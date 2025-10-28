@@ -57,7 +57,7 @@ export default function CoinCalculator() {
             tag: bonusCoins > 0 ? 'Custom Package' : undefined,
             price: `$${numAmount}`,
             amount: numAmount,
-            productId: 'custom_package',
+            productId: process.env.NEXT_PUBLIC_PRODUCT_ID || 'custom_package',
         };
 
         setSelectedPackage(packageData);
