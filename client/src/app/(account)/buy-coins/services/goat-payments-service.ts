@@ -52,7 +52,6 @@ class GoatPaymentsService {
     public reset(): void {
         this.isConfigured = false;
         this.clearToken();
-        this.removePaymentHandler();
         this.resetUIElements();
     }
 

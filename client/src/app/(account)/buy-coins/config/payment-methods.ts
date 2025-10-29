@@ -14,15 +14,15 @@ export interface PaymentMethod {
 }
 
 export const PAYMENT_METHODS: PaymentMethod[] = [
-    // {
-    //     id: 'goatpayments',
-    //     name: 'goatpayments',
-    //     label: 'Card/Apple Pay/GPay',
-    //     icon: 'lucide:credit-card',
-    //     color: '--color-blue-500',
-    //     description: 'Pay with credit card, Apple Pay, or Google Pay',
-    //     available: true, // Now enabled
-    // },
+    {
+        id: 'goatpayments',
+        name: 'goatpayments',
+        label: 'Card/Apple Pay/GPay',
+        icon: 'lucide:credit-card',
+        color: '--color-blue-500',
+        description: 'Pay with credit card, Apple Pay, or Google Pay',
+        available: true, // Now enabled
+    },
     {
         id: 'plisio',
         name: 'plisio',

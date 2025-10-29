@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useGoatPayments } from '../hooks/useGoatPayments';
 import type { CoinPackage, GoatPaymentsModalProps } from '../types';
 
@@ -38,6 +38,15 @@ const PackGoldCoinBox = ({
 export default function GoatPaymentsModal({ isOpen, onClose, selectedPackage }: GoatPaymentsModalProps) {
     const { sm, xl } = useBreakPoint();
     const [selectedPaymentType, setSelectedPaymentType] = useState<'card' | 'applepay' | 'googlepay' | null>(null);
+	const [isApplePayAvailable, setIsApplePayAvailable] = useState(false);
+
+	useEffect(() => {
+		if (typeof window === 'undefined') return;
+		const isAppleDevice = /Mac|iPhone|iPad|iPod/.test(navigator.platform) ||
+			(/Macintosh/.test(navigator.userAgent) && 'ontouchend' in document);
+		const hasApplePayApi = typeof (window as any).ApplePaySession === 'function';
+		setIsApplePayAvailable(isAppleDevice && hasApplePayApi);
+	}, []);
     
     const {
         isLoading,
@@ -84,29 +93,31 @@ export default function GoatPaymentsModal({ isOpen, onClose, selectedPackage }: 
         onClose();
     };
 
-    const paymentTypes = [
-        {
-            id: 'card' as const,
-            label: 'Credit/Debit Card',
-            icon: 'lucide:credit-card',
-            description: 'Pay with your credit or debit card',
-            color: '--color-blue-500',
-        },
-        {
-            id: 'applepay' as const,
-            label: 'Apple Pay',
-            icon: 'lucide:smartphone',
-            description: 'Pay securely with Apple Pay',
-            color: '--color-gray-500',
-        },
-        {
-            id: 'googlepay' as const,
-            label: 'Google Pay',
-            icon: 'lucide:smartphone',
-            description: 'Pay securely with Google Pay',
-            color: '--color-green-500',
-        },
-    ];
+	const paymentTypes = useMemo(() => {
+		return [
+			{
+				id: 'card' as const,
+				label: 'Credit/Debit Card',
+				icon: 'lucide:credit-card',
+				description: 'Pay with your credit or debit card',
+				color: '--color-blue-500',
+			},
+			{
+				id: 'applepay' as const,
+				label: 'Apple Pay',
+				icon: 'lucide:smartphone',
+				description: isApplePayAvailable ? 'Pay securely with Apple Pay' : 'Available only on Apple devices',
+				color: '--color-gray-500',
+			},
+			{
+				id: 'googlepay' as const,
+				label: 'Google Pay',
+				icon: 'lucide:smartphone',
+				description: 'Pay securely with Google Pay',
+				color: '--color-green-500',
+			},
+		];
+	}, [isApplePayAvailable]);
 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -184,7 +195,9 @@ export default function GoatPaymentsModal({ isOpen, onClose, selectedPackage }: 
 
                     {/* Payment Types Grid */}
                     <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl'>
-                        {paymentTypes.map((type) => (
+			{paymentTypes.map((type) => {
+				const isDisabled = type.id === 'applepay' && !isApplePayAvailable;
+				return (
                             <Button
                                 key={type.id}
                                 neon
@@ -193,36 +206,40 @@ export default function GoatPaymentsModal({ isOpen, onClose, selectedPackage }: 
                                 glowColor={type.color}
                                 glowSpread={selectedPaymentType === type.id ? 1.2 : 0.8}
                                 backgroundColor={type.color}
-                                backgroundOpacity={selectedPaymentType === type.id ? 0.2 : 0.1}
+						backgroundOpacity={isDisabled ? 0.06 : selectedPaymentType === type.id ? 0.2 : 0.1}
                                 neonBoxClass='rounded-md transition-all duration-200'
                                 className={cn(
-                                    'w-full flex flex-col items-center gap-2 p-4 h-auto min-h-[100px] transition-all duration-200 relative',
-                                    selectedPaymentType === type.id && 'ring-2 ring-white/50 shadow-lg scale-[1.02]',
-                                    !selectedPaymentType || selectedPaymentType !== type.id ? 'hover:scale-[1.01] hover:shadow-md' : ''
+							'w-full flex flex-col items-center gap-2 p-4 h-auto min-h-[100px] transition-all duration-200 relative',
+							selectedPaymentType === type.id && !isDisabled && 'ring-2 ring-white/50 shadow-lg scale-[1.02]',
+							!isDisabled && (!selectedPaymentType || selectedPaymentType !== type.id) ? 'hover:scale-[1.01] hover:shadow-md' : 'opacity-60 cursor-not-allowed'
                                 )}
-                                onClick={() => handlePaymentTypeSelect(type.id)}
+						disabled={isDisabled}
+						onClick={() => {
+							if (isDisabled) return;
+							handlePaymentTypeSelect(type.id);
+						}}
                             >
                                 <NeonIcon
                                     icon={type.icon}
                                     size={xl ? 28 : 24}
                                     glowColor={type.color}
-                                    glowSpread={selectedPaymentType === type.id ? 1.5 : 1}
+							glowSpread={!isDisabled && selectedPaymentType === type.id ? 1.5 : 1}
                                 />
                                 <div className='text-center'>
                                     <div className={cn(
                                         'font-bold text-base mb-1 transition-colors duration-200',
-                                        selectedPaymentType === type.id ? 'text-white' : 'text-white/90'
+								isDisabled ? 'text-white/60' : selectedPaymentType === type.id ? 'text-white' : 'text-white/90'
                                     )}>
                                         {type.label}
                                     </div>
                                     <div className={cn(
                                         'text-xs leading-tight transition-colors duration-200',
-                                        selectedPaymentType === type.id ? 'text-white/90' : 'text-white/70'
+								isDisabled ? 'text-white/60' : selectedPaymentType === type.id ? 'text-white/90' : 'text-white/70'
                                     )}>
                                         {type.description}
                                     </div>
                                 </div>
-                                {selectedPaymentType === type.id && (
+						{!isDisabled && selectedPaymentType === type.id && (
                                     <div className='absolute top-2 right-2'>
                                         <div className='w-6 h-6 bg-green-500 rounded-full flex items-center justify-center'>
                                             <NeonIcon
@@ -234,7 +251,8 @@ export default function GoatPaymentsModal({ isOpen, onClose, selectedPackage }: 
                                     </div>
                                 )}
                             </Button>
-                        ))}
+				);
+			})}
                     </div>
 
                     {/* Payment Buttons for Apple Pay and Google Pay */}
