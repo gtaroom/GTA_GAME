@@ -5,12 +5,12 @@ import { MailOptions, MailOptions2 } from "../types/types";
 
 // Brand colors
 const BRAND_COLORS = {
-  primary: '#fde049', // Gold
-  secondary: '#bdf8c7', // Light green
-  background: '#310a47', // Deep purple (updated)
-  text: '#ffffff', // White
-  accent: '#ff6b6b', // Neon accent
-  darkText: '#2c3e50' // Dark text for contrast
+  primary: "#fde049", // Gold
+  secondary: "#bdf8c7", // Light green
+  background: "#310a47", // Deep purple (updated)
+  text: "#ffffff", // White
+  accent: "#ff6b6b", // Neon accent
+  darkText: "#2c3e50", // Dark text for contrast
 };
 
 /**
@@ -29,13 +29,17 @@ const generateBrandedEmailTemplate = (
   buttonLink?: string,
   logoUrl?: string
 ): string => {
-  const logoHtml = logoUrl ? `
+  const logoHtml = logoUrl
+    ? `
     <div style="text-align: center; margin-bottom: 30px;">
       <img src="${logoUrl}" alt="Golden Ticket Online Arcade" style="max-width: 200px; height: auto;" />
     </div>
-  ` : '';
+  `
+    : "";
 
-  const buttonHtml = buttonText && buttonLink ? `
+  const buttonHtml =
+    buttonText && buttonLink
+      ? `
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 40px 0;">
       <tr>
         <td align="center">
@@ -51,7 +55,8 @@ const generateBrandedEmailTemplate = (
         </td>
       </tr>
     </table>
-  ` : '';
+  `
+      : "";
 
   return `
     <!DOCTYPE html>
@@ -127,7 +132,7 @@ const sendEmail = async (options: MailOptions) => {
   let emailTextual: string;
 
   // Check if options.mailgenContent is a string (new branded template) or object (old Mailgen format)
-  if (typeof options.mailgenContent === 'string') {
+  if (typeof options.mailgenContent === "string") {
     // New branded template format
     emailHtml = options.mailgenContent;
     emailTextual = options.subject || "Golden Ticket Online Arcade & Casino";
@@ -146,11 +151,11 @@ const sendEmail = async (options: MailOptions) => {
   }
 
   const mail = {
-    from: process.env.SMTP_USER, 
-    to: options.email, 
-    subject: options.subject, 
-    text: emailTextual, 
-    html: emailHtml, 
+    from: process.env.SMTP_USER,
+    to: options.email,
+    subject: options.subject,
+    text: emailTextual,
+    html: emailHtml,
   };
 
   try {
@@ -159,7 +164,7 @@ const sendEmail = async (options: MailOptions) => {
     // As sending email is not strongly coupled to the business logic it is not worth to raise an error when email sending fails
     // So it's better to fail silently rather than breaking the app
     console.error(
-      "Email service failed silently. Make sure you have provided your MAILTRAP credentials in the .env file",
+      "Email service failed silently. Make sure you have provided your MAILTRAP credentials in the .env file"
     );
     console.error("Error: ", error);
   }
@@ -179,7 +184,7 @@ const sendEmailNotify = async (options: MailOptions2) => {
 
   // Extract title from subject or use default
   const title = options.subject || "Golden Ticket Online Arcade & Casino";
-  
+
   // Use branded template instead of raw HTML
   const brandedHtml = generateBrandedEmailTemplate(
     title,
@@ -190,10 +195,10 @@ const sendEmailNotify = async (options: MailOptions2) => {
   );
 
   const mail = {
-    from: process.env.SMTP_USER, 
+    from: process.env.SMTP_USER,
     to: options.email, // mail receiver
     subject: options.subject, // mail subject
-    html: brandedHtml, 
+    html: brandedHtml,
   };
 
   try {
@@ -202,7 +207,7 @@ const sendEmailNotify = async (options: MailOptions2) => {
     // As sending email is not strongly coupled to the business logic it is not worth to raise an error when email sending fails
     // So it's better to fail silently rather than breaking the app
     console.error(
-      "Email notification service failed silently. Make sure you have provided your MAILTRAP credentials in the .env file",
+      "Email notification service failed silently. Make sure you have provided your MAILTRAP credentials in the .env file"
     );
     console.error("Error: ", error);
   }
@@ -217,16 +222,18 @@ const sendEmailNotify = async (options: MailOptions2) => {
  */
 const emailVerificationMailgenContent = (
   username: string,
-  verificationUrl: string,
+  verificationUrl: string
 ) => {
-  const giftIconUrl = process.env.CLIENT_URL ? `${process.env.CLIENT_URL}/modal/gift-icon.png` : '';
-  
+  const giftIconUrl = process.env.CLIENT_URL
+    ? `${process.env.CLIENT_URL}/modal/gift-icon.png`
+    : "";
+
   const content = `
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 40px;">
       <tr>
         <td align="center">
           ${giftIconUrl ? `<img src="${giftIconUrl}" alt="Gift" style="width: 80px; height: 80px; margin: 20px auto; display: block;" />` : '<div style="font-size: 60px; margin-bottom: 20px; text-align: center;">🎁</div>'}
-          <div style="font-size: 24px; font-weight: 600; color: ${BRAND_COLORS.primary}; margin: 20px 0; text-align: center;">Welcome to Golden Ticket!</div>
+          <div style="font-size: 24px; font-weight: 600; color: ${BRAND_COLORS.primary}; margin: 20px 0; text-align: center;">Welcome to GTOA Family!</div>
         </td>
       </tr>
     </table>
@@ -234,7 +241,7 @@ const emailVerificationMailgenContent = (
     <div style="font-size: 20px; margin: 30px 0 20px 0;">Hi <span style="color: ${BRAND_COLORS.primary}; font-weight: 600;">${username}</span>,</div>
     
     <div style="font-size: 18px; margin: 20px 0;">
-      Welcome to our app! We're very excited to have you on board. 
+     Welcome to Golden Ticket Online Arcade! We’re very excited to have you as part of the GTOA Family.
       To verify your email address, click the button below. 
       <span style="text-shadow: 0 0 10px ${BRAND_COLORS.accent}, 0 0 20px ${BRAND_COLORS.accent}, 0 0 30px ${BRAND_COLORS.accent};">This link will expire in 20 minutes.</span>
     </div>
@@ -262,7 +269,7 @@ const emailVerificationMailgenContent = (
  */
 const forgotPasswordMailgenContent = (
   username: string,
-  passwordResetUrl: string,
+  passwordResetUrl: string
 ) => {
   const content = `
     <div style="text-align: center; margin-bottom: 30px;">
@@ -317,13 +324,13 @@ const generateAdminNotificationContent = (
         
         <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
           <h3 style="color: ${BRAND_COLORS.primary}; margin-top: 0;">Request Details</h3>
-          <p><strong>User:</strong> ${data.userName || 'N/A'} (${data.userEmail || 'N/A'})</p>
-          <p><strong>Game:</strong> ${data.gameName || 'N/A'}</p>
-          <p><strong>Username:</strong> ${data.username || 'N/A'}</p>
-          <p><strong>Amount:</strong> ${data.amount || 'N/A'} ${data.currency || 'GC'}</p>
-          <p><strong>Equivalent To:</strong> ${data.usdAmount || 'N/A'} USD</p>
-          <p><strong>Request ID:</strong> ${data.requestId || 'N/A'}</p>
-          <p><strong>Status:</strong> <span class="highlight">${data.status || 'Pending'}</span></p>
+          <p><strong>User:</strong> ${data.userName || "N/A"} (${data.userEmail || "N/A"})</p>
+          <p><strong>Game:</strong> ${data.gameName || "N/A"}</p>
+          <p><strong>Username:</strong> ${data.username || "N/A"}</p>
+          <p><strong>Amount:</strong> ${data.amount || "N/A"} ${data.currency || "GC"}</p>
+          <p><strong>Equivalent To:</strong> ${data.usdAmount || "N/A"} USD</p>
+          <p><strong>Request ID:</strong> ${data.requestId || "N/A"}</p>
+          <p><strong>Status:</strong> <span class="highlight">${data.status || "Pending"}</span></p>
         </div>
         
         <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
@@ -342,12 +349,12 @@ const generateAdminNotificationContent = (
         
         <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
           <h3 style="color: ${BRAND_COLORS.primary}; margin-top: 0;">Withdrawal Details</h3>
-          <p><strong>User:</strong> ${data.userName || 'N/A'} (${data.userEmail || 'N/A'})</p>
-          <p><strong>Amount:</strong> ${data.amount || 'N/A'} ${data.currency || 'SC'}</p>
-          <p><strong>Payment Method:</strong> ${data.paymentMethod || 'N/A'}</p>
-          <p><strong>Account Details:</strong> ${data.accountDetails || 'N/A'}</p>
-          <p><strong>Request ID:</strong> ${data.requestId || 'N/A'}</p>
-          <p><strong>Status:</strong> <span class="highlight">${data.status || 'Pending'}</span></p>
+          <p><strong>User:</strong> ${data.userName || "N/A"} (${data.userEmail || "N/A"})</p>
+          <p><strong>Amount:</strong> ${data.amount || "N/A"} ${data.currency || "SC"}</p>
+          <p><strong>Payment Method:</strong> ${data.paymentMethod || "N/A"}</p>
+          <p><strong>Account Details:</strong> ${data.accountDetails || "N/A"}</p>
+          <p><strong>Request ID:</strong> ${data.requestId || "N/A"}</p>
+          <p><strong>Status:</strong> <span class="highlight">${data.status || "Pending"}</span></p>
         </div>
         
         <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
@@ -366,11 +373,11 @@ const generateAdminNotificationContent = (
         
         <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
           <h3 style="color: ${BRAND_COLORS.primary}; margin-top: 0;">Account Request Details</h3>
-          <p><strong>User:</strong> ${data.userName || 'N/A'} (${data.userEmail || 'N/A'})</p>
-          <p><strong>Game:</strong> ${data.gameName || 'N/A'}</p>
-          <p><strong>Request Type:</strong> ${data.requestType || 'N/A'}</p>
-          <p><strong>Request ID:</strong> ${data.requestId || 'N/A'}</p>
-          <p><strong>Status:</strong> <span class="highlight">${data.status || 'Pending'}</span></p>
+          <p><strong>User:</strong> ${data.userName || "N/A"} (${data.userEmail || "N/A"})</p>
+          <p><strong>Game:</strong> ${data.gameName || "N/A"}</p>
+          <p><strong>Request Type:</strong> ${data.requestType || "N/A"}</p>
+          <p><strong>Request ID:</strong> ${data.requestId || "N/A"}</p>
+          <p><strong>Status:</strong> <span class="highlight">${data.status || "Pending"}</span></p>
         </div>
         
         <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
@@ -423,7 +430,7 @@ const generateUserNotificationContent = (
           <h2 style="color: ${BRAND_COLORS.primary}; margin: 0; font-size: 24px;">${title}</h2>
         </div>
         
-        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.userName || 'Valued Player'}</span>,</p>
+        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.userName || "Valued Player"}</span>,</p>
         
         <p style="font-size: 16px; margin-bottom: 20px;">
           Great news! Your request to deposit coins in <span class="highlight">${data.gameName}</span> has been approved.
@@ -452,7 +459,7 @@ const generateUserNotificationContent = (
           <h2 style="color: ${BRAND_COLORS.accent}; margin: 0; font-size: 24px;">${title}</h2>
         </div>
         
-        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.userName || 'Valued Player'}</span>,</p>
+        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.userName || "Valued Player"}</span>,</p>
         
         <p style="font-size: 16px; margin-bottom: 20px;">
           We're sorry, but your request to deposit amount in <span class="highlight">${data.gameName}</span> was rejected.
@@ -463,7 +470,7 @@ const generateUserNotificationContent = (
           <p><strong>Game:</strong> ${data.gameName}</p>
           <p><strong>Amount:</strong> ${data.amount} GC (worth: ${data.usdAmount} USD)</p>
           <p><strong>Status:</strong> <span style="color: ${BRAND_COLORS.accent};">Rejected</span></p>
-          <p><strong>Reason:</strong> ${data.reason || 'Not specified'}</p>
+          <p><strong>Reason:</strong> ${data.reason || "Not specified"}</p>
         </div>
         
         <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
@@ -480,7 +487,7 @@ const generateUserNotificationContent = (
           <h2 style="color: ${BRAND_COLORS.primary}; margin: 0; font-size: 24px;">${title}</h2>
         </div>
         
-        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.userName || 'Valued Player'}</span>,</p>
+        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.userName || "Valued Player"}</span>,</p>
         
         <p style="font-size: 16px; margin-bottom: 20px;">
           Congratulations! Your game account request for <span class="highlight">${data.gameName}</span> has been approved.
@@ -507,7 +514,7 @@ const generateUserNotificationContent = (
           <h2 style="color: ${BRAND_COLORS.primary}; margin: 0; font-size: 24px;">${title}</h2>
         </div>
         
-        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.userName || 'Valued Player'}</span>,</p>
+        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.userName || "Valued Player"}</span>,</p>
         
         <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
           <pre style="color: ${BRAND_COLORS.text}; white-space: pre-wrap; font-family: inherit;">${JSON.stringify(data, null, 2)}</pre>
@@ -531,5 +538,5 @@ export {
   sendEmailNotify,
   generateBrandedEmailTemplate,
   generateAdminNotificationContent,
-  generateUserNotificationContent
+  generateUserNotificationContent,
 };

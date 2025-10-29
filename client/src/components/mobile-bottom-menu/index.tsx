@@ -2,13 +2,11 @@
 
 import { useIsLoggedIn } from '@/contexts/auth-context';
 import { useUI } from '@/contexts/ui-context';
-import { useGameSearchModal } from '@/hooks/useGameSearchModal';
 import { cn } from '@/lib/utils';
 import { Link } from 'next-transition-router';
 import { useEffect, useState } from 'react';
 import NeonBox from '../neon/neon-box';
 import NeonIcon from '../neon/neon-icon';
-import { Notification, NotificationTrigger } from '../notification';
 
 function NavButton({
     icon,
@@ -45,7 +43,6 @@ export default function BottomNavigation() {
         showUserLoggedIn?: boolean | 'both';
     }
 
-    const { openGameSearch } = useGameSearchModal();
     const { isLoggedIn } = useIsLoggedIn();
     const { toggleSidebar, toggleMobileMenu } = useUI();
 
@@ -57,10 +54,12 @@ export default function BottomNavigation() {
         }
     };
 
-    const handleOpenSearch = () => {
-        openGameSearch(selectedGame => {
-            console.log('Selected game:', selectedGame);
-        });
+    const handleSupportClick = () => {
+        // Redirect to Facebook support page
+        window.open(
+            'https://web.facebook.com/Goldenticketonlinearcade',
+            '_blank'
+        );
     };
 
     const navItems: NavItem[] = [
@@ -86,10 +85,10 @@ export default function BottomNavigation() {
             showUserLoggedIn: 'both',
         },
         {
-            icon: 'lucide:search',
-            label: 'Search',
+            icon: 'lucide:headphones',
+            label: 'Support',
             type: 'button',
-            onClick: handleOpenSearch,
+            onClick: handleSupportClick,
             showUserLoggedIn: false,
         },
         {
@@ -107,7 +106,6 @@ export default function BottomNavigation() {
             showUserLoggedIn: 'both',
         },
     ];
-
 
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
