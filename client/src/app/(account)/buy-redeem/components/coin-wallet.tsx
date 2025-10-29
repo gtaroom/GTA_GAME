@@ -104,7 +104,7 @@ export default function CoinWallet() {
                 </div>
 
                 <ButtonGroup className='xl:gap-6 gap-4'>
-                    <Button size={BTN_SIZE} disabled={loading} onClick={() => router.push('/game-listing?tab=signature')}>
+                    <Button size={BTN_SIZE} disabled={loading} onClick={() => router.push('/game-listing?tab=exclusive')}>
                         Use GC in Game
                     </Button>
                     <Button
