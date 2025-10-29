@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 import AuthWrapper from '@/components/wrappers/auth-wrapper';
 import { useIsLoggedIn } from '@/contexts/auth-context';
@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils';
 import { useTransitionRouter } from 'next-transition-router';
 import Footer from '../footer';
 import Header from '../header';
-import LiveChatButton from '../live-chat-button';
 import MobileBottomMenu from '../mobile-bottom-menu';
 import Sidebar from '../sidebar';
 
@@ -76,7 +75,7 @@ const LayoutWrapper: React.FC<Props> = ({ children }) => {
                         {children}
                     </main>
                     <Footer />
-                    <LiveChatButton />
+                    {/* <LiveChatButton /> */}
                 </div>
             )}
 

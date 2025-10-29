@@ -38,7 +38,7 @@ const HeroSection = () => {
                     </p>
 
                     {/* Hero Section Action Button */}
-                    <ButtonGroup className='mb-8 sm:mb-12 gap-4 sm:gap-7.5 flex-wrap justify-center'>
+                    <ButtonGroup className='mb-20 sm:mb-32 gap-4 sm:gap-7.5 flex-wrap justify-center'>
                         <Button
                             variant='secondary'
                             size={md ? 'xl' : 'lg'}
