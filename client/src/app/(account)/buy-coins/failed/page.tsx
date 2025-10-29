@@ -32,7 +32,7 @@ export default function BuyCoinsFailedPage() {
                 </p>
 
                 <div className='space-x-3'>
-                    <Button onClick={() => router.push('/account/buy-coins')}>
+                    <Button onClick={() => router.push('/buy-coins')}>
                         Try Again
                     </Button>
                     <Button variant='secondary' onClick={() => router.push('/support')}>
