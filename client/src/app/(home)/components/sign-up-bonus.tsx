@@ -35,13 +35,15 @@ const SignUpBonus = () => {
                         <ButtonGroup className='gap-4 sm:gap-6 flex-wrap max-lg:justify-center max-lg:w-full'>
                             <Button
                                 size={md ? 'xl' : 'lg'}
+                                className={`${md ? 'min-w-[180px]' : 'min-w-[140px]'}`}
                                 onClick={() => router.push('/register')}
                             >
-                                Start Playing Now{' '}
+                                Play Now
                             </Button>
                             <Button
                                 variant='secondary'
                                 size={md ? 'xl' : 'lg'}
+                                className={`${md ? 'min-w-[180px]' : 'min-w-[140px]'}`}
                                 onClick={() => router.push('/about-us')}
                             >
                                 Learn More

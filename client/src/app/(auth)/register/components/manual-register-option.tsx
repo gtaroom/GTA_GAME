@@ -22,11 +22,11 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import { useAuth } from '@/contexts/auth-context';
 import { statesData } from '@/data/states';
+import { register as registerUser } from '@/lib/api/auth';
 import { cn } from '@/lib/utils';
 import { useTransitionRouter } from 'next-transition-router';
-import { register as registerUser } from '@/lib/api/auth';
-import { useAuth } from '@/contexts/auth-context';
 
 const ManualregisterOption = () => {
     const id = useId();
@@ -48,49 +48,39 @@ const ManualregisterOption = () => {
     const router = useTransitionRouter();
     const { setLoggedIn, setUser } = useAuth();
 
-    // Validate US phone numbers (NANP): 10 digits, area code and central office code cannot start with 0 or 1
-    const validateUSPhone = (rawPhone: string): { ok: boolean; e164?: string } => {
-        const digits = rawPhone.replace(/\D/g, '');
-        // Allow optional leading country code '1'
-        const normalized = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
-        if (normalized.length !== 10) return { ok: false };
-        const areaFirst = normalized.charCodeAt(0) - 48;
-        const centralFirst = normalized.charCodeAt(3) - 48;
-        if (areaFirst < 2 || centralFirst < 2) return { ok: false };
-        // Return E.164 format
-        return { ok: true, e164: `+1${normalized}` };
+    // Format phone number as user types: (XXX) XXX-XXXX
+    const formatPhoneNumber = (value: string) => {
+        // Remove all non-digits
+        const phoneNumber = value.replace(/\D/g, '');
+
+        // Limit to 10 digits
+        const limitedPhone = phoneNumber.slice(0, 10);
+
+        // Format based on length
+        if (limitedPhone.length <= 3) {
+            return limitedPhone;
+        } else if (limitedPhone.length <= 6) {
+            return `(${limitedPhone.slice(0, 3)}) ${limitedPhone.slice(3)}`;
+        } else {
+            return `(${limitedPhone.slice(0, 3)}) ${limitedPhone.slice(3, 6)}-${limitedPhone.slice(6)}`;
+        }
     };
 
-    // Format phone while typing and limit to US length (10 digits or 11 with leading 1)
-    const formatUSPhoneForInput = (raw: string): string => {
-        const hasPlus = raw.trim().startsWith('+');
-        let digits = raw.replace(/\D/g, '');
-        // Keep optional leading 1
-        if (digits.startsWith('1')) {
-            digits = digits.slice(0, 11);
-        } else {
-            digits = digits.slice(0, 10);
-        }
-        const withCountry = digits.length > 0 && digits.startsWith('1');
-        const core = withCountry ? digits.slice(1) : digits;
-        const a = core.slice(0, 3);
-        const b = core.slice(3, 6);
-        const c = core.slice(6, 10);
-        const national = a && b && c
-            ? `(${a}) ${b}-${c}`
-            : a && b
-                ? `(${a}) ${b}`
-                : a
-                    ? `(${a}`
-                    : '';
-        if (withCountry) {
-            return national ? `+1 ${national}` : '+1';
-        }
-        // If user typed '+', preserve it only if they also typed 1 next
-        if (hasPlus && raw.replace(/\D/g, '').startsWith('1')) {
-            return national ? `+1 ${national}` : '+1';
-        }
-        return national;
+    // Validate US phone number
+    const validateUSPhone = (phone: string): boolean => {
+        const digits = phone.replace(/\D/g, '');
+        if (digits.length !== 10) return false;
+
+        // Area code and central office code cannot start with 0 or 1
+        const areaCode = parseInt(digits.charAt(0));
+        const centralOffice = parseInt(digits.charAt(3));
+
+        return areaCode >= 2 && centralOffice >= 2;
+    };
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const formatted = formatPhoneNumber(e.target.value);
+        setForm(s => ({ ...s, phone: formatted }));
     };
 
     return (
@@ -101,7 +91,9 @@ const ManualregisterOption = () => {
                 e.preventDefault();
                 setError('');
                 if (!form.acceptTerms) {
-                    setError('Please accept the Terms & Conditions and Privacy Policy.');
+                    setError(
+                        'Please accept the Terms & Conditions and Privacy Policy.'
+                    );
                     return;
                 }
                 if (form.password !== form.confirmPassword) {
@@ -109,9 +101,8 @@ const ManualregisterOption = () => {
                     return;
                 }
                 // Validate US phone number
-                const phoneValidation = validateUSPhone(form.phone);
-                if (!phoneValidation.ok) {
-                    setError('Please enter a valid US phone number (e.g., +1 (408) 555-2376).');
+                if (!validateUSPhone(form.phone)) {
+                    setError('Please enter a valid 10-digit US phone number.');
                     return;
                 }
                 setLoading(true);
@@ -121,36 +112,44 @@ const ManualregisterOption = () => {
                     let first = parts[0] || '';
                     let middle = parts[1] || '';
                     let last = parts.slice(2).join(' ') || '';
-                    
+
                     // if no last name but there is a middle, treat middle as last
                     if (!last && middle) {
-                      last = middle;
-                      middle = '';
+                        last = middle;
+                        middle = '';
                     }
-                    
+
+                    // Convert phone to E.164 format
+                    const phoneDigits = form.phone.replace(/\D/g, '');
+                    const e164Phone = `+1${phoneDigits}`;
+
                     const payload = {
-                        name: { first,
-                            middle,
-                            last },
+                        name: { first, middle, last },
                         email: form.email.toLowerCase(),
                         password: form.password,
-                        phone: phoneValidation.e164!,
+                        phone: e164Phone,
                         state: value,
                         acceptSMSMarketing: form.acceptSMSMarketing,
                         acceptSMSTerms: form.acceptSMSTerms,
-                        isOpted: form.acceptSMSMarketing
+                        isOpted: form.acceptSMSMarketing,
                     };
-                    const response = await registerUser(payload) as any;
-                    
+                    const response = (await registerUser(payload)) as any;
+
                     // If registration includes user data and cookies are set, mark as logged in
                     if (response.success && response.data?.data?.user) {
                         setLoggedIn(true);
                         setUser(response.data.data.user);
                     }
-                    
-                    router.push(`/email-verification?email=${encodeURIComponent(form.email)}&phone=${encodeURIComponent(form.phone)}`);
+
+                    router.push(
+                        `/email-verification?email=${encodeURIComponent(form.email)}&phone=${encodeURIComponent(form.phone)}`
+                    );
                 } catch (err: unknown) {
-                    setError(err instanceof Error ? err.message : 'Registration failed');
+                    setError(
+                        err instanceof Error
+                            ? err.message
+                            : 'Registration failed'
+                    );
                 } finally {
                     setLoading(false);
                 }
@@ -163,7 +162,9 @@ const ManualregisterOption = () => {
                     placeholder='Full Name'
                     {...inputSettings}
                     value={form.fullName}
-                    onChange={e => setForm(s => ({ ...s, fullName: e.target.value }))}
+                    onChange={e =>
+                        setForm(s => ({ ...s, fullName: e.target.value }))
+                    }
                 />
 
                 {/* Email Address */}
@@ -172,20 +173,29 @@ const ManualregisterOption = () => {
                     placeholder='Email Address'
                     {...inputSettings}
                     value={form.email}
-                    onChange={e => setForm(s => ({ ...s, email: e.target.value }))}
+                    onChange={e =>
+                        setForm(s => ({ ...s, email: e.target.value }))
+                    }
                 />
 
-                {/* Number */}
-                <Input
-                    type='tel'
-                    placeholder='+1 (408) 555-2376'
-                    {...inputSettings}
-                    inputMode='tel'
-                    autoComplete='tel'
-                    maxLength={18}
-                    value={form.phone}
-                    onChange={e => setForm(s => ({ ...s, phone: formatUSPhoneForInput(e.target.value) }))}
-                />
+                {/* Phone Number with US Flag and +1 */}
+                <div className='relative'>
+                    <div className='absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2.5 pointer-events-none z-10'>
+                        <span className='text-base leading-none'>🇺🇸</span>
+                        <span className='text-white text-base font-medium'>
+                            +1
+                        </span>
+                    </div>
+                    <Input
+                        type='tel'
+                        // placeholder='(555) 123-4567'
+                        {...inputSettings}
+                        style={{ paddingLeft: '6rem' }}
+                        value={form.phone}
+                        onChange={handlePhoneChange}
+                        inputMode='numeric'
+                    />
+                </div>
 
                 {/* Select States */}
                 <Popover open={open} onOpenChange={setOpen}>
@@ -226,7 +236,6 @@ const ManualregisterOption = () => {
                             <CommandInput placeholder='Search States...' />
                             <CommandList>
                                 <CommandEmpty>No state found.</CommandEmpty>
-                                {/* TODO: @shivam here is the US country flag API https://flagpedia.net/us-states can you please use that API to get the flags of all the states*/}
                                 <CommandGroup>
                                     {statesData.map(state => (
                                         <CommandItem
@@ -262,7 +271,9 @@ const ManualregisterOption = () => {
                     placeholder='Password'
                     {...inputSettings}
                     value={form.password}
-                    onChange={e => setForm(s => ({ ...s, password: e.target.value }))}
+                    onChange={e =>
+                        setForm(s => ({ ...s, password: e.target.value }))
+                    }
                 />
 
                 {/* Confirm Password */}
@@ -271,7 +282,12 @@ const ManualregisterOption = () => {
                     placeholder='Confirm Password'
                     {...inputSettings}
                     value={form.confirmPassword}
-                    onChange={e => setForm(s => ({ ...s, confirmPassword: e.target.value }))}
+                    onChange={e =>
+                        setForm(s => ({
+                            ...s,
+                            confirmPassword: e.target.value,
+                        }))
+                    }
                 />
 
                 {/* Terms and SMS Consent */}
@@ -281,7 +297,12 @@ const ManualregisterOption = () => {
                         <Checkbox
                             id='terms-policy'
                             checked={form.acceptTerms}
-                            onCheckedChange={v => setForm(s => ({ ...s, acceptTerms: Boolean(v) }))}
+                            onCheckedChange={v =>
+                                setForm(s => ({
+                                    ...s,
+                                    acceptTerms: Boolean(v),
+                                }))
+                            }
                         />
                         <NeonText
                             as='label'
@@ -309,7 +330,12 @@ const ManualregisterOption = () => {
                         <Checkbox
                             id='sms-marketing-terms'
                             checked={form.acceptSMSMarketing}
-                            onCheckedChange={v => setForm(s => ({ ...s, acceptSMSMarketing: Boolean(v) }))}
+                            onCheckedChange={v =>
+                                setForm(s => ({
+                                    ...s,
+                                    acceptSMSMarketing: Boolean(v),
+                                }))
+                            }
                         />
                         <NeonText
                             as='label'
@@ -317,7 +343,9 @@ const ManualregisterOption = () => {
                             className='text-sm! lg:text-base!'
                             glowSpread={0.5}
                         >
-                            I agree to receive marketing SMS from GTOA. Frequency varies. Msg & data rates may apply. Consent is not a condition of purchase.
+                            I agree to receive marketing SMS from GTOA.
+                            Frequency varies. Msg & data rates may apply.
+                            Consent is not a condition of purchase.
                             <br />
                             Reply STOP to unsubscribe or HELP for assistance.
                         </NeonText>
@@ -333,16 +361,26 @@ const ManualregisterOption = () => {
                         borderWidth={1}
                     >
                         <NeonText className='text-sm text-white/90 leading-relaxed'>
-                            By registering, you agree to receive account-related SMS from GTOA (such as verification codes, password resets, receipts, or security alerts). These are not marketing messages. Msg & data rates may apply. Reply{' '}
-                            <span className='text-yellow-400 font-semibold'>STOP</span>
-                            {' '}to unsubscribe,{' '}
-                            <span className='text-yellow-400 font-semibold'>HELP</span>
-                            {' '}for help.
+                            By registering, you agree to receive account-related
+                            SMS from GTOA (such as verification codes, password
+                            resets, receipts, or security alerts). These are not
+                            marketing messages. Msg & data rates may apply.
+                            Reply{' '}
+                            <span className='text-yellow-400 font-semibold'>
+                                STOP
+                            </span>{' '}
+                            to unsubscribe,{' '}
+                            <span className='text-yellow-400 font-semibold'>
+                                HELP
+                            </span>{' '}
+                            for help.
                         </NeonText>
                     </NeonBox>
                 </div>
                 {error && (
-                    <p className='text-red-500 text-base font-semibold'>{error}</p>
+                    <p className='text-red-500 text-base font-semibold'>
+                        {error}
+                    </p>
                 )}
             </div>
 

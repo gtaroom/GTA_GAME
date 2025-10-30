@@ -1,0 +1,131 @@
+/* Custom styles for react-phone-input-2 to match neon theme */
+
+.phone-input-wrapper {
+    width: 100%;
+}
+
+.phone-input-container {
+    width: 100% !important;
+}
+
+.phone-input-field {
+    width: 100% !important;
+    height: 56px !important;
+    background: rgba(139, 92, 246, 0.1) !important;
+    border: 1px solid rgba(139, 92, 246, 0.3) !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-size: 16px !important;
+    padding-left: 58px !important;
+    transition: all 0.3s ease !important;
+}
+
+.phone-input-field:hover {
+    border-color: rgba(139, 92, 246, 0.5) !important;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3) !important;
+}
+
+.phone-input-field:focus {
+    outline: none !important;
+    border-color: rgba(139, 92, 246, 0.8) !important;
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.5) !important;
+    background: rgba(139, 92, 246, 0.15) !important;
+}
+
+.phone-input-field::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.phone-input-button {
+    background: transparent !important;
+    border: none !important;
+    border-right: 1px solid rgba(139, 92, 246, 0.3) !important;
+    padding: 0 12px !important;
+}
+
+.phone-input-button:hover {
+    background: rgba(139, 92, 246, 0.1) !important;
+}
+
+.phone-input-dropdown {
+    background: rgba(30, 20, 50, 0.98) !important;
+    border: 1px solid rgba(139, 92, 246, 0.3) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+}
+
+.phone-input-dropdown .country {
+    color: white !important;
+    padding: 10px 15px !important;
+    transition: background 0.2s ease !important;
+}
+
+.phone-input-dropdown .country:hover {
+    background: rgba(139, 92, 246, 0.2) !important;
+}
+
+.phone-input-dropdown .country.highlight {
+    background: rgba(139, 92, 246, 0.3) !important;
+}
+
+.phone-input-dropdown .search {
+    background: rgba(139, 92, 246, 0.1) !important;
+    border: 1px solid rgba(139, 92, 246, 0.3) !important;
+    color: white !important;
+    padding: 8px 12px !important;
+    margin: 8px !important;
+    border-radius: 6px !important;
+}
+
+.phone-input-dropdown .search:focus {
+    outline: none !important;
+    border-color: rgba(139, 92, 246, 0.6) !important;
+}
+
+.phone-input-dropdown .search::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Scrollbar styling for dropdown */
+.phone-input-dropdown::-webkit-scrollbar {
+    width: 8px;
+}
+
+.phone-input-dropdown::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.phone-input-dropdown::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.5);
+    border-radius: 4px;
+}
+
+.phone-input-dropdown::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 92, 246, 0.7);
+}
+
+/* Dark mode adjustments */
+.react-tel-input .flag-dropdown {
+    background: transparent !important;
+}
+
+.react-tel-input .selected-flag {
+    padding: 0 0 0 12px !important;
+    background: transparent !important;
+}
+
+.react-tel-input .selected-flag:hover,
+.react-tel-input .selected-flag.open {
+    background: rgba(139, 92, 246, 0.1) !important;
+}
+
+.react-tel-input .country-list .country-name {
+    color: white !important;
+}
+
+.react-tel-input .country-list .dial-code {
+    color: rgba(255, 255, 255, 0.7) !important;
+}

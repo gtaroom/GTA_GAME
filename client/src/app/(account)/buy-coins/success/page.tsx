@@ -66,10 +66,10 @@ export default function BuyCoinsSuccessPage() {
                 </div>
 
                 <div className='space-x-3'>
-                    <Button onClick={() => router.push('/games')}>
+                    <Button onClick={() => router.push('/game-listing?tab=exclusive')}>
                         Explore Games
                     </Button>
-                    <Button variant='secondary' onClick={() => router.push('/account')}>
+                    <Button variant='secondary' onClick={() => router.push('/profile')}>
                         Go to My Account
                     </Button>
                 </div>
@@ -78,9 +78,9 @@ export default function BuyCoinsSuccessPage() {
             <div className='mt-10 text-center opacity-80'>
                 <div className='mb-2'>Use your GC in:</div>
                 <div className='flex items-center justify-center gap-3 flex-wrap'>
-                    <span className='px-3 py-1 rounded-full border border-white/10'>Signature Games</span>
                     <span className='px-3 py-1 rounded-full border border-white/10'>Exclusive Games</span>
-                    <span className='px-3 py-1 rounded-full border border-white/10'>Featured Slots</span>
+                    <span className='px-3 py-1 rounded-full border border-white/10'>Signature Games</span>
+                    {/* <span className='px-3 py-1 rounded-full border border-white/10'>Featured Slots</span> */}
                 </div>
             </div>
         </div>

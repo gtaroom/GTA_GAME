@@ -38,7 +38,7 @@ const HeroSection = () => {
                     </p>
 
                     {/* Hero Section Action Button */}
-                    <ButtonGroup className='sm:mb-[50px] mb-8 gap-4 sm:gap-7.5 flex-wrap'>
+                    <ButtonGroup className='mb-20 sm:mb-32 gap-4 sm:gap-7.5 flex-wrap justify-center'>
                         <Button
                             variant='secondary'
                             size={md ? 'xl' : 'lg'}
@@ -57,13 +57,13 @@ const HeroSection = () => {
                     </ButtonGroup>
 
                     {/* Hero Section Bottom Text */}
-                    <div className='inline-flex flex-wrap items-center justify-center gap-3.5 [&>span]:font-bold [&>span]:uppercase'>
+                    <div className='flex flex-wrap items-center justify-center gap-3.5 [&>span]:font-bold [&>span]:uppercase'>
                         <NeonText
                             as='span'
                             className='h3-title'
                             glowColor='--color-blue-500'
                         >
-                         Play Games
+                            INSTANT ACCESS
                         </NeonText>
                         <NeonText
                             as='span'
