@@ -15,7 +15,7 @@ export default function GetHelp() {
             description:
                 'Get instant help from our support team. Average response time: 30 seconds',
             button: {
-                text: 'Start Chat Now',
+                text: 'Chat Now',
                 onClick: () => router.push('#'),
             },
             color: '--color-cyan-500',

@@ -346,8 +346,8 @@ const ManualregisterOption = () => {
                             className='text-sm! lg:text-base!'
                             glowSpread={0.5}
                         >
-                            I agree to receive marketing SMS from GTOA.
-                            Frequency varies. Msg & data rates may apply.
+                            I agree to receive marketing SMS and emails from
+                            GTOA. Frequency varies. Msg & data rates may apply.
                             Consent is not a condition of purchase.
                             <br />
                             Reply STOP to unsubscribe or HELP for assistance.

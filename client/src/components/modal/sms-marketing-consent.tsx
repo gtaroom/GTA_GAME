@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import NeonBox from '@/components/neon/neon-box';
+import NeonIcon from '@/components/neon/neon-icon';
+import NeonText from '@/components/neon/neon-text';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import NeonText from '@/components/neon/neon-text';
-import NeonIcon from '@/components/neon/neon-icon';
-import NeonBox from '@/components/neon/neon-box';
-import { updateProfile } from '@/lib/api/auth';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/auth-context';
+import { updateProfile } from '@/lib/api/auth';
+import { useState } from 'react';
 
 interface SmsMarketingConsentProps {
     open: boolean;
@@ -29,10 +29,11 @@ export default function SmsMarketingConsent({
         setError('');
 
         try {
-            const response = await updateProfile({
+            const response = (await updateProfile({
                 isSmsOpted: agreed,
                 acceptSMSMarketing: agreed,
-            }) as any;
+                isOpted: agreed,
+            })) as any;
 
             if (response.success) {
                 // Refresh user data
@@ -67,13 +68,14 @@ export default function SmsMarketingConsent({
                                     size={32}
                                     glowColor='--color-green-500'
                                 />
-                                <span>SMS Alerts</span>
+                                <span>Stay Updated!</span>
                             </div>
                         </NeonText>
                     </DialogTitle>
 
                     <p className='font-bold text-base leading-7.5 mb-5'>
-                        Get instant notifications about bonuses, events, and exclusive offers via SMS
+                        Get instant notifications about bonuses, events, and
+                        exclusive offers via SMS and Email
                     </p>
 
                     <NeonBox
@@ -96,7 +98,8 @@ export default function SmsMarketingConsent({
                                         Instant Bonus Codes
                                     </NeonText>
                                     <p className='text-xs text-white/70'>
-                                        Receive time-sensitive bonus codes directly to your phone
+                                        Receive time-sensitive bonus codes
+                                        directly to your phone
                                     </p>
                                 </div>
                             </div>
@@ -112,7 +115,8 @@ export default function SmsMarketingConsent({
                                         Event Notifications
                                     </NeonText>
                                     <p className='text-xs text-white/70'>
-                                        Be alerted when special events and tournaments begin
+                                        Be alerted when special events and
+                                        tournaments begin
                                     </p>
                                 </div>
                             </div>
@@ -128,7 +132,8 @@ export default function SmsMarketingConsent({
                                         Flash Promotions
                                     </NeonText>
                                     <p className='text-xs text-white/70'>
-                                        Get notified about limited-time offers before anyone else
+                                        Get notified about limited-time offers
+                                        before anyone else
                                     </p>
                                 </div>
                             </div>
@@ -144,7 +149,8 @@ export default function SmsMarketingConsent({
                                         Account Updates
                                     </NeonText>
                                     <p className='text-xs text-white/70'>
-                                        Important account notifications and game account status
+                                        Important account notifications and game
+                                        account status
                                     </p>
                                 </div>
                             </div>
@@ -169,7 +175,8 @@ export default function SmsMarketingConsent({
                             className='text-sm! lg:text-base! cursor-pointer'
                             glowSpread={0.5}
                         >
-                            Yes, I want to receive promotional SMS
+                            Yes, I want to receive promotional SMS and emails
+                            from GTOA
                         </NeonText>
                     </div>
 
@@ -181,10 +188,18 @@ export default function SmsMarketingConsent({
                         glowSpread={0.2}
                     >
                         <p className='text-xs text-white/70 leading-relaxed'>
-                            By opting in, you agree to receive marketing SMS from GTOA. Frequency varies. 
-                            Msg & data rates may apply. Consent is not a condition of purchase. 
-                            Reply <span className='text-yellow-400 font-semibold'>STOP</span> to unsubscribe or{' '}
-                            <span className='text-yellow-400 font-semibold'>HELP</span> for assistance.
+                            By opting in, you agree to receive marketing SMS and
+                            emails from GTOA. Frequency varies. Msg & data rates
+                            may apply. Consent is not a condition of purchase.
+                            Reply{' '}
+                            <span className='text-yellow-400 font-semibold'>
+                                STOP
+                            </span>{' '}
+                            to unsubscribe,{' '}
+                            <span className='text-yellow-400 font-semibold'>
+                                HELP
+                            </span>{' '}
+                            for help.
                         </p>
                     </NeonBox>
 
@@ -220,11 +235,11 @@ export default function SmsMarketingConsent({
                     </div>
 
                     <p className='text-xs text-white/50 mt-4'>
-                        You can opt-out anytime from your account settings or by replying STOP
+                        You can opt-out anytime from your account settings or by
+                        replying STOP
                     </p>
                 </div>
             </DialogContent>
         </Dialog>
     );
 }
-
