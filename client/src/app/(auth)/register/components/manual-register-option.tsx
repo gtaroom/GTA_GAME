@@ -141,8 +141,11 @@ const ManualregisterOption = () => {
                         setUser(response.data.data.user);
                     }
 
+                    // router.push(
+                    //     `/email-verification?email=${encodeURIComponent(form.email)}&phone=${encodeURIComponent(form.phone)}`
+                    // );
                     router.push(
-                        `/email-verification?email=${encodeURIComponent(form.email)}&phone=${encodeURIComponent(form.phone)}`
+                        `/phone-verification?phone=${encodeURIComponent(form.phone)}`
                     );
                 } catch (err: unknown) {
                     setError(
