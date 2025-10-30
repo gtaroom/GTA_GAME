@@ -63,6 +63,13 @@ const HeroSection = () => {
                             className='h3-title'
                             glowColor='--color-blue-500'
                         >
+                            INSTANT ACCESS
+                        </NeonText>
+                        <NeonText
+                            as='span'
+                            className='h3-title'
+                            glowColor='--color-blue-500'
+                        >
                             No Purchase Needed to Play
                         </NeonText>
                         <NeonText
