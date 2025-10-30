@@ -10,6 +10,7 @@ import StoreAccountStep from './store-account-step';
 import { useGameAccount } from '../../hooks/useGameAccount';
 import type { GameModalFlowProps, Game } from '../../types/game-account.types';
 import NeonIcon from '../neon/neon-icon';
+import { useWalletBalance } from '@/contexts/wallet-balance-context';
 
 export default function GameCardModalFlow({
     open,
@@ -19,6 +20,8 @@ export default function GameCardModalFlow({
     const [step, setStep] = useState(0);
     const [internalOpen, setInternalOpen] = useState(open);
     const { lg } = useBreakPoint();
+    const { refresh: refreshWalletBalance } = useWalletBalance();
+    
 
     const {
         accountStatus,
@@ -76,12 +79,15 @@ export default function GameCardModalFlow({
         });
     };
 
-    const handleRequestNewAccount = async () => {
+    const handleRequestNewAccount = async (amount?: number) => {
         if (!game) return;
         
         await requestNewAccount({
             gameId: game._id,
+            amount: amount, // Pass the recharge amount if provided
         });
+
+        await refreshWalletBalance();
     };
 
     // Determine the appropriate step based on account status

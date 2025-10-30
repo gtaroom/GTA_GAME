@@ -92,17 +92,17 @@ export default function GamePlayStep({ game, accountDetails }: GamePlayModalProp
             const response = await rechargeGame(payload);
             
             if (response.success) {
-                setSuccess('Game loot request submitted successfully!');
+                setSuccess('Game GC request submitted successfully!');
                 setLootAmount('');
                 setShowAddLootForm(false);
                 await fetchBalance();
                 setTimeout(() => setSuccess(null), 3000);
             } else {
-                setError(response.message || 'Failed to add game loot');
+                setError(response.message || 'Failed to add game GC');
             }
         } catch (err) {
-            console.error('Add loot error:', err);
-            setError(err instanceof Error ? err.message : 'Failed to add game loot');
+            console.error('Add GC error:', err);
+            setError(err instanceof Error ? err.message : 'Failed to add game GC');
         } finally {
             setLoading(false);
         }
@@ -157,11 +157,11 @@ export default function GamePlayStep({ game, accountDetails }: GamePlayModalProp
                 await fetchBalance();
                 setTimeout(() => setSuccess(null), 3000);
             } else {
-                setError(response.message || 'Failed to redeem game loot');
+                setError(response.message || 'Failed to redeem game GC');
             }
         } catch (err) {
             console.error('Redeem error:', err);
-            setError(err instanceof Error ? err.message : 'Failed to redeem game loot');
+            setError(err instanceof Error ? err.message : 'Failed to redeem game GC');
         } finally {
             setLoading(false);
         }
@@ -180,7 +180,7 @@ export default function GamePlayStep({ game, accountDetails }: GamePlayModalProp
         <div className='max-w-[600px] px-2 pb-2 mx-auto'>
             <GameModalTitle
                 title={game.name}
-                description='Manage your game account and loot'
+                description='Manage your game account and add gold coins to play'
             />
             
             <div className='space-y-4'>
@@ -246,7 +246,7 @@ export default function GamePlayStep({ game, accountDetails }: GamePlayModalProp
                 >
                     <div className='flex items-center justify-between'>
                         <div className='flex items-center gap-2'>
-                            <Image src='/coins/gold-coin.svg' height={24} width={24} alt='User Balance' />
+                            <Image src='/coins/bronze-coin.svg' height={24} width={24} alt='User Balance' />
                             <span className='text-sm font-semibold text-blue-400'>Your Wallet Balance</span>
                         </div>
                         {userBalanceLoading ? (
@@ -265,7 +265,7 @@ export default function GamePlayStep({ game, accountDetails }: GamePlayModalProp
                                     size={16}
                                     glowColor='--color-red-500'
                                 />
-                                <span>Low balance! You need at least {MIN_ADD_LOOT*100} GC (worth ${MIN_ADD_LOOT}) to add loot.</span>
+                                <span>Low balance! You need at least {MIN_ADD_LOOT*100} GC (worth ${MIN_ADD_LOOT}) to add GC.</span>
                             </div>
                             <button
                                 onClick={() => router.push('/buy-coins')}
@@ -327,7 +327,7 @@ export default function GamePlayStep({ game, accountDetails }: GamePlayModalProp
                             <div className='flex items-center justify-between'>
                                 <div className='flex items-center gap-2'>
                                     <NeonIcon icon='lucide:arrow-down-to-line' size={16} glowColor='--color-purple-500' />
-                                    <NeonText className='text-sm font-semibold'>Add Game Loot</NeonText>
+                                    <NeonText className='text-sm font-semibold'>Add Game GC</NeonText>
                                 </div>
                                 <button
                                     onClick={() => {
@@ -384,7 +384,7 @@ export default function GamePlayStep({ game, accountDetails }: GamePlayModalProp
                             <div className='flex items-center justify-between'>
                                 <div className='flex items-center gap-2'>
                                     <NeonIcon icon='lucide:trophy' size={16} glowColor='--color-green-500' />
-                                    <NeonText className='text-sm font-semibold'>Redeem Game Loot</NeonText>
+                                    <NeonText className='text-sm font-semibold'>Redeem Game GC</NeonText>
                                 </div>
                                 <button
                                     onClick={() => {
@@ -444,7 +444,7 @@ export default function GamePlayStep({ game, accountDetails }: GamePlayModalProp
                             className='w-full'
                         >
                             <NeonIcon icon='lucide:arrow-down-to-line' size={16} className='mr-1.5' />
-                            Add Game Loot
+                            Add Game GC
                         </Button>
                         <Button
                             onClick={() => {
@@ -457,7 +457,7 @@ export default function GamePlayStep({ game, accountDetails }: GamePlayModalProp
                             className='w-full'
                         >
                             <NeonIcon icon='lucide:trophy' size={16} className='mr-1.5' />
-                            Redeem Loot
+                            Redeem SC
                         </Button>
                     </div>
                 )}
@@ -473,13 +473,13 @@ export default function GamePlayStep({ game, accountDetails }: GamePlayModalProp
                         <div className='flex items-start gap-2'>
                             <NeonIcon icon='lucide:info' size={14} glowColor='--color-cyan-500' className='mt-0.5 flex-shrink-0' />
                             <div>
-                                <span className='font-semibold text-cyan-400'>Add Game Loot:</span> Transfer coins to play this game (min ${MIN_ADD_LOOT})
+                                <span className='font-semibold text-cyan-400'>Add Game GC:</span> Transfer coins to play this game (min ${MIN_ADD_LOOT})
                             </div>
                         </div>
                         <div className='flex items-start gap-2'>
                             <NeonIcon icon='lucide:info' size={14} glowColor='--color-cyan-500' className='mt-0.5 flex-shrink-0' />
                             <div>
-                                <span className='font-semibold text-cyan-400'>Redeem Loot:</span> Request to redeem winnings (${MIN_REDEEM}-${MAX_REDEEM})
+                                <span className='font-semibold text-cyan-400'>Redeem SC:</span> Request to redeem winnings (${MIN_REDEEM}-${MAX_REDEEM})
                             </div>
                         </div>
                     </div>
