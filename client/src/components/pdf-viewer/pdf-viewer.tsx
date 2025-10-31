@@ -4,9 +4,9 @@ import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 interface PDFViewerProps {
-  src: string;
-  title: string;
-  className?: string;
+    src: string;
+    title: string;
+    className?: string;
 }
 
 // Detect if user is on mobile or iOS device

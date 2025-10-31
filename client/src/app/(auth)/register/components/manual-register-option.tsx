@@ -141,8 +141,11 @@ const ManualregisterOption = () => {
                         setUser(response.data.data.user);
                     }
 
+                    // router.push(
+                    //     `/email-verification?email=${encodeURIComponent(form.email)}&phone=${encodeURIComponent(form.phone)}`
+                    // );
                     router.push(
-                        `/email-verification?email=${encodeURIComponent(form.email)}&phone=${encodeURIComponent(form.phone)}`
+                        `/phone-verification?phone=${encodeURIComponent(form.phone)}`
                     );
                 } catch (err: unknown) {
                     setError(
@@ -343,8 +346,8 @@ const ManualregisterOption = () => {
                             className='text-sm! lg:text-base!'
                             glowSpread={0.5}
                         >
-                            I agree to receive marketing SMS from GTOA.
-                            Frequency varies. Msg & data rates may apply.
+                            I agree to receive marketing SMS and emails from
+                            GTOA. Frequency varies. Msg & data rates may apply.
                             Consent is not a condition of purchase.
                             <br />
                             Reply STOP to unsubscribe or HELP for assistance.

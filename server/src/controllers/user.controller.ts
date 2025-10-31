@@ -48,7 +48,8 @@ const generateAccessAndRefreshTokens = async (userId: string) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { email, name, password, role, phone, acceptSMSMarketing,isOpted } = req.body;
+  const { email, name, password, role, phone, acceptSMSMarketing, isOpted } =
+    req.body;
   const existedUser = await User.findOne({ email });
 
   const bannedStates = [
@@ -139,12 +140,12 @@ const registerUser = asyncHandler(async (req, res) => {
     // Handle database constraint violations
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
-      if (field === 'phone') {
+      if (field === "phone") {
         throw new ApiError(
           409,
           "This phone number is already registered with another account. Please use a different phone number or contact support if you believe this is an error."
         );
-      } else if (field === 'email') {
+      } else if (field === "email") {
         throw new ApiError(409, "User with email already exists", []);
       } else {
         throw new ApiError(
@@ -208,7 +209,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
-  
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
     createdUser._id
   );
@@ -219,11 +219,10 @@ const registerUser = asyncHandler(async (req, res) => {
     // Remove domain property to prevent cookie sharing between main domain and subdomains
   };
 
-
   return res
     .status(201)
-  .cookie("accessToken", accessToken, options)
-  .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse(
         201,
@@ -708,12 +707,12 @@ const updateProfile = asyncHandler(async (req, res) => {
     }
 
     phoneUpdated = user.phone !== formattedPhone;
-    
+
     // Check for phone number duplication if phone is being changed
     if (phoneUpdated) {
-      const existingPhoneUser = await User.findOne({ 
+      const existingPhoneUser = await User.findOne({
         phone: formattedPhone,
-        _id: { $ne: user._id } // Exclude current user
+        _id: { $ne: user._id }, // Exclude current user
       });
       if (existingPhoneUser) {
         throw new ApiError(
@@ -723,7 +722,7 @@ const updateProfile = asyncHandler(async (req, res) => {
       }
       updateData.isPhoneVerified = false;
     }
-    
+
     updateData.phone = formattedPhone;
   }
 
@@ -797,12 +796,12 @@ const updateProfile = asyncHandler(async (req, res) => {
     // Handle database constraint violations
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
-      if (field === 'phone') {
+      if (field === "phone") {
         throw new ApiError(
           409,
           "This phone number is already registered with another account. Please use a different phone number or contact support if you believe this is an error."
         );
-      } else if (field === 'email') {
+      } else if (field === "email") {
         throw new ApiError(409, "User with email already exists", []);
       } else {
         throw new ApiError(

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import PhoneVerificationPrompt from '../modal/phone-verification-prompt';
-import EmailVerificationPrompt from '../modal/email-verification-prompt';
+import { useEffect, useState } from 'react';
 import EmailMarketingConsent from '../modal/email-marketing-consent';
+import EmailVerificationPrompt from '../modal/email-verification-prompt';
+import PhoneVerificationPrompt from '../modal/phone-verification-prompt';
 import SmsMarketingConsent from '../modal/sms-marketing-consent';
 
 const INITIAL_DELAY = 15000; // 15 seconds (increased from 10)
@@ -40,8 +40,11 @@ export default function VerificationChecker() {
             try {
                 lastDismissed = window.localStorage.getItem(dismissedKey);
             } catch {}
-            
-            if (!lastDismissed || now - parseInt(lastDismissed) > REMINDER_INTERVAL) {
+
+            if (
+                !lastDismissed ||
+                now - parseInt(lastDismissed) > REMINDER_INTERVAL
+            ) {
                 setActiveModal('phone');
                 return;
             }
@@ -54,26 +57,30 @@ export default function VerificationChecker() {
             try {
                 lastDismissed = window.localStorage.getItem(dismissedKey);
             } catch {}
-            
-            if (!lastDismissed || now - parseInt(lastDismissed) > REMINDER_INTERVAL) {
+
+            if (
+                !lastDismissed ||
+                now - parseInt(lastDismissed) > REMINDER_INTERVAL
+            ) {
                 setActiveModal('email');
                 return;
             }
         }
 
         // Priority 3: Email Marketing Consent
-        if (!user.isOpted) {
-            const askedKey = `email_consent_asked_${userId}`;
-            let hasBeenAsked: string | null = null;
-            try {
-                hasBeenAsked = window.localStorage.getItem(askedKey);
-            } catch {}
-            
-            if (!hasBeenAsked) {
-                setActiveModal('email-consent');
-                return;
-            }
-        }
+
+        // if (!user.isOpted) {
+        //     const askedKey = `email_consent_asked_${userId}`;
+        //     let hasBeenAsked: string | null = null;
+        //     try {
+        //         hasBeenAsked = window.localStorage.getItem(askedKey);
+        //     } catch {}
+
+        //     if (!hasBeenAsked) {
+        //         setActiveModal('email-consent');
+        //         return;
+        //     }
+        // }
 
         // Priority 4: SMS Marketing Consent
         if (!user.isSmsOpted) {
@@ -82,7 +89,7 @@ export default function VerificationChecker() {
             try {
                 hasBeenAsked = window.localStorage.getItem(askedKey);
             } catch {}
-            
+
             if (!hasBeenAsked) {
                 setActiveModal('sms-consent');
                 return;
@@ -90,20 +97,25 @@ export default function VerificationChecker() {
         }
     };
 
-    const handlePhoneModalClose = (action: 'verify' | 'dismiss' | 'skip_all') => {
+    const handlePhoneModalClose = (
+        action: 'verify' | 'dismiss' | 'skip_all'
+    ) => {
         if (action === 'dismiss' && user && typeof window !== 'undefined') {
             try {
-                window.localStorage.setItem(`phone_verification_dismissed_${user._id}`, Date.now().toString());
+                window.localStorage.setItem(
+                    `phone_verification_dismissed_${user._id}`,
+                    Date.now().toString()
+                );
             } catch {}
         }
-        
+
         if (action === 'skip_all') {
             handleSkipAllModals();
             return;
         }
-        
+
         setActiveModal(null);
-        
+
         // Check for next modal after a delay (longer for better UX)
         setTimeout(checkAndShowNextModal, MODAL_DELAY);
     };
@@ -111,11 +123,14 @@ export default function VerificationChecker() {
     const handleEmailModalClose = (action: 'verify' | 'dismiss') => {
         if (action === 'dismiss' && user && typeof window !== 'undefined') {
             try {
-                window.localStorage.setItem(`email_verification_dismissed_${user._id}`, Date.now().toString());
+                window.localStorage.setItem(
+                    `email_verification_dismissed_${user._id}`,
+                    Date.now().toString()
+                );
             } catch {}
         }
         setActiveModal(null);
-        
+
         // Check for next modal after a delay (longer for better UX)
         setTimeout(checkAndShowNextModal, MODAL_DELAY);
     };
@@ -123,11 +138,14 @@ export default function VerificationChecker() {
     const handleEmailConsentClose = (consented: boolean) => {
         if (user && typeof window !== 'undefined') {
             try {
-                window.localStorage.setItem(`email_consent_asked_${user._id}`, 'true');
+                window.localStorage.setItem(
+                    `email_consent_asked_${user._id}`,
+                    'true'
+                );
             } catch {}
         }
         setActiveModal(null);
-        
+
         // Check for next modal after a delay (longer for better UX)
         setTimeout(checkAndShowNextModal, MODAL_DELAY);
     };
@@ -135,7 +153,10 @@ export default function VerificationChecker() {
     const handleSmsConsentClose = (consented: boolean) => {
         if (user && typeof window !== 'undefined') {
             try {
-                window.localStorage.setItem(`sms_consent_asked_${user._id}`, 'true');
+                window.localStorage.setItem(
+                    `sms_consent_asked_${user._id}`,
+                    'true'
+                );
             } catch {}
         }
         setActiveModal(null);
@@ -146,10 +167,22 @@ export default function VerificationChecker() {
             try {
                 // Mark all modals as dismissed for 24 hours
                 const now = Date.now().toString();
-                window.localStorage.setItem(`phone_verification_dismissed_${user._id}`, now);
-                window.localStorage.setItem(`email_verification_dismissed_${user._id}`, now);
-                window.localStorage.setItem(`email_consent_asked_${user._id}`, 'true');
-                window.localStorage.setItem(`sms_consent_asked_${user._id}`, 'true');
+                window.localStorage.setItem(
+                    `phone_verification_dismissed_${user._id}`,
+                    now
+                );
+                window.localStorage.setItem(
+                    `email_verification_dismissed_${user._id}`,
+                    now
+                );
+                window.localStorage.setItem(
+                    `email_consent_asked_${user._id}`,
+                    'true'
+                );
+                window.localStorage.setItem(
+                    `sms_consent_asked_${user._id}`,
+                    'true'
+                );
             } catch {}
         }
         setActiveModal(null);
@@ -183,4 +216,3 @@ export default function VerificationChecker() {
         </>
     );
 }
-
