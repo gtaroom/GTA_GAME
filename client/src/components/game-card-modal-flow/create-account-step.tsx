@@ -26,7 +26,7 @@ export default function CreateAccountStep({
 }: CreateAccountStepProps) {
     const { balance: userBalance, loading: balanceLoading } = useWalletBalance();
     const router = useRouter();
-    const [rechargeAmount, setRechargeAmount] = useState('5');
+    const [rechargeAmount, setRechargeAmount] = useState('');
     const [showAmountError, setShowAmountError] = useState<string | null>(null);
     
     // Balance validation
@@ -34,27 +34,27 @@ export default function CreateAccountStep({
     const processInfo: ProcessInfo[] = [
         {
             description:
-                'This process usually takes a few minutes and is handled by our support team.',
+                'This process usually takes a few minutes.',
             color: '--color-blue-500',
         },
         {
             icon: 'lucide:square-check',
             description:
-                'You\'ll receive an email or SMS as soon as your account is ready.',
+                'You’ll receive an email or text (based on your selected preference) from our support team once your Gold Coins have been added and your account is ready to play',
             color: '--color-orange-500',
         },
-        {
-            icon: 'lucide:mail',
-            description:
-                'Make sure your email is verified and SMS notifications are enabled.',
-            color: '--color-fuchsia-500',
-        },
-        {
-            icon: 'lucide:bell',
-            description:
-                'We\'ll notify you by email or SMS. Once ready, you can start playing instantly.',
-            color: '--color-green-500',
-        },
+        // {
+        //     icon: 'lucide:mail',
+        //     description:
+        //         'Make sure your email is verified and SMS notifications are enabled.',
+        //     color: '--color-fuchsia-500',
+        // },
+        // {
+        //     icon: 'lucide:bell',
+        //     description:
+        //         'We\'ll notify you by email or SMS. Once ready, you can start playing instantly.',
+        //     color: '--color-green-500',
+        // },
     ];
 
     const handleRequestAccount = async () => {
@@ -303,7 +303,7 @@ export default function CreateAccountStep({
                     >
                         {hasEnoughBalance 
                             ? (rechargeAmount && parseFloat(rechargeAmount) >= MIN_ADD_LOOT 
-                                ? `Request Account + Add $${parseFloat(rechargeAmount).toFixed(2)}` 
+                                ? `Confirm & Load Game ($${parseFloat(rechargeAmount).toFixed(2)})` 
                                 : 'Request New Account')
                             : 'Insufficient Balance'
                         }
