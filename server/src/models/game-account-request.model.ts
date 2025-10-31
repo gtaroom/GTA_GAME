@@ -9,6 +9,7 @@ export interface GameAccountRequestSchemaIn extends Document {
   generatedUsername?: string;
   generatedPassword?: string;
   adminNotes?: string;
+  requestedAmount?:number;
 }
 
 const gameAccountRequestSchema = new Schema<GameAccountRequestSchemaIn>(
@@ -44,7 +45,10 @@ const gameAccountRequestSchema = new Schema<GameAccountRequestSchemaIn>(
     },
     adminNotes: {
       type: String
-    }
+    },
+   requestedAmount:{
+    type:Number
+   }
   },
   { timestamps: true }
 );

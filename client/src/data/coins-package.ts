@@ -6,7 +6,7 @@ interface CoinPackages {
 }
 
 export const coinPackages: CoinPackages[] = [
-    { totalGC: '100 GC', bonusGC: '', tag: '', price: '$1' },
+    { totalGC: '500 GC', bonusGC: '+100 Bonus', tag: '', price: '$5' },
     {
         totalGC: '1,000 GC',
         bonusGC: '+200 Bonus',

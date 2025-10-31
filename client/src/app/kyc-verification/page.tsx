@@ -358,7 +358,6 @@ export default function KYCVerificationPage() {
             <ul className="text-sm opacity-80 space-y-1">
               <li>• Government-issued photo ID (driver's license, passport, etc.)</li>
               <li>• Good lighting and a stable internet connection</li>
-              <li>• 5-10 minutes of your time</li>
             </ul>
           </div>
 

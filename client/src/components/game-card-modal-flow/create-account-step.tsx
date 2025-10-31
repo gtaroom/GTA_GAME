@@ -2,10 +2,18 @@ import NeonBox from '../neon/neon-box';
 import NeonIcon from '../neon/neon-icon';
 import NeonText from '../neon/neon-text';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import GameModalTitle from './game-modal-title';
 import type { CreateAccountStepProps, ProcessInfo } from '../../types/game-account.types';
 import { useWalletBalance } from '@/contexts/wallet-balance-context';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import Image from 'next/image';
+
+// Validation constants
+const MIN_BALANCE_REQUIRED = 500; // Minimum GC required for account creation
+const MIN_ADD_LOOT = 5; // Minimum recharge amount in dollars
+const CONVERSION_RATE = 100; // 1 USD = 100 GC
 
 export default function CreateAccountStep({
     game,
@@ -18,9 +26,10 @@ export default function CreateAccountStep({
 }: CreateAccountStepProps) {
     const { balance: userBalance, loading: balanceLoading } = useWalletBalance();
     const router = useRouter();
+    const [rechargeAmount, setRechargeAmount] = useState('5');
+    const [showAmountError, setShowAmountError] = useState<string | null>(null);
     
-    // Balance validation constants
-    const MIN_BALANCE_REQUIRED = 500;
+    // Balance validation
     const hasEnoughBalance = userBalance >= MIN_BALANCE_REQUIRED;
     const processInfo: ProcessInfo[] = [
         {
@@ -49,12 +58,36 @@ export default function CreateAccountStep({
     ];
 
     const handleRequestAccount = async () => {
+        // Clear previous errors
+        setShowAmountError(null);
+
         if (!hasEnoughBalance) {
             // Redirect to buy coins page if insufficient balance
             router.push('/buy-coins');
             return;
         }
-        await onRequestAccount();
+
+        // Validate recharge amount if provided
+        const amount = parseFloat(rechargeAmount);
+        if (rechargeAmount && rechargeAmount.trim() !== '') {
+            if (isNaN(amount) || amount < MIN_ADD_LOOT) {
+                setShowAmountError(`Minimum recharge amount is $${MIN_ADD_LOOT}`);
+                return;
+            }
+
+            // Check if user has enough balance for the recharge amount
+            const requiredGC = amount * CONVERSION_RATE;
+            if (userBalance < requiredGC) {
+                setShowAmountError(`Insufficient balance. You need ${requiredGC.toLocaleString()} GC (worth $${amount.toFixed(2)}) but only have ${userBalance.toLocaleString()} GC`);
+                return;
+            }
+
+            // Pass amount to request
+            await onRequestAccount(amount);
+        } else {
+            // No recharge amount provided, just create account
+            await onRequestAccount();
+        }
     };
 
     return (
@@ -63,7 +96,7 @@ export default function CreateAccountStep({
                 title={game.name}
                 description={
                     hasPendingRequest 
-                        ? "Your account request is being processed by our support team."
+                        ? "Your request is being processed by our support team."
                         : "We're currently waiting for your game account confirmation."
                 }
             />
@@ -162,6 +195,104 @@ export default function CreateAccountStep({
                 </NeonBox>
             )}
 
+            {/* Recharge Amount Section - Only show if not pending and has enough balance */}
+            {!hasPendingRequest && !isLoading && hasEnoughBalance && (
+                <NeonBox
+                    glowColor='--color-purple-500'
+                    backgroundColor='--color-purple-500'
+                    backgroundOpacity={0.1}
+                    className='p-5 rounded-lg mb-6'
+                >
+                    <div className='space-y-4'>
+                        <div className='flex items-start gap-4'>
+                            {/* <NeonIcon
+                                icon='lucide:coins'
+                                size={24}
+                                glowColor='--color-purple-500'
+                            /> */}
+                            <div className='flex-1'>
+                                {/* <NeonText
+                                    glowColor='--color-purple-500'
+                                    className='text-lg font-bold text-purple-400 mb-2'
+                                >
+                                    💰 Add Initial Recharge (Optional)
+                                </NeonText>
+                                <p className='text-sm text-gray-400 mb-4'>
+                                    Want to add game GC right away? Enter an amount to transfer Gold Coins from your wallet to this game when your account is ready. This helps our team process both requests together.
+                                </p> */}
+
+                                {/* User Balance Display */}
+                                <div className='bg-purple-900/20 border border-purple-500/30 rounded-lg p-3 mb-4'>
+                                    <div className='flex items-center justify-between'>
+                                        <div className='flex items-center gap-2'>
+                                            <Image src='/coins/bronze-coin.svg' height={20} width={20} alt='User Balance' />
+                                            <span className='text-sm font-semibold text-purple-400'>Your Wallet Balance</span>
+                                        </div>
+                                        {balanceLoading ? (
+                                            <span className="text-base text-purple-300 animate-pulse">---</span>
+                                        ) : (
+                                            <span className='text-base font-bold text-purple-300'>
+                                                {userBalance.toLocaleString()} GC
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Amount Input */}
+                                <div className='space-y-2'>
+                                    <label className='text-sm font-semibold text-purple-300 flex items-center gap-2'>
+                                        <NeonIcon icon='lucide:dollar-sign' size={14} glowColor='--color-purple-500' />
+                                        Amount to load into Game
+                                    </label>
+                                    <Input
+                                        type='number'
+                                        placeholder={`Enter amount (min $${MIN_ADD_LOOT}) - Optional`}
+                                        value={rechargeAmount}
+                                        onChange={(e) => {
+                                            setRechargeAmount(e.target.value);
+                                            setShowAmountError(null);
+                                        }}
+                                        disabled={isLoading}
+                                        min={MIN_ADD_LOOT}
+                                        step='1'
+                                        className='w-full bg-purple-900/20 border-purple-500/30 focus:border-purple-500/50'
+                                    />
+                                    {rechargeAmount && !isNaN(parseFloat(rechargeAmount)) && parseFloat(rechargeAmount) >= MIN_ADD_LOOT && (
+                                        <div className='text-xs text-purple-300 flex items-center gap-1'>
+                                            <NeonIcon icon='lucide:info' size={12} glowColor='--color-purple-500' />
+                                            <span>
+                                                This will deduct {(parseFloat(rechargeAmount) * CONVERSION_RATE).toLocaleString()} GC from your wallet
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Amount Error */}
+                                {showAmountError && (
+                                    <div className='flex items-center gap-2 text-red-400 text-sm mt-2'>
+                                        <NeonIcon
+                                            icon='lucide:alert-circle'
+                                            size={14}
+                                            glowColor='--color-red-500'
+                                        />
+                                        <span>{showAmountError}</span>
+                                    </div>
+                                )}
+
+                                <div className='mt-3 p-3 bg-purple-900/30 rounded-lg'>
+                                    <div className='flex items-start gap-2 text-xs text-purple-300'>
+                                        <NeonIcon icon='lucide:lightbulb' size={14} glowColor='--color-purple-500' className='mt-0.5 flex-shrink-0' />
+                                        <div>
+                                            <span className='font-semibold'>Pro Tip:</span> Adding your amount to load into the game now saves time! Our team will handle both your account creation and Gold Coin load together. You can also skip this step and add it later.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </NeonBox>
+            )}
+
             {/* Only show action buttons if not pending request */}
             {!hasPendingRequest && !isLoading && (
                 <div className='mb-6'>
@@ -170,7 +301,12 @@ export default function CreateAccountStep({
                         className='w-full mb-4'
                         disabled={isLoading || !hasEnoughBalance}
                     >
-                        {hasEnoughBalance ? 'Request New Account' : 'Insufficient Balance'}
+                        {hasEnoughBalance 
+                            ? (rechargeAmount && parseFloat(rechargeAmount) >= MIN_ADD_LOOT 
+                                ? `Request Account + Add $${parseFloat(rechargeAmount).toFixed(2)}` 
+                                : 'Request New Account')
+                            : 'Insufficient Balance'
+                        }
                     </Button>
                     
                     <Button
