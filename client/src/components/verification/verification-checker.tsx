@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/auth-context';
 import { useEffect, useState } from 'react';
+import EmailMarketingConsent from '../modal/email-marketing-consent';
 import EmailVerificationPrompt from '../modal/email-verification-prompt';
 import PhoneVerificationPrompt from '../modal/phone-verification-prompt';
 import SmsMarketingConsent from '../modal/sms-marketing-consent';
@@ -67,18 +68,19 @@ export default function VerificationChecker() {
         }
 
         // Priority 3: Email Marketing Consent
-        if (!user.isOpted) {
-            const askedKey = `email_consent_asked_${userId}`;
-            let hasBeenAsked: string | null = null;
-            try {
-                hasBeenAsked = window.localStorage.getItem(askedKey);
-            } catch {}
 
-            if (!hasBeenAsked) {
-                setActiveModal('email-consent');
-                return;
-            }
-        }
+        // if (!user.isOpted) {
+        //     const askedKey = `email_consent_asked_${userId}`;
+        //     let hasBeenAsked: string | null = null;
+        //     try {
+        //         hasBeenAsked = window.localStorage.getItem(askedKey);
+        //     } catch {}
+
+        //     if (!hasBeenAsked) {
+        //         setActiveModal('email-consent');
+        //         return;
+        //     }
+        // }
 
         // Priority 4: SMS Marketing Consent
         if (!user.isSmsOpted) {
@@ -201,11 +203,11 @@ export default function VerificationChecker() {
                 onClose={handleEmailModalClose}
                 email={user.email}
             />
-            {/* 
+
             <EmailMarketingConsent
                 open={activeModal === 'email-consent'}
                 onClose={handleEmailConsentClose}
-            /> */}
+            />
 
             <SmsMarketingConsent
                 open={activeModal === 'sms-consent'}
