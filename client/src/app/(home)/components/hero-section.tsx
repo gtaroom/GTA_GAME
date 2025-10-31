@@ -33,8 +33,7 @@ const HeroSection = () => {
 
                     {/* Hero Section Description */}
                     <p className='mx-auto mb-7.5 max-w-[1000px] text-2xl sm:text-3xl'>
-                        Experience exciting arcade-style games no purchase
-                        required.
+                        Experience exciting arcade-style games.
                     </p>
 
                     {/* Hero Section Action Button */}
@@ -63,14 +62,14 @@ const HeroSection = () => {
                             className='h3-title'
                             glowColor='--color-blue-500'
                         >
-                            INSTANT ACCESS
+                            INSTANT ACCESS.
                         </NeonText>
                         <NeonText
                             as='span'
                             className='h3-title'
                             glowColor='--color-blue-500'
                         >
-                            No Purchase Needed to Play
+                            NO PURCHASE NEEDED TO PLAY.
                         </NeonText>
                         <NeonText
                             as='span'

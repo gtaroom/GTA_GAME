@@ -17,7 +17,7 @@ export enum VipTierLevel {
 // VIP tier configuration
 export const VIP_TIER_CONFIG = {
   [VipTierLevel.NONE]: {
-    name: "Standard Player",
+    name: "Standard",
     minSpend: 0,
     bonusMultiplier: 1,
     birthdayBonus: 0,
@@ -134,17 +134,17 @@ export interface IVipTier extends Document {
   isVipConfirmed: boolean; // VIP status - automatic, only set false to suspend
   last7DaysSpending: number;
   totalLifetimeSpending: number;
-  
+
   // VIP Period Management (14-day lock)
   vipPeriodStartDate?: Date;
   vipPeriodEndDate?: Date;
-  
+
   tierHistory: Array<{
     tier: VipTierLevel;
     achievedAt: Date;
     spendingAtTime: number;
   }>;
-  
+
   // Birthday Bonus
   birthdayBonusClaimed: boolean;
   lastBirthdayBonusDate?: Date;
@@ -153,12 +153,12 @@ export interface IVipTier extends Document {
     birthdayUsed: string; // Store the birthday that was used for the claim
     bonusAmount: number;
   }>;
-  
+
   // Period-Based Bonus Spins
   bonusSpinsRemaining: number;
   bonusSpinsGrantedAt?: Date;
   bonusSpinsExpireAt?: Date;
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -180,7 +180,8 @@ const vipTierSchema = new Schema<IVipTier>(
     isVipConfirmed: {
       type: Boolean,
       default: true,
-      comment: "VIP status is automatically enabled. Only set to false to suspend VIP privileges (fraud/abuse cases)",
+      comment:
+        "VIP status is automatically enabled. Only set to false to suspend VIP privileges (fraud/abuse cases)",
     },
     last7DaysSpending: {
       type: Number,
@@ -232,7 +233,8 @@ const vipTierSchema = new Schema<IVipTier>(
         birthdayUsed: {
           type: String,
           required: true,
-          comment: "The birthday that was used for this claim (YYYY-MM-DD format)",
+          comment:
+            "The birthday that was used for this claim (YYYY-MM-DD format)",
         },
         bonusAmount: {
           type: Number,
@@ -265,4 +267,3 @@ vipTierSchema.index({ last7DaysSpending: -1 });
 vipTierSchema.index({ currentTier: 1, isVipConfirmed: 1 });
 
 export default mongoose.model<IVipTier>("VipTier", vipTierSchema);
-
