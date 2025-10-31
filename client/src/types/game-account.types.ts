@@ -58,6 +58,7 @@ export interface StoreExistingAccountResponse {
 
 export interface RequestNewAccountRequest {
     gameId: string;
+    amount?: number; // Recharge amount in dollars
 }
 
 export interface RequestNewAccountResponse {
@@ -128,7 +129,7 @@ export interface StoreAccountStepProps extends GameModalStepProps {
 
 // Create Account Step Types
 export interface CreateAccountStepProps extends GameModalStepProps {
-    onRequestAccount: () => Promise<void>;
+    onRequestAccount: (amount?: number) => Promise<void>;
     isLoading?: boolean;
     error?: string | null;
     hasPendingRequest?: boolean;

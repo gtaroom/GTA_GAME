@@ -14,6 +14,7 @@ import { generateUsernameFromEmail } from "../utils/game-account-helper";
 import { getUserFromRequest } from "../utils/get-user";
 import { sendEmailNotify } from "../utils/mail";
 import { formatPhoneNumber } from "../utils/phone-formatter";
+import WalletModel from "../models/wallet.model";
 
 // Store existing game account credentials
 export const storeExistingGameAccount = asyncHandler(
@@ -108,7 +109,7 @@ export const storeExistingGameAccount = asyncHandler(
 // Request new game account
 export const requestNewGameAccount = asyncHandler(
   async (req: Request, res: Response) => {
-    const { gameId } = req.body;
+    const { gameId, amount } = req.body;
     const { _id: userId } = getUserFromRequest(req);
     const { email: userEmail } = getUserFromRequest(req);
 
@@ -164,6 +165,31 @@ export const requestNewGameAccount = asyncHandler(
       status: "pending",
     });
 
+    // If user provided an amount (USD), validate wallet and reserve funds
+    if (amount !== undefined && amount !== null && amount !== "") {
+      const usdAmount = Number(amount);
+      if (isNaN(usdAmount) || usdAmount <= 0) {
+        throw new ApiError(400, "Invalid amount");
+      }
+
+      const wallet = await WalletModel.findOne({ userId });
+      if (!wallet) {
+        throw new ApiError(404, "Wallet not found");
+      }
+
+      const goldCoinsToDeduct = Math.round(usdAmount * 100);
+      if (wallet.balance < goldCoinsToDeduct) {
+        throw new ApiError(400, "Insufficient balance in wallet");
+      }
+
+      // Reserve funds by deducting from wallet immediately (like recharge flow)
+      wallet.balance -= goldCoinsToDeduct;
+      await wallet.save();
+
+      // Persist requested USD amount on the request
+      accountRequest.requestedAmount = usdAmount;
+    }
+
     await accountRequest.save();
 
     // Get user details for notifications
@@ -182,6 +208,7 @@ export const requestNewGameAccount = asyncHandler(
       <p><strong>Game:</strong> ${game.name}</p>
       <p><strong>Request ID:</strong> ${accountRequest._id}</p>
       <p><strong>Status:</strong> Pending</p>
+      ${accountRequest.requestedAmount ? `<p><strong>Requested Deposit:</strong> $${accountRequest.requestedAmount.toFixed(2)} USD</p>` : ""}
       <p>Please review and process this request.</p>
     `,
     });
@@ -198,6 +225,8 @@ export const requestNewGameAccount = asyncHandler(
       userEmail: user.email,
       gameName: game.name,
       gameId: gameId,
+      // Optional: include USD requested amount for admin UIs listening to this event
+      requestedAmount: accountRequest.requestedAmount,
     };
 
     // Send to admins with persistent storage
@@ -443,6 +472,7 @@ export const approveAccountRequest = asyncHandler(
               gameName: accountRequest.gameName,
               username: generatedUsername,
               password: generatedPassword,
+              requestedAmount: accountRequest.requestedAmount,
             },
             customMessage // Pass the custom message to override the default template
           );
@@ -478,6 +508,7 @@ export const approveAccountRequest = asyncHandler(
       <p><strong>Your Account Details:</strong></p>
       <p><strong>Username:</strong> ${generatedUsername}</p>
       <p><strong>Password:</strong> ${generatedPassword}</p>
+      ${accountRequest.requestedAmount ? `<p><strong>Requested Deposit:</strong> $${accountRequest.requestedAmount.toFixed(2)} USD (\worth ${(accountRequest.requestedAmount * 100).toFixed(0)} GC) added to your game by our team.</p>` : ""}
       ${adminNotes ? `<p><strong>Note:</strong> ${adminNotes}</p>` : ""}
       <p>You can now log in to your game account and start playing!</p>
       <p>If you have any questions, please contact our support team.</p>

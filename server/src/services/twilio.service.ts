@@ -39,6 +39,7 @@ export interface GameAccountApprovalSMSData {
   gameName: string;
   username: string;
   password: string;
+  requestedAmount?: number;
 }
 
 export interface MarketingMessageData {
@@ -389,7 +390,7 @@ Your ${data.gameName} account request has been approved!
 
 Username: ${data.username}
 Password: ${data.password}
-
+${data.requestedAmount ? `Requested Deposit: $${data.requestedAmount.toFixed(2)}(\worth ${(data.requestedAmount * 100).toFixed(0)} GC) added to your game by our team.` : ""}
 You can now log in and start playing!
 
 For support, contact our team.

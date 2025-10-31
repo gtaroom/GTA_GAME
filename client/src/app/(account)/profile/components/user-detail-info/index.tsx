@@ -26,8 +26,8 @@ export default function UserDetailInfo() {
             color: '--color-green-500',
             content: <LocationDetails />,
         },
-        {
-            title: 'Subscriptions',
+         {
+            title: 'Marketing Consent',
             icon: 'lucide:bell',
             color: '--color-lime-500',
             content: <SubscriptionDetails />,

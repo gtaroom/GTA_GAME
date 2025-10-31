@@ -62,9 +62,9 @@ function PopupContent({ notification }: { notification: Notification }) {
                             To start playing:
                         </p>
                         <ol className='text-xs text-foreground/80 space-y-1 list-decimal list-inside'>
-                            <li>Go to your Wallet (Load Loot)</li>
+                            <li>Go to your Wallet (Load GC)</li>
                             <li>Choose your favorite game</li>
-                            <li>Click Add Game Loot, provide your username, and play!</li>
+                            <li>Click Add Game GC, provide your username, and play!</li>
                         </ol>
                     </NeonBox>
 

@@ -18,13 +18,83 @@ interface PageTransitionWrapperProps {
 const formatRouteName = (route?: string | null) => {
     if (!route) return 'HOME';
 
-    if (route === '/buy-redeem') {
-        return 'Coin Wallet';
-    }else if (route.includes('game-listing')) {
+    // Split route and query parameters
+    const [cleanRoute, queryString] = route.split('?');
+    const params = new URLSearchParams(queryString || '');
+
+    // Special route mappings
+    const routeMap: Record<string, string> = {
+        '/buy-redeem': 'Coin Wallet',
+        '/game-listing': 'Games',
+        '/phone-verification': 'Phone Verification',
+        '/email-verification': 'Verification',
+        '/kyc-verification': 'KYC Verification',
+        '/buy-coins/success': 'Purchase Successful',
+        '/buy-coins/failed': 'Purchase Failed',
+        '/buy-coins/cancelled': 'Purchase Cancelled',
+    };
+
+    // Check for exact matches first
+    if (routeMap[cleanRoute]) {
+        return routeMap[cleanRoute];
+    }
+
+    // Check if route includes certain keywords
+    if (cleanRoute.includes('game-listing')) {
         return 'Games';
     }
 
-    return route.replace(/^\//, '').replace(/-/g, ' ').toUpperCase();
+    // Handle auth success page with query parameters
+    if (cleanRoute === '/success') {
+        const verified = params.get('verified');
+        if (verified === 'phone') {
+            return 'Phone Verified';
+        }
+        if (verified === 'true') {
+            return 'Email Verified';
+        }
+        return 'Success';
+    }
+
+    // Handle auth failed page with query parameters
+    if (cleanRoute === '/failed') {
+        const token = params.get('token');
+        if (token === 'invalid') {
+            return 'Invalid Link';
+        }
+        if (token === 'expired') {
+            return 'Link Expired';
+        }
+        return 'Verification Failed';
+    }
+
+    // Handle success/failed/cancelled routes (generic)
+    if (cleanRoute.includes('/success')) {
+        return 'Success';
+    }
+    if (cleanRoute.includes('/failed')) {
+        return 'Failed';
+    }
+    if (cleanRoute.includes('/cancelled')) {
+        return 'Cancelled';
+    }
+
+    // Handle verification routes
+    if (cleanRoute.includes('verification')) {
+        if (cleanRoute.includes('phone')) {
+            return 'Phone Verification';
+        }
+        if (cleanRoute.includes('email')) {
+            return 'Verification';
+        }
+        if (cleanRoute.includes('kyc')) {
+            return 'KYC Verification';
+        }
+        return 'Verification';
+    }
+
+    // Default: format route by removing leading slash and replacing hyphens with spaces
+    return cleanRoute.replace(/^\//, '').replace(/-/g, ' ').toUpperCase();
 };
 
 const computeCircleScale = () => {
