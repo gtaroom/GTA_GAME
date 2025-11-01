@@ -86,7 +86,7 @@ export default function BottomNavigation() {
             showUserLoggedIn: 'both',
         },
         {
-            href: '/redeeem',
+            href: '/redeem',
             icon: 'material-symbols:redeem',
             label: 'Redeem',
             type: 'link',
@@ -103,7 +103,8 @@ export default function BottomNavigation() {
             icon: 'lucide:earth',
             label: 'Community',
             type: 'button',
-            onClick: handleSupportClick,
+            href: '/community',
+            // onClick: handleSupportClick,
             showUserLoggedIn: 'both',
         },
         {
