@@ -86,9 +86,9 @@ export default function BottomNavigation() {
             showUserLoggedIn: 'both',
         },
         {
-            href: '/buy-coins',
-            icon: 'lucide:shopping-cart',
-            label: 'Shop',
+            href: '/redeeem',
+            icon: 'material-symbols:redeem',
+            label: 'Redeem',
             type: 'link',
             showUserLoggedIn: 'both',
         },
@@ -100,8 +100,8 @@ export default function BottomNavigation() {
             showUserLoggedIn: 'both',
         },
         {
-            icon: 'lucide:headphones',
-            label: 'Support',
+            icon: 'lucide:earth',
+            label: 'Community',
             type: 'button',
             onClick: handleSupportClick,
             showUserLoggedIn: 'both',
