@@ -102,7 +102,7 @@ export default function BottomNavigation() {
         {
             icon: 'lucide:earth',
             label: 'Community',
-            type: 'button',
+            type: 'link',
             href: '/community',
             // onClick: handleSupportClick,
             showUserLoggedIn: 'both',
