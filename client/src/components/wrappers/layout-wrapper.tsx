@@ -84,7 +84,7 @@ const LayoutWrapper: React.FC<Props> = ({ children }) => {
             {!md && !isAuthPage && <MobileBottomMenu />}
 
             {/* Rocket.Chat Livechat Script */}
-            <Script id='rocketchat-livechat' strategy='afterInteractive'>
+            {/* <Script id='rocketchat-livechat' strategy='afterInteractive'>
                 {`
                     (function(w, d, s, u) {
                         w.RocketChat = function(c) { w.RocketChat._.push(c) }; 
@@ -96,7 +96,7 @@ const LayoutWrapper: React.FC<Props> = ({ children }) => {
                         h.parentNode.insertBefore(j, h);
                     })(window, document, 'script', 'https://assistcentral.net/livechat');
                 `}
-            </Script>
+            </Script> */}
         </>
     );
 };
