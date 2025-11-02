@@ -134,7 +134,7 @@ const HeaderLoggedOut = ({
                                     </li>
                                 ))}
                             </ul>
-                            <div className='mt-8'>
+                            <div className='mt-8' onClick={closeMobileMenu}>
                                 <VIPprogramBtn className='max-lg:w-[240px]!' />
                             </div>
                         </nav>

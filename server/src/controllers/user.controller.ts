@@ -28,6 +28,12 @@ import otpService from "../services/otp.service";
 import { formatPhoneNumber } from "../utils/phone-formatter";
 import twilioService from "../services/twilio.service";
 import { logger } from "../utils/logger";
+import UserGameAccountModel from "../models/user-game-account.model";
+import GameAccountRequestModel from "../models/game-account-request.model";
+import rechargeRequestModel from "../models/recharge-request.model";
+import withdrawalRequestModel from "../models/withdrawal-request.model";
+import NotificationModel from "../models/notification.model";
+import AmoeModel from "../models/amoe-entry.model";
 
 const generateAccessAndRefreshTokens = async (userId: string) => {
   try {
@@ -923,16 +929,36 @@ const deleteUser = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(404, "User not found");
   }
-  const { password, ...other } = req.body;
+
+  // Delete all related user documents (except transactions which are kept for audit)
+  await Promise.all([
+    // User-specific data
+    UserBonusModel.findOneAndDelete({ userId: id }),
+    WalletModel.findOneAndDelete({ userId: id }),
+    
+    // Game account related
+    UserGameAccountModel.deleteMany({ userId: id }),
+    GameAccountRequestModel.deleteMany({ userId: id }),
+    
+    // Financial requests (not transactions)
+    rechargeRequestModel.deleteMany({ userId: id }),
+    withdrawalRequestModel.deleteMany({ userId: id }),
+    
+    // User notifications
+    NotificationModel.deleteMany({ userId: id }),
+    
+    // AMOE entries
+    AmoeModel.deleteMany({ userId: id }),
+  ]);
+
+  // Finally delete the user
   await User.findByIdAndDelete(id).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
 
-  await UserBonusModel.findOneAndDelete({ userId: id });
-
   res
     .status(200)
-    .json(new ApiResponse(200, {}, "Updated user data successfully"));
+    .json(new ApiResponse(200, {}, "User and all related data deleted successfully"));
 });
 
 export const csvUserData = asyncHandler(async (req, res) => {

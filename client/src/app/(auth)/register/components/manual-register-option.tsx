@@ -346,11 +346,10 @@ const ManualregisterOption = () => {
                             className='text-sm! lg:text-base!'
                             glowSpread={0.5}
                         >
-                            I agree to receive marketing SMS and emails from
+                            (Optional) I agree to receive marketing SMS from
                             GTOA. Frequency varies. Msg & data rates may apply.
-                            Consent is not a condition of purchase.
-                            <br />
-                            Reply STOP to unsubscribe or HELP for assistance.
+                            Consent is not a condition of purchase. Reply STOP
+                            to unsubscribe or HELP for assistance.
                         </NeonText>
                     </div>
 
@@ -364,15 +363,15 @@ const ManualregisterOption = () => {
                         borderWidth={1}
                     >
                         <NeonText className='text-sm text-white/90 leading-relaxed'>
-                            By registering, you agree to receive account-related
-                            SMS from GTOA (such as verification codes, password
+                            By registering, you'll receive account-related SMS
+                            from GTOA (such as verification codes, password
                             resets, receipts, or security alerts). These are not
                             marketing messages. Msg & data rates may apply.
                             Reply{' '}
                             <span className='text-yellow-400 font-semibold'>
                                 STOP
                             </span>{' '}
-                            to unsubscribe,{' '}
+                            to opt out or{' '}
                             <span className='text-yellow-400 font-semibold'>
                                 HELP
                             </span>{' '}

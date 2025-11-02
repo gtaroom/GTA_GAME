@@ -55,7 +55,7 @@ export default function NeedHelp() {
                         </ul>
                         <Button
                             size={md ? 'lg' : 'md'}
-                            onClick={() => router.push('/support')}
+                            onClick={() => window.open('https://assistcentral.net/livechat', '_blank', 'noopener,noreferrer')}
                         >
                             Live Support
                         </Button>

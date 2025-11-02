@@ -16,18 +16,49 @@ const ManualLoginOption = () => {
     const [userData, setUserData] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [verificationData, setVerificationData] = useState<{
+        phone?: string;
+    } | null>(null);
 
     const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError('');
+        setVerificationData(null);
         setLoading(true);
         try {
-            const response = await login({ email: userData.email.toLowerCase(), password: userData.password }) as any;
+            const response = (await login({
+                email: userData.email.toLowerCase(),
+                password: userData.password,
+            })) as any;
             setLoggedIn(true);
             setUser(response.data.user);
             router.push('/lobby');
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Login failed');
+            if (err instanceof Error) {
+                // Check if this is the verification error (status 204/401)
+                const errorMessage = err.message;
+                if (
+                    errorMessage.includes(
+                        'User verification email has been sent'
+                    ) ||
+                    errorMessage.includes('verification email')
+                ) {
+                    // Extract user data from error if available
+                    try {
+                        const errorData = (err as any).response?.data;
+                        if (errorData?.data?.user?.phone) {
+                            setVerificationData({
+                                phone: errorData.data.user.phone,
+                            });
+                        }
+                    } catch (e) {
+                        // If we can't extract data, just show the error
+                    }
+                }
+                setError(errorMessage);
+            } else {
+                setError('Login failed');
+            }
         } finally {
             setLoading(false);
         }
@@ -59,11 +90,35 @@ const ManualLoginOption = () => {
                     onChange={handleChange}
                 />
 
-                {/* Error Message */}
+                {/* Error/Verification Message */}
                 {error && (
-                    <p className='text-red-500 text-base font-semibold'>
-                        {error}
-                    </p>
+                    <div className='space-y-3'>
+                        <p className='text-red-500 text-base font-semibold'>
+                            {error}
+                        </p>
+
+                        {/* Show verification options if user needs to verify */}
+                        {error.includes('verification') &&
+                            verificationData?.phone && (
+                                <div className='bg-purple-500/20 border border-purple-500/50 rounded-lg p-4'>
+                                    <NeonText
+                                        className='text-sm text-center leading-relaxed'
+                                        glowSpread={0.5}
+                                    >
+                                        <span className='text-white/90'>
+                                            Prefer to verify via text
+                                            instead?{' '}
+                                        </span>
+                                        <Link
+                                            href={`/phone-verification?phone=${encodeURIComponent(verificationData.phone)}`}
+                                            className='text-purple-400 hover:text-purple-300 underline font-semibold'
+                                        >
+                                            Click here to verify via phone
+                                        </Link>
+                                    </NeonText>
+                                </div>
+                            )}
+                    </div>
                 )}
 
                 <div className='flex flex-wrap items-center justify-between gap-3'>

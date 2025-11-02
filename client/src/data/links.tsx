@@ -16,7 +16,7 @@ export interface LinkProps {
 // Helper function to get smart href based on auth status
 export const getSmartHref = (href?: string, isLoggedIn?: boolean) => {
     if (!href) return undefined;
-    return (href === '/' && isLoggedIn) ? '/lobby' : href;
+    return href === '/' && isLoggedIn ? '/lobby' : href;
 };
 
 // GLOBAL/SHARED LINKS - Used in multiple locations
@@ -81,7 +81,7 @@ const transactionHistoryLink: LinkProps = {
 };
 
 const howItWorkLink: LinkProps = {
-    title: "How It Works",
+    title: 'How It Works',
     href: '/how-it-works',
     icon: 'lucide:columns-settings',
     color: 'pink',

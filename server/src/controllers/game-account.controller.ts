@@ -463,7 +463,7 @@ export const approveAccountRequest = asyncHandler(
         if (formattedPhone) {
           const firstName = user.name?.first || "User";
 
-          const customMessage = `GTOA ✅ Account Approved!\n\nHello ${firstName},\n\nYour ${accountRequest.gameName} account has been approved.\n\nUsername: ${generatedUsername}\nPassword: ${generatedPassword}\n\nYou can now log in and get started.\n\n💡 You'll see two buttons:\n\t• Add Loot – Add coins to your account\n\t• Redeem Loot – Request redemption\n\nFor help, text 702-356-3435 or DM http://m.me/105542688498394.`;
+          const customMessage = `GTOA ✅ Account Approved!\n\nHello ${firstName},\n\nYour ${accountRequest.gameName} account has been approved.\n\nUsername: ${generatedUsername}\nPassword: ${generatedPassword}\n\nYou can now log in and get started.\n\n💡 You'll see two buttons:\n\t•  Add Game GC – Add coins to your account\n\t• Redeem SC – Request redemption\n\nFor help, text 702-356-3435 or DM http://m.me/105542688498394.`;
 
           const smsResult = await twilioService.sendGameAccountApprovalSMS(
             formattedPhone,

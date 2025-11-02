@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import { Link } from 'next-transition-router';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 
@@ -13,13 +14,25 @@ import { cn } from '@/lib/utils';
 
 import { useIsLoggedIn } from '@/contexts/auth-context';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
+import { ChevronDown } from 'lucide-react';
 import NeonText from '../neon/neon-text';
 import SiteLogo from '../site-logo';
+
 const Footer = () => {
     const pathname = usePathname();
     const { sidebarOpen } = useUI();
     const { lg, is2xl } = useBreakPoint();
     const { isLoggedIn } = useIsLoggedIn();
+    const [openSections, setOpenSections] = useState<Record<string, boolean>>(
+        {}
+    );
+
+    const toggleSection = (sectionId: string) => {
+        setOpenSections(prev => ({
+            ...prev,
+            [sectionId]: !prev[sectionId],
+        }));
+    };
 
     const commonLinkClass = cn(
         'tracking-common relative text-base capitalize',
@@ -89,61 +102,95 @@ const Footer = () => {
                                 return null;
                             }
 
+                            const isOpen = openSections[col.id] || false;
+
                             return (
                                 <div
                                     key={colIndex}
-                                    className='max-lg:text-center'
+                                    className='max-lg:text-center w-full lg:w-auto'
                                 >
-                                    <NeonText as='h4' className='h4-title mb-5'>
-                                        {col.title}
-                                    </NeonText>
-                                    <ul
+                                    {/* Accordion Header */}
+                                    <button
+                                        onClick={() => toggleSection(col.id)}
+                                        className='w-full lg:cursor-default flex items-center justify-between lg:justify-start gap-2 mb-5'
+                                    >
+                                        <NeonText as='h4' className='h4-title'>
+                                            {col.title}
+                                        </NeonText>
+                                        <ChevronDown
+                                            className={cn(
+                                                'lg:hidden w-5 h-5 text-white transition-transform duration-300',
+                                                isOpen && 'rotate-180'
+                                            )}
+                                        />
+                                    </button>
+
+                                    {/* Accordion Content */}
+                                    <div
                                         className={cn(
-                                            'grid gap-x-[20px] gap-y-[14px]',
-                                            isLoggedIn
-                                                ? '2xl:grid-cols-2 grid-cols-1 '
-                                                : 'lg:grid-cols-2 grid-cols-1'
+                                            'lg:block overflow-hidden transition-all duration-300',
+                                            isOpen
+                                                ? 'max-h-[500px] opacity-100'
+                                                : 'max-h-0 opacity-0 lg:max-h-none lg:opacity-100'
                                         )}
                                     >
-                                        {col.links.map((link, linkIndex) => (
-                                            <li key={linkIndex}>
-                                                {link.isModal ? (
-                                                    <>
-                                                        <Dialog>
-                                                            <DialogTrigger
-                                                                asChild
-                                                            >
-                                                                <button
-                                                                    className={
-                                                                        commonLinkClass
+                                        <ul
+                                            className={cn(
+                                                'grid gap-x-[20px] gap-y-[14px]',
+                                                isLoggedIn
+                                                    ? '2xl:grid-cols-2 grid-cols-1 '
+                                                    : 'lg:grid-cols-2 grid-cols-1'
+                                            )}
+                                        >
+                                            {col.links.map(
+                                                (link, linkIndex) => (
+                                                    <li key={linkIndex}>
+                                                        {link.isModal ? (
+                                                            <>
+                                                                <Dialog>
+                                                                    <DialogTrigger
+                                                                        asChild
+                                                                    >
+                                                                        <button
+                                                                            className={
+                                                                                commonLinkClass
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                link.title
+                                                                            }
+                                                                        </button>
+                                                                    </DialogTrigger>
+                                                                    {
+                                                                        link.isModalContent
                                                                     }
-                                                                >
-                                                                    {link.title}
-                                                                </button>
-                                                            </DialogTrigger>
-                                                            {
-                                                                link.isModalContent
-                                                            }
-                                                        </Dialog>
-                                                    </>
-                                                ) : (
-                                                    <Link
-                                                        key={linkIndex}
-                                                        href={link.href || '#'}
-                                                        title={link.title}
-                                                        className={cn(
-                                                            commonLinkClass,
-                                                            pathname ===
-                                                                link.href &&
-                                                                'before:w-full before:border-white before:shadow-[0_0_6px_var(--color-purple-500),0_0_12px_var(--color-purple-500),0_0_18px_var(--color-purple-500),inset_0_0_6px_var(--color-purple-500)]'
+                                                                </Dialog>
+                                                            </>
+                                                        ) : (
+                                                            <Link
+                                                                key={linkIndex}
+                                                                href={
+                                                                    link.href ||
+                                                                    '#'
+                                                                }
+                                                                title={
+                                                                    link.title
+                                                                }
+                                                                className={cn(
+                                                                    commonLinkClass,
+                                                                    pathname ===
+                                                                        link.href &&
+                                                                        'before:w-full before:border-white before:shadow-[0_0_6px_var(--color-purple-500),0_0_12px_var(--color-purple-500),0_0_18px_var(--color-purple-500),inset_0_0_6px_var(--color-purple-500)]'
+                                                                )}
+                                                            >
+                                                                {link.title}
+                                                            </Link>
                                                         )}
-                                                    >
-                                                        {link.title}
-                                                    </Link>
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                                    </li>
+                                                )
+                                            )}
+                                        </ul>
+                                    </div>
                                 </div>
                             );
                         })}
@@ -163,7 +210,7 @@ const Footer = () => {
                         </p>
 
                         <p>
-                            Copyright © 2025 
+                            Copyright © 2025
                             <Link
                                 href='#'
                                 title='Golden Ticket Online Arcade'

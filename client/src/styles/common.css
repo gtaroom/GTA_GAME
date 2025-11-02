@@ -221,3 +221,26 @@ div[data-slot="scroll-area-viewport"] {
         border: 2px solid var(--color-white);
     }
 }
+/* Hide RocketChat default launcher*/
+.rocketchat-widget,
+.rocketchat-container > div:first-child,
+#rocketchat-widget,
+div[class*="rocketchat"] > button,
+button[class*="rocketchat"],
+button[class*="launcher"],
+[style*="position: fixed"][style*="bottom: 20px"],
+iframe[src*="livechat"] + div,
+iframe[src*="livechat"] ~ div > button {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Keep chat window visible when opened */
+.rocketchat-widget iframe,
+.rocketchat-container iframe,
+iframe[src*="livechat"] {
+    display: block !important;
+    visibility: visible !important;
+}
