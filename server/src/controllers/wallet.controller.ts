@@ -65,87 +65,123 @@ export const createDeposit = asyncHandler(
       });
     }
 
-  const orderId = crypto.randomBytes(16).toString('hex');
-  logger.debug(`Generated order ID: ${orderId}`);
-  
-  try {
+    const orderId = crypto.randomBytes(16).toString("hex");
+    logger.debug(`Generated order ID: ${orderId}`);
 
-    
-    const gateway =paymentGateway !== 'nowpayments' ? PaymentGatewayFactory.getGateway(paymentGateway as any) : null;
-    
-    let result;
-    if (paymentGateway === 'soap') {
-      // Handle Soap deposit
-      logger.debug(`Processing Soap deposit for user ${userId}`);
-      const soapGateway = gateway as SoapPaymentGateway;
-      result = await soapGateway.processDeposit(amount, userId.toString(), req.body.productId,req.body.returnUrl);
-    } else if (paymentGateway === 'centryos') {
-      // Handle CentryOS deposit
-      logger.debug(`Processing CentryOS deposit for user ${userId}`);
-      const centryosGateway = gateway as SoapPaymentGateway;
-      result = await centryosGateway.processDeposit(amount, userId.toString(), req.body.returnUrl);
-    } else if (paymentGateway === 'plisio') {
-      // Handle other payment gateways
-      logger.debug(`Processing ${paymentGateway} deposit for user ${userId}`);
-      const regularGateway = gateway as IPaymentGateway;
-      result = await regularGateway.createInvoice({
-        amount,
-        currency:'BTC',
-        orderId,
-        successUrl: `${process.env.CLIENT_URL}/wallet/success`,
-        failureUrl: `${process.env.CLIENT_URL}/wallet/failure`,
-        callbackUrl: `${process.env.WEBHOOK_CALLBACK_URL}/${paymentGateway}`,
-      });
-    } else{
-      result = {
-        data:{
-          ...req.body.response
-        }
+    try {
+      const gateway =
+        paymentGateway !== "nowpayments"
+          ? PaymentGatewayFactory.getGateway(paymentGateway as any)
+          : null;
+
+      let result;
+      if (paymentGateway === "soap") {
+        // Handle Soap deposit
+        logger.debug(`Processing Soap deposit for user ${userId}`);
+        const soapGateway = gateway as SoapPaymentGateway;
+        result = await soapGateway.processDeposit(
+          amount,
+          userId.toString(),
+          req.body.productId,
+          req.body.returnUrl
+        );
+      } else if (paymentGateway === "centryos") {
+        // Handle CentryOS deposit
+        logger.debug(`Processing CentryOS deposit for user ${userId}`);
+        const centryosGateway = gateway as SoapPaymentGateway;
+        result = await centryosGateway.processDeposit(
+          amount,
+          userId.toString(),
+          req.body.returnUrl
+        );
+      } else if (paymentGateway === "plisio") {
+        // Handle other payment gateways
+        logger.debug(`Processing ${paymentGateway} deposit for user ${userId}`);
+        const regularGateway = gateway as IPaymentGateway;
+        result = await regularGateway.createInvoice({
+          amount,
+          currency: "BTC",
+          orderId,
+          successUrl: `${process.env.CLIENT_URL}/wallet/success`,
+          failureUrl: `${process.env.CLIENT_URL}/wallet/failure`,
+          callbackUrl: `${process.env.WEBHOOK_CALLBACK_URL}/${paymentGateway}`,
+        });
+      } else {
+        result = {
+          data: {
+            ...req.body.response,
+          },
+        };
       }
-    }
-    // Create transaction record
-    const transaction = await TransactionModel.create({
-      userId,
-      walletId: wallet._id,
-      type: 'deposit',
-      amount,
-      currency: wallet.currency,
-      status: 'pending',
-      paymentGateway,
-      gatewayInvoiceId: paymentGateway === 'soap' ? result.checkoutId : 
-                       paymentGateway === 'centryos' ? result.paymentId :
-                       paymentGateway === 'plisio'? orderId : result.data.payment_id,
-      gatewayTransactionId: paymentGateway === 'soap' ? result.checkoutId :  
-                           paymentGateway === 'centryos' ? result.id :
-                           paymentGateway === 'plisio' ? result?.data?.id : result.data.order_id,
-      metadata: paymentGateway === 'soap' ? {
-        checkoutUrl: result.checkoutUrl,
-      } : paymentGateway === 'centryos' ? {
-        paymentUrl: result.paymentUrl,
-        paymentId: result.paymentId,
-        expiredAt: result.expiredAt
-      } : result.data,
-    });
-    
-    logger.info(`Deposit transaction created: ${transaction._id} for user ${userId}, amount=${amount}, gateway=${paymentGateway}`);
+      // Create transaction record
+      const transaction = await TransactionModel.create({
+        userId,
+        walletId: wallet._id,
+        type: "deposit",
+        amount,
+        currency: wallet.currency,
+        status: "pending",
+        paymentGateway,
+        gatewayInvoiceId:
+          paymentGateway === "soap"
+            ? result.checkoutId
+            : paymentGateway === "centryos"
+              ? result.paymentId
+              : paymentGateway === "plisio"
+                ? orderId
+                : result.data.payment_id,
+        gatewayTransactionId:
+          paymentGateway === "soap"
+            ? result.checkoutId
+            : paymentGateway === "centryos"
+              ? result.id
+              : paymentGateway === "plisio"
+                ? result?.data?.id
+                : result.data.order_id,
+        metadata:
+          paymentGateway === "soap"
+            ? {
+                checkoutUrl: result.checkoutUrl,
+              }
+            : paymentGateway === "centryos"
+              ? {
+                  paymentUrl: result.paymentUrl,
+                  paymentId: result.paymentId,
+                  expiredAt: result.expiredAt,
+                }
+              : result.data,
+      });
 
-    return res.status(200).json(
-      new ApiResponse(200, {
-       'invoiceUrl': 
-          paymentGateway === 'soap' ? result.checkoutUrl : 
-          paymentGateway === 'centryos' ? result.paymentUrl :
-          result.data.invoice_url,
-      'invoiceId': 
-          paymentGateway === 'soap' ? result.checkoutId : 
-          paymentGateway === 'centryos' ? result.paymentId :
-          result.data.id
-      }, `Deposit ${paymentGateway === 'soap' ? 'checkout' : paymentGateway === 'centryos' ? 'payment link' : 'invoice'} created successfully`)
-    );
-  } catch (error) {
-    logger.error(`Error creating deposit for user ${userId}:`, error);
-    throw error;
+      logger.info(
+        `Deposit transaction created: ${transaction._id} for user ${userId}, amount=${amount}, gateway=${paymentGateway}`
+      );
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            invoiceUrl:
+              paymentGateway === "soap"
+                ? result.checkoutUrl
+                : paymentGateway === "centryos"
+                  ? result.paymentUrl
+                  : result.data.invoice_url,
+            invoiceId:
+              paymentGateway === "soap"
+                ? result.checkoutId
+                : paymentGateway === "centryos"
+                  ? result.paymentId
+                  : result.data.id,
+          },
+          `Deposit ${paymentGateway === "soap" ? "checkout" : paymentGateway === "centryos" ? "payment link" : "invoice"} created successfully`
+        )
+      );
+    } catch (error) {
+      logger.error(`Error creating deposit for user ${userId}:`, error);
+      throw error;
+    }
   }
-});
+);
 
 // Process Goat Payment
 export const processGoatPayment = asyncHandler(
@@ -283,28 +319,28 @@ export const processGoatPayment = asyncHandler(
         },
       });
 
-    // Update wallet balance with VIP bonus calculation
-    const coinsToAdd = Math.round(transaction.amount * 100); // Convert to coins
-    
-    // Get VIP status for bonus calculation
-    const vipTier = await vipService.getOrCreateVipTier(userId);
-    const bonusCalculation = vipService.calculateDepositBonus(
-      transaction.amount,
-      vipTier.isVipConfirmed,
-      vipTier.currentTier
-    );
-    
-    const totalAmount = coinsToAdd + bonusCalculation.totalBonus;
-    
-    wallet.balance += totalAmount;
-    await wallet.save();
-    
-    // Update VIP tier after deposit
-    await vipService.updateUserTier(userId);
-    
-    logger.info(
-      `Goat deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x`
-    );
+      // Update wallet balance with VIP bonus calculation
+      const coinsToAdd = Math.round(transaction.amount * 100); // Convert to coins
+
+      // Get VIP status for bonus calculation
+      const vipTier = await vipService.getOrCreateVipTier(userId);
+      const bonusCalculation = vipService.calculateDepositBonus(
+        transaction.amount,
+        vipTier.isVipConfirmed,
+        vipTier.currentTier
+      );
+
+      const totalAmount = coinsToAdd + bonusCalculation.totalBonus;
+
+      wallet.balance += totalAmount;
+      await wallet.save();
+
+      // Update VIP tier after deposit
+      await vipService.updateUserTier(userId);
+
+      logger.info(
+        `Goat deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x`
+      );
 
       logger.info(
         `Goat payment successful for user ${userId}: transaction=${transaction._id}, amount=${amount}`
@@ -450,10 +486,18 @@ export const createWithdrawal = asyncHandler(
     }
 
     // Check VIP tier redemption limit
-    const redemptionCheck = await vipService.checkRedemptionLimit(userId, amount);
+    const redemptionCheck = await vipService.checkRedemptionLimit(
+      userId,
+      amount
+    );
     if (!redemptionCheck.allowed) {
-      logger.warn(`Redemption limit exceeded for user ${userId}: ${redemptionCheck.reason}`);
-      throw new ApiError(400, redemptionCheck.reason || "Daily redemption limit exceeded");
+      logger.warn(
+        `Redemption limit exceeded for user ${userId}: ${redemptionCheck.reason}`
+      );
+      throw new ApiError(
+        400,
+        redemptionCheck.reason || "Daily redemption limit exceeded"
+      );
     }
 
     // Validate wallet address for Plisio
@@ -715,7 +759,7 @@ export const getTransactions = asyncHandler(
     if (req.query.type) {
       query.type = req.query.type;
     }
-    if(req.query.status) {
+    if (req.query.status) {
       query.status = req.query.status;
     }
 
@@ -851,23 +895,25 @@ export const handlePaymentWebhook = asyncHandler(
 
         if (transaction.type === "deposit") {
           const newBalance = Math.round(transaction.amount * 100);
-          
+
           // Get VIP status for bonus calculation
-          const vipTier = await vipService.getOrCreateVipTier(transaction.userId);
+          const vipTier = await vipService.getOrCreateVipTier(
+            transaction.userId
+          );
           const bonusCalculation = vipService.calculateDepositBonus(
             transaction.amount,
             vipTier.isVipConfirmed,
             vipTier.currentTier
           );
-          
+
           const totalAmount = newBalance + bonusCalculation.totalBonus;
 
           const previousBalance = wallet.balance;
           wallet.balance += totalAmount;
-          
+
           // Update VIP tier after deposit
           await vipService.updateUserTier(transaction.userId);
-          
+
           logger.info(
             `Deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
           );
@@ -899,7 +945,7 @@ export const handlePaymentWebhook = asyncHandler(
               if (formattedPhone) {
                 const firstName = user.name?.first || "Player";
 
-                const smsMessage = `💳 Deposit Confirmation + Next Step\n\nHello ${firstName},\n\nYour deposit of $${transaction.amount} has been received and coins have been added to your account.\n\n💡 Once your wallet shows the update, tap Add Loot then Add Coins. A Support rep will load your coins to your game right away.\n\nFor support, text 702-356-3435 or DM http://m.me/105542688498394.`;
+                const smsMessage = `💳 Deposit Confirmation + Next Step\n\nHello ${firstName},\n\nYour deposit of $${transaction.amount} has been received and coins have been added to your account.\n\n💡 Once your wallet shows the update, tap Add Game GC then Add Coins. A Support rep will load your coins to your game right away.\n\nFor support, text 702-356-3435 or DM http://m.me/105542688498394.`;
 
                 const smsResult = await twilioService.sendTransactionalSMS(
                   formattedPhone,
@@ -1067,23 +1113,25 @@ export const handleSoapWebhook = asyncHandler(
 
         if (transaction.type === "deposit") {
           const newBalance = Math.round(transaction.amount * 100);
-          
+
           // Get VIP status for bonus calculation
-          const vipTier = await vipService.getOrCreateVipTier(transaction.userId);
+          const vipTier = await vipService.getOrCreateVipTier(
+            transaction.userId
+          );
           const bonusCalculation = vipService.calculateDepositBonus(
             transaction.amount,
             vipTier.isVipConfirmed,
             vipTier.currentTier
           );
-          
+
           const totalAmount = newBalance + bonusCalculation.totalBonus;
 
           const previousBalance = wallet.balance;
           wallet.balance += totalAmount;
-          
+
           // Update VIP tier after deposit
           await vipService.updateUserTier(transaction.userId);
-          
+
           logger.info(
             `Soap deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
           );
@@ -1115,7 +1163,7 @@ export const handleSoapWebhook = asyncHandler(
               if (formattedPhone) {
                 const firstName = user.name?.first || "Player";
 
-                const smsMessage = `💳 Deposit Confirmation + Next Step\n\nHello ${firstName},\n\nYour deposit of $${transaction.amount} has been received and coins have been added to your account.\n\n💡 Once your wallet shows the update, tap Add Loot then Add Coins. A Support rep will load your coins to your game right away.\n\nFor support, text 702-356-3435 or DM http://m.me/105542688498394.`;
+                const smsMessage = `💳 Deposit Confirmation + Next Step\n\nHello ${firstName},\n\nYour deposit of $${transaction.amount} has been received and coins have been added to your account.\n\n💡 Once your wallet shows the update, tap Add Game GC then Add Coins. A Support rep will load your coins to your game right away.\n\nFor support, text 702-356-3435 or DM http://m.me/105542688498394.`;
 
                 const smsResult = await twilioService.sendTransactionalSMS(
                   formattedPhone,
@@ -1522,23 +1570,25 @@ export const handleNowPaymentsWebhook = asyncHandler(
 
           if (transaction.type === "deposit") {
             const newBalance = Math.round(transaction.amount * 100);
-            
+
             // Get VIP status for bonus calculation
-            const vipTier = await vipService.getOrCreateVipTier(transaction.userId);
+            const vipTier = await vipService.getOrCreateVipTier(
+              transaction.userId
+            );
             const bonusCalculation = vipService.calculateDepositBonus(
               transaction.amount,
               vipTier.isVipConfirmed,
               vipTier.currentTier
             );
-            
+
             const totalAmount = newBalance + bonusCalculation.totalBonus;
 
             const previousBalance = wallet.balance;
             wallet.balance += totalAmount;
-            
+
             // Update VIP tier after deposit
             await vipService.updateUserTier(transaction.userId);
-            
+
             logger.info(
               `NowPayments deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
             );
@@ -1572,7 +1622,7 @@ export const handleNowPaymentsWebhook = asyncHandler(
                 if (formattedPhone) {
                   const firstName = user.name?.first || "Player";
 
-                  const smsMessage = `💳 Deposit Confirmation + Next Step\n\nHello ${firstName},\n\nYour deposit of $${transaction.amount} has been received and coins have been added to your account.\n\n💡 Once your wallet shows the update, tap Add Loot then Add Coins. A Support rep will load your coins to your game right away.\n\nFor support, text 702-356-3435 or DM http://m.me/105542688498394.`;
+                  const smsMessage = `💳 Deposit Confirmation + Next Step\n\nHello ${firstName},\n\nYour deposit of $${transaction.amount} has been received and coins have been added to your account.\n\n💡 Once your wallet shows the update, tap Add Game GC then Add Coins. A Support rep will load your coins to your game right away.\n\nFor support, text 702-356-3435 or DM http://m.me/105542688498394.`;
 
                   const smsResult = await twilioService.sendTransactionalSMS(
                     formattedPhone,
@@ -1762,22 +1812,24 @@ export const handleGoatWebhook = asyncHandler(
             if (transaction.type === "deposit") {
               // Add coins to wallet balance for deposits
               const coinsToAdd = Math.round(transaction.amount * 100); // Convert to coins
-              
+
               // Get VIP status for bonus calculation
-              const vipTier = await vipService.getOrCreateVipTier(transaction.userId);
+              const vipTier = await vipService.getOrCreateVipTier(
+                transaction.userId
+              );
               const bonusCalculation = vipService.calculateDepositBonus(
                 transaction.amount,
                 vipTier.isVipConfirmed,
                 vipTier.currentTier
               );
-              
+
               const totalAmount = coinsToAdd + bonusCalculation.totalBonus;
 
               wallet.balance += totalAmount;
-              
+
               // Update VIP tier after deposit
               await vipService.updateUserTier(transaction.userId);
-              
+
               logger.info(
                 `Goat webhook deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
               );
@@ -1811,7 +1863,7 @@ export const handleGoatWebhook = asyncHandler(
                   if (formattedPhone) {
                     const firstName = user.name?.first || "Player";
 
-                    const smsMessage = `💳 Deposit Confirmation + Next Step\n\nHello ${firstName},\n\nYour deposit of $${transaction.amount} has been received and coins have been added to your account.\n\n💡 Once your wallet shows the update, tap Add Loot then Add Coins. A Support rep will load your coins to your game right away.\n\nFor support, text 702-356-3435 or DM http://m.me/105542688498394.`;
+                    const smsMessage = `💳 Deposit Confirmation + Next Step\n\nHello ${firstName},\n\nYour deposit of $${transaction.amount} has been received and coins have been added to your account.\n\n💡 Once your wallet shows the update, tap Add Game GC then Add Coins. A Support rep will load your coins to your game right away.\n\nFor support, text 702-356-3435 or DM http://m.me/105542688498394.`;
 
                     const smsResult = await twilioService.sendTransactionalSMS(
                       formattedPhone,
@@ -1900,152 +1952,172 @@ export const handleGoatWebhook = asyncHandler(
         `Goat webhook processing completed for transaction ${transaction._id}, new status=${transaction.status}`
       );
 
-    return res.status(200).json({ success: true });
-  } catch (error: any) {
-    logger.error('Error processing Goat webhook:', error);
-    throw error;
+      return res.status(200).json({ success: true });
+    } catch (error: any) {
+      logger.error("Error processing Goat webhook:", error);
+      throw error;
+    }
   }
-});
+);
 
 // Test CentryOS integration
-export const testCentryOSIntegration = asyncHandler(async (req: Request, res: Response) => {
-  const { amount = 10 } = req.body;
-  const { _id: userId } = getUserFromRequest(req);
-  
-  try {
-    const gateway = PaymentGatewayFactory.getGateway('centryos') as any;
-    const result = await gateway.processDeposit(amount, userId.toString());
-    
-    return res.status(200).json(
-      new ApiResponse(200, {
-        message: 'CentryOS integration test successful',
-        paymentUrl: result.paymentUrl,
-        paymentId: result.paymentId,
-        expiredAt: result.expiredAt
-      }, 'CentryOS test completed successfully')
-    );
-  } catch (error: any) {
-    logger.error('CentryOS integration test failed:', error);
-    return res.status(500).json(
-      new ApiResponse(500, { error: error.message }, 'CentryOS test failed')
-    );
+export const testCentryOSIntegration = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { amount = 10 } = req.body;
+    const { _id: userId } = getUserFromRequest(req);
+
+    try {
+      const gateway = PaymentGatewayFactory.getGateway("centryos") as any;
+      const result = await gateway.processDeposit(amount, userId.toString());
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            message: "CentryOS integration test successful",
+            paymentUrl: result.paymentUrl,
+            paymentId: result.paymentId,
+            expiredAt: result.expiredAt,
+          },
+          "CentryOS test completed successfully"
+        )
+      );
+    } catch (error: any) {
+      logger.error("CentryOS integration test failed:", error);
+      return res
+        .status(500)
+        .json(
+          new ApiResponse(500, { error: error.message }, "CentryOS test failed")
+        );
+    }
   }
-});
+);
 
 // CentryOS webhook handler
-export const handleCentryOSWebhook = asyncHandler(async (req: Request, res: Response) => {
-  // Get raw body for signature verification (from middleware)
-  const rawBody = (req as any).rawBody;
-  const payload = req.body; // Use the already parsed body
-  const signature = req.headers['signature'] as string;
-  
-  logger.info('Received CentryOS webhook:', { 
-    eventType: payload.eventType,
-    status: payload.status,
-    signature: signature ? `${signature}...` : 'missing'
-  });
-  
-  try {
-    const gateway = PaymentGatewayFactory.getGateway('centryos') as any;
-    
-    // Verify webhook signature using SHA-512 HMAC
-    if (!gateway.verifyWebhook(rawBody, signature)) {
-      logger.error('Invalid CentryOS webhook signature');
-      // throw new ApiError(400, 'Invalid webhook signature');
-    }
+export const handleCentryOSWebhook = asyncHandler(
+  async (req: Request, res: Response) => {
+    // Get raw body for signature verification (from middleware)
+    const rawBody = (req as any).rawBody;
+    const payload = req.body; // Use the already parsed body
+    const signature = req.headers["signature"] as string;
 
-    // Handle COLLECTION event type
-    if (payload.eventType !== 'COLLECTION') {
-      logger.info(`Ignoring non-collection event: ${payload.eventType}`);
-      return res.status(200).json({ success: true, message: 'Event type not handled' });
-    }
-
-    // Find transaction by checking both entityId and transactionId against gatewayTransactionId
-    const transaction = await TransactionModel.findOne({
-      paymentGateway: 'centryos',
-gatewayTransactionId: payload.payload.paymentLink.id 
+    logger.info("Received CentryOS webhook:", {
+      eventType: payload.eventType,
+      status: payload.status,
+      signature: signature ? `${signature}...` : "missing",
     });
 
-    if (!transaction) {
-      logger.error(`Transaction not found for CentryOS webhook`);
-      // Return success even if transaction not found to prevent webhook retries
-      return res.status(200).json({ success: true, message: 'Transaction not found' });
-    }
+    try {
+      const gateway = PaymentGatewayFactory.getGateway("centryos") as any;
 
-    // Log which field matched for debugging
-    logger.info(`Processing CentryOS webhook for transaction ${transaction._id}`);
+      // Verify webhook signature using SHA-512 HMAC
+      if (!gateway.verifyWebhook(rawBody, signature)) {
+        logger.error("Invalid CentryOS webhook signature");
+        // throw new ApiError(400, 'Invalid webhook signature');
+      }
 
-    const wallet = await WalletModel.findById(transaction.walletId);
-    if (!wallet) {
-      logger.error(`Wallet not found for transaction ${transaction._id}`);
-      throw new ApiError(404, "Wallet not found");
-    }
+      // Handle COLLECTION event type
+      if (payload.eventType !== "COLLECTION") {
+        logger.info(`Ignoring non-collection event: ${payload.eventType}`);
+        return res
+          .status(200)
+          .json({ success: true, message: "Event type not handled" });
+      }
 
-    // Update transaction based on webhook status
-    switch (payload.status) {
-      case 'SUCCESS':
-        // Payment successful
-        if (transaction.status !== 'completed') {
-          logger.info(`CentryOS payment successful for transaction ${transaction._id}`);
-          transaction.status = 'completed';
-          transaction.gatewayTransactionId = payload.payload.transactionId;
-          
-          const newBalance = Math.round(transaction.amount * 100);
-          
-          // Get VIP status for bonus calculation
-          const vipTier = await vipService.getOrCreateVipTier(transaction.userId);
-          const bonusCalculation = vipService.calculateDepositBonus(
-            transaction.amount,
-            vipTier.isVipConfirmed,
-            vipTier.currentTier
-          );
-          
-          const totalAmount = newBalance + bonusCalculation.totalBonus;
+      // Find transaction by checking both entityId and transactionId against gatewayTransactionId
+      const transaction = await TransactionModel.findOne({
+        paymentGateway: "centryos",
+        gatewayTransactionId: payload.payload.paymentLink.id,
+      });
 
-          wallet.balance += totalAmount;
-          
-          // Update VIP tier after deposit
-          await vipService.updateUserTier(transaction.userId);
-          
-          logger.info(
-            `CentryOS deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
-          );
-          // Add funds to wallet
-          
-          const notification = {
-            id: uuidv4(),
-            timestamp: new Date(),
-            read: false,
-            type: "deposit_success" as const,
-            transactionId: transaction._id.toString(),
-            amount: transaction.amount,
-            coins: totalAmount,
-            paymentGateway: "centryos",
-          };
+      if (!transaction) {
+        logger.error(`Transaction not found for CentryOS webhook`);
+        // Return success even if transaction not found to prevent webhook retries
+        return res
+          .status(200)
+          .json({ success: true, message: "Transaction not found" });
+      }
 
-          // Use notification service to send and store notification
-          await notificationService.sendNotification(
-            transaction.userId.toString(),
-            SocketEvents.DEPOSIT_SUCCESS,
-            notification
-          );
+      // Log which field matched for debugging
+      logger.info(
+        `Processing CentryOS webhook for transaction ${transaction._id}`
+      );
 
-          // Update metadata
-          transaction.metadata = {
-            ...transaction.metadata,
-            webhook_received: true,
-            eventType: payload.eventType,
-            status: payload.status,
-            method: payload.payload.method,
-            walletId: payload.payload.walletId,
-            summary: payload.payload.summary,
-            entry: payload.payload.entry,
-            timestamp: payload.payload.timestamp,
-            completed_at: new Date().toISOString()
-          };
+      const wallet = await WalletModel.findById(transaction.walletId);
+      if (!wallet) {
+        logger.error(`Wallet not found for transaction ${transaction._id}`);
+        throw new ApiError(404, "Wallet not found");
+      }
 
-             // SMS
-             const user = await UserModel.findById(transaction.userId).select(
+      // Update transaction based on webhook status
+      switch (payload.status) {
+        case "SUCCESS":
+          // Payment successful
+          if (transaction.status !== "completed") {
+            logger.info(
+              `CentryOS payment successful for transaction ${transaction._id}`
+            );
+            transaction.status = "completed";
+            transaction.gatewayTransactionId = payload.payload.transactionId;
+
+            const newBalance = Math.round(transaction.amount * 100);
+
+            // Get VIP status for bonus calculation
+            const vipTier = await vipService.getOrCreateVipTier(
+              transaction.userId
+            );
+            const bonusCalculation = vipService.calculateDepositBonus(
+              transaction.amount,
+              vipTier.isVipConfirmed,
+              vipTier.currentTier
+            );
+
+            const totalAmount = newBalance + bonusCalculation.totalBonus;
+
+            wallet.balance += totalAmount;
+
+            // Update VIP tier after deposit
+            await vipService.updateUserTier(transaction.userId);
+
+            logger.info(
+              `CentryOS deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
+            );
+            // Add funds to wallet
+
+            const notification = {
+              id: uuidv4(),
+              timestamp: new Date(),
+              read: false,
+              type: "deposit_success" as const,
+              transactionId: transaction._id.toString(),
+              amount: transaction.amount,
+              coins: totalAmount,
+              paymentGateway: "centryos",
+            };
+
+            // Use notification service to send and store notification
+            await notificationService.sendNotification(
+              transaction.userId.toString(),
+              SocketEvents.DEPOSIT_SUCCESS,
+              notification
+            );
+
+            // Update metadata
+            transaction.metadata = {
+              ...transaction.metadata,
+              webhook_received: true,
+              eventType: payload.eventType,
+              status: payload.status,
+              method: payload.payload.method,
+              walletId: payload.payload.walletId,
+              summary: payload.payload.summary,
+              entry: payload.payload.entry,
+              timestamp: payload.payload.timestamp,
+              completed_at: new Date().toISOString(),
+            };
+
+            // SMS
+            const user = await UserModel.findById(transaction.userId).select(
               "name email phone isOpted isSmsOpted"
             );
             if (user.phone) {
@@ -2054,7 +2126,7 @@ gatewayTransactionId: payload.payload.paymentLink.id
                 if (formattedPhone) {
                   const firstName = user.name?.first || "Player";
 
-                  const smsMessage = `💳 Deposit Confirmation + Next Step\n\nHello ${firstName},\n\nYour deposit of $${transaction.amount} has been received and coins have been added to your account.\n\n💡 Once your wallet shows the update, tap Add Loot then Add Coins. A Support rep will load your coins to your game right away.\n\nFor support, text 702-356-3435 or DM http://m.me/105542688498394.`;
+                  const smsMessage = `💳 Deposit Confirmation + Next Step\n\nHello ${firstName},\n\nYour deposit of $${transaction.amount} has been received and coins have been added to your account.\n\n💡 Once your wallet shows the update, tap Add Game GC then Add Coins. A Support rep will load your coins to your game right away.\n\nFor support, text 702-356-3435 or DM http://m.me/105542688498394.`;
 
                   const smsResult = await twilioService.sendTransactionalSMS(
                     formattedPhone,
@@ -2091,46 +2163,51 @@ gatewayTransactionId: payload.payload.paymentLink.id
                 // Don't fail the webhook processing if SMS fails
               }
             }
-        }
-        break;
+          }
+          break;
 
-      case 'FAILED':
-        // Payment failed
-        if (transaction.status !== 'failed') {
-          logger.info(`CentryOS payment failed for transaction ${transaction._id}`);
-          transaction.status = 'failed';
-          
-          // Update metadata
+        case "FAILED":
+          // Payment failed
+          if (transaction.status !== "failed") {
+            logger.info(
+              `CentryOS payment failed for transaction ${transaction._id}`
+            );
+            transaction.status = "failed";
+
+            // Update metadata
+            transaction.metadata = {
+              ...transaction.metadata,
+              webhook_received: true,
+              eventType: payload.eventType,
+              status: payload.status,
+              method: payload.payload.method,
+              summary: payload.payload.summary,
+              failed_at: new Date().toISOString(),
+              failure_reason: payload.payload.summary || "Payment failed",
+            };
+          }
+          break;
+
+        default:
+          logger.warn(`Unknown CentryOS webhook status: ${payload.status}`);
           transaction.metadata = {
             ...transaction.metadata,
+            unknown_status: payload.status,
             webhook_received: true,
             eventType: payload.eventType,
-            status: payload.status,
-            method: payload.payload.method,
-            summary: payload.payload.summary,
-            failed_at: new Date().toISOString(),
-            failure_reason: payload.payload.summary || 'Payment failed'
           };
-        }
-        break;
+      }
 
-      default:
-        logger.warn(`Unknown CentryOS webhook status: ${payload.status}`);
-        transaction.metadata = { 
-          ...transaction.metadata, 
-          unknown_status: payload.status,
-          webhook_received: true,
-          eventType: payload.eventType
-        };
+      // Save updates
+      await Promise.all([transaction.save(), wallet.save()]);
+      logger.info(
+        `CentryOS webhook processing completed for transaction ${transaction._id}, new status=${transaction.status}`
+      );
+
+      return res.status(200).json({ success: true });
+    } catch (error: any) {
+      logger.error("Error processing CentryOS webhook:", error);
+      throw error;
     }
-
-    // Save updates
-    await Promise.all([transaction.save(), wallet.save()]);
-    logger.info(`CentryOS webhook processing completed for transaction ${transaction._id}, new status=${transaction.status}`);
-
-    return res.status(200).json({ success: true });
-  } catch (error: any) {
-    logger.error('Error processing CentryOS webhook:', error);
-    throw error;
   }
-});
+);
