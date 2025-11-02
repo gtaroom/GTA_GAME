@@ -810,11 +810,37 @@ export const getDashboardTransactions = asyncHandler(
       TransactionModel.countDocuments(query),
     ]);
 
+    // Handle null userId/walletId from deleted users/wallets - still show transaction for tracking
+    const safeTransactions = transactions.map((transaction) => {
+      const transactionObj = transaction.toObject();
+      
+      // Handle null userId (deleted user)
+      if (!transactionObj.userId || transactionObj.userId === null) {
+        transactionObj.userId = {
+          _id: null,
+          name: { first: "Deleted", last: "User" },
+          email: "deleted@user.com",
+          isDeleted: true,
+        };
+      }
+      
+      // Handle null walletId (deleted wallet)
+      if (!transactionObj.walletId || transactionObj.walletId === null) {
+        transactionObj.walletId = {
+          _id: null,
+          balance: 0,
+          isDeleted: true,
+        };
+      }
+      
+      return transactionObj;
+    });
+
     return res.status(200).json(
       new ApiResponse(
         200,
         {
-          transactions,
+          transactions: safeTransactions,
           total,
           page: pageNumber,
           limit: limitNumber,
