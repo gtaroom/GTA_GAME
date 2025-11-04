@@ -119,6 +119,7 @@ const Sidebar: React.FC = () => {
                                 label='Get Coins'
                                 icon='mingcute:copper-coin-fill'
                                 sidebarOpen={sidebarOpen}
+                                tooltipColor='#d97706'
                                 onClick={() => {
                                     router.push('/buy-coins');
                                     handleNavigate();
@@ -129,6 +130,7 @@ const Sidebar: React.FC = () => {
                                 icon='mdi:gift'
                                 variant='secondary'
                                 sidebarOpen={sidebarOpen}
+                                tooltipColor='#10b981'
                                 onClick={() => {
                                     router.push('/redeem');
                                     handleNavigate();

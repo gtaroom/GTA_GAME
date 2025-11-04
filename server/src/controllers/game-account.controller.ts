@@ -199,8 +199,6 @@ export const requestNewGameAccount = asyncHandler(
       throw new ApiError(404, "User not found");
     }
 
-    // ===== NEW: Send notification to USER =====
-
     // Send email notification to user
     await sendEmailNotify({
       email: user.email,
@@ -261,8 +259,6 @@ export const requestNewGameAccount = asyncHandler(
         // Don't throw error here as the request was successful
       }
     }
-
-    // ===== END NEW CODE =====
 
     // Send email notification to admin
     await sendEmailNotify({
