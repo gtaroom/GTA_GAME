@@ -13,7 +13,12 @@ export default function VIPProgramFAQ() {
             <AccordionTrigger className='py-2 text-[15px] leading-6 hover:no-underline focus-visible:ring-0'>
                 {faq.question}
             </AccordionTrigger>
-            <AccordionContent>{faq.answer}</AccordionContent>
+            <AccordionContent>
+                <div
+                    className='faq-answer'
+                    dangerouslySetInnerHTML={{ __html: faq.answer }}
+                />
+            </AccordionContent>
         </AccordionItem>
     );
 

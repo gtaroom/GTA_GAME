@@ -20,7 +20,7 @@ export const bannerSliderData: BannerSliderDataProps[] = [
         description: 'Level up to unlock exciting rewards and spins.',
         button: {
             text: 'View Rewards',
-            href: '#',
+            href: '/vip-program',
         },
         images: {
             background: '/banner-slider/backgrounds/rewards-unlock.jpg',
@@ -61,7 +61,7 @@ export const bannerSliderData: BannerSliderDataProps[] = [
         description: 'Check back daily for new free-play opportunities.',
         button: {
             text: "See What's New",
-            href: '#',
+            href: 'https://web.facebook.com/Goldenticketonlinearcade',
         },
         images: {
             background: '/banner-slider/backgrounds/daily-surprises.jpg',

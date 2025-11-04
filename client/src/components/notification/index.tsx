@@ -10,11 +10,11 @@ import {
     useNotifications,
 } from '@/contexts/notification-context';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
-import { type ReactNode } from 'react';
 import { formatDistanceToNow } from '@/lib/date-utils';
+import type { Notification as NotificationType } from '@/types/notification.types';
+import { type ReactNode } from 'react';
 import NeonBox from '../neon/neon-box';
 import NeonIcon from '../neon/neon-icon';
-import type { Notification as NotificationType } from '@/types/notification.types';
 
 function Dot({ className }: { className?: string }) {
     return (
@@ -34,7 +34,9 @@ function Dot({ className }: { className?: string }) {
 
 // Helper to get notification ID
 const getNotificationId = (notification: NotificationType): string => {
-    return notification._id || notification.id || notification.notificationId || '';
+    return (
+        notification._id || notification.id || notification.notificationId || ''
+    );
 };
 
 // Helper to format timestamp
@@ -47,20 +49,36 @@ const formatTimestamp = (timestamp: Date): string => {
 };
 
 // Render notification content based on type
-function NotificationContent({ notification }: { notification: NotificationType }) {
+function NotificationContent({
+    notification,
+}: {
+    notification: NotificationType;
+}) {
     const { type } = notification;
+    // Add logging
+    console.log('🔔 Rendering notification:', type, notification);
 
     switch (type) {
         case 'deposit_success': {
-            const n = notification as typeof notification & { amount: number; coins: number };
+            const n = notification as typeof notification & {
+                amount: number;
+                coins: number;
+            };
             return (
                 <div className='space-y-1'>
                     <div className='flex items-start gap-2'>
-                        <NeonIcon icon='lucide:check-circle' size={18} className='text-green-500 flex-shrink-0 mt-0.5' />
+                        <NeonIcon
+                            icon='lucide:check-circle'
+                            size={18}
+                            className='text-green-500 flex-shrink-0 mt-0.5'
+                        />
                         <div className='flex-1'>
-                            <p className='font-semibold text-green-400'>Payment Successful! 🎉</p>
+                            <p className='font-semibold text-green-400'>
+                                Payment Successful! 🎉
+                            </p>
                             <p className='text-xs text-foreground/80 mt-1'>
-                                Your payment of ${n.amount} has been processed. {n.coins} Gold Coins added to your wallet.
+                                Your payment of ${n.amount} has been processed.{' '}
+                                {n.coins} Gold Coins added to your wallet.
                             </p>
                         </div>
                     </div>
@@ -69,25 +87,60 @@ function NotificationContent({ notification }: { notification: NotificationType 
         }
 
         case 'recharge_status_updated': {
-            const n = notification as typeof notification & { status: string; amount: number; message: string; gameName?: string; metadata?: { status?: string; amount?: number; message?: string; gameName?: string } };
-            const isApproved = n.status === 'approved' || n.metadata?.status === 'approved';
-            const isRejected = n.status === 'rejected' || n.metadata?.status === 'rejected';
-            
+            const n = notification as typeof notification & {
+                status: string;
+                amount: number;
+                message: string;
+                gameName?: string;
+                metadata?: {
+                    status?: string;
+                    amount?: number;
+                    message?: string;
+                    gameName?: string;
+                };
+            };
+            const isApproved =
+                n.status === 'approved' || n.metadata?.status === 'approved';
+            const isRejected =
+                n.status === 'rejected' || n.metadata?.status === 'rejected';
+
             return (
                 <div className='space-y-1'>
                     <div className='flex items-start gap-2'>
-                        <NeonIcon 
-                            icon={isApproved ? 'lucide:check-circle' : isRejected ? 'lucide:x-circle' : 'lucide:clock'} 
-                            size={18} 
+                        <NeonIcon
+                            icon={
+                                isApproved
+                                    ? 'lucide:check-circle'
+                                    : isRejected
+                                      ? 'lucide:x-circle'
+                                      : 'lucide:clock'
+                            }
+                            size={18}
                             className={`flex-shrink-0 mt-0.5 ${isApproved ? 'text-green-500' : isRejected ? 'text-red-500' : 'text-yellow-500'}`}
                         />
                         <div className='flex-1'>
-                            <p className='font-semibold'>Deposit Status Updated</p>
+                            <p className='font-semibold'>
+                                Deposit Status Updated
+                            </p>
                             <p className='text-xs text-foreground/80 mt-1'>
-                                Your deposit request for ${n.amount || (n.metadata?.amount ? n.metadata.amount / 100 : 0)} {n.gameName || n.metadata?.gameName && `in ${n.gameName || n.metadata?.gameName}`} is now <span className='font-semibold'>{n.status || n.metadata?.status}</span>.
+                                Your deposit request for $
+                                {n.amount ||
+                                    (n.metadata?.amount
+                                        ? n.metadata.amount / 100
+                                        : 0)}{' '}
+                                {n.gameName ||
+                                    (n.metadata?.gameName &&
+                                        `in ${n.gameName || n.metadata?.gameName}`)}{' '}
+                                is now{' '}
+                                <span className='font-semibold'>
+                                    {n.status || n.metadata?.status}
+                                </span>
+                                .
                             </p>
                             {n.message && (
-                                <p className='text-xs text-foreground/60 mt-1'>{n.message || n.metadata?.message}</p>
+                                <p className='text-xs text-foreground/60 mt-1'>
+                                    {n.message || n.metadata?.message}
+                                </p>
                             )}
                         </div>
                     </div>
@@ -96,36 +149,68 @@ function NotificationContent({ notification }: { notification: NotificationType 
         }
 
         case 'withdrawal_status_updated': {
-            const n = notification as typeof notification & { status: string; amount: number; message: string; checkoutUrl?: string; metadata?: { status?: string; amount?: number; message?: string; checkoutUrl?: string } };
-            const isApproved = n.status === 'approved' || n.metadata?.status === 'approved';
-            const isRejected = n.status === 'rejected' || n.metadata?.status === 'rejected';
-            
+            const n = notification as typeof notification & {
+                status: string;
+                amount: number;
+                message: string;
+                checkoutUrl?: string;
+                metadata?: {
+                    status?: string;
+                    amount?: number;
+                    message?: string;
+                    checkoutUrl?: string;
+                };
+            };
+            const isApproved =
+                n.status === 'approved' || n.metadata?.status === 'approved';
+            const isRejected =
+                n.status === 'rejected' || n.metadata?.status === 'rejected';
+
             return (
                 <div className='space-y-1'>
                     <div className='flex items-start gap-2'>
-                        <NeonIcon 
-                            icon={isApproved ? 'lucide:check-circle' : isRejected ? 'lucide:x-circle' : 'lucide:clock'} 
-                            size={18} 
+                        <NeonIcon
+                            icon={
+                                isApproved
+                                    ? 'lucide:check-circle'
+                                    : isRejected
+                                      ? 'lucide:x-circle'
+                                      : 'lucide:clock'
+                            }
+                            size={18}
                             className={`flex-shrink-0 mt-0.5 ${isApproved ? 'text-green-500' : isRejected ? 'text-red-500' : 'text-yellow-500'}`}
                         />
                         <div className='flex-1'>
-                            <p className='font-semibold'>Withdrawal Status Updated</p>
+                            <p className='font-semibold'>
+                                Withdrawal Status Updated
+                            </p>
                             <p className='text-xs text-foreground/80 mt-1'>
-                                Your withdrawal request for ${n.amount || n.metadata?.amount} is now <span className='font-semibold'>{n.status || n.metadata?.status}</span>.
+                                Your withdrawal request for $
+                                {n.amount || n.metadata?.amount} is now{' '}
+                                <span className='font-semibold'>
+                                    {n.status || n.metadata?.status}
+                                </span>
+                                .
                             </p>
                             {n.message && (
-                                <p className='text-xs text-foreground/60 mt-1'>{n.message || n.metadata?.message}</p>
+                                <p className='text-xs text-foreground/60 mt-1'>
+                                    {n.message || n.metadata?.message}
+                                </p>
                             )}
-                            {n.checkoutUrl || n.metadata?.checkoutUrl && (
-                                <a 
-                                    href={n.checkoutUrl || n.metadata?.checkoutUrl}
-                                    target='_blank'
-                                    rel='noopener noreferrer'
-                                    className='text-xs text-blue-400 hover:underline mt-1 inline-block'
-                                >
-                                    Complete Withdrawal →
-                                </a>
-                            )}
+                            {n.checkoutUrl ||
+                                (n.metadata?.checkoutUrl && (
+                                    <a
+                                        href={
+                                            n.checkoutUrl ||
+                                            n.metadata?.checkoutUrl
+                                        }
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                        className='text-xs text-blue-400 hover:underline mt-1 inline-block'
+                                    >
+                                        Complete Withdrawal →
+                                    </a>
+                                ))}
                         </div>
                     </div>
                 </div>
@@ -133,15 +218,24 @@ function NotificationContent({ notification }: { notification: NotificationType 
         }
 
         case 'payment_received': {
-            const n = notification as typeof notification & { amount: number; currency: string; paymentGateway: string };
+            const n = notification as typeof notification & {
+                amount: number;
+                currency: string;
+                paymentGateway: string;
+            };
             return (
                 <div className='space-y-1'>
                     <div className='flex items-start gap-2'>
-                        <NeonIcon icon='lucide:dollar-sign' size={18} className='text-green-500 flex-shrink-0 mt-0.5' />
+                        <NeonIcon
+                            icon='lucide:dollar-sign'
+                            size={18}
+                            className='text-green-500 flex-shrink-0 mt-0.5'
+                        />
                         <div className='flex-1'>
                             <p className='font-semibold'>Payment Received</p>
                             <p className='text-xs text-foreground/80 mt-1'>
-                                You received {n.amount} {n.currency} via {n.paymentGateway}.
+                                You received {n.amount} {n.currency} via{' '}
+                                {n.paymentGateway}.
                             </p>
                         </div>
                     </div>
@@ -150,21 +244,50 @@ function NotificationContent({ notification }: { notification: NotificationType 
         }
 
         case 'game_account_approved': {
-            const n = notification as typeof notification & { gameName: string; generatedUsername: string; generatedPassword: string };
+            const n = notification as typeof notification & {
+                gameName: string;
+                generatedUsername: string;
+                generatedPassword: string;
+            };
+            // Add this logging
+            console.log('🎮 Game account approved notification:', {
+                gameName: n.gameName,
+                username: n.generatedUsername,
+                password: n.generatedPassword,
+                raw: n,
+            });
             return (
                 <div className='space-y-1'>
                     <div className='flex items-start gap-2'>
-                        <NeonIcon icon='lucide:check-circle' size={18} className='text-green-500 flex-shrink-0 mt-0.5' />
+                        <NeonIcon
+                            icon='lucide:check-circle'
+                            size={18}
+                            className='text-green-500 flex-shrink-0 mt-0.5'
+                        />
                         <div className='flex-1'>
-                            <p className='font-semibold text-green-400'>Game Account Approved! 🎉</p>
+                            <p className='font-semibold text-green-400'>
+                                Game Account Approved! 🎉
+                            </p>
                             <p className='text-xs text-foreground/80 mt-1'>
                                 Your {n.gameName} account has been approved!
                             </p>
                             <div className='text-xs text-foreground/70 mt-2 space-y-1'>
-                                <p><span className='font-semibold'>Username:</span> {n.generatedUsername}</p>
-                                <p><span className='font-semibold'>Password:</span> {n.generatedPassword}</p>
+                                <p>
+                                    <span className='font-semibold'>
+                                        Username:
+                                    </span>{' '}
+                                    {n.generatedUsername}
+                                </p>
+                                <p>
+                                    <span className='font-semibold'>
+                                        Password:
+                                    </span>{' '}
+                                    {n.generatedPassword}
+                                </p>
                             </div>
-                            <p className='text-xs text-yellow-500 mt-1'>Please save these credentials securely!</p>
+                            <p className='text-xs text-yellow-500 mt-1'>
+                                Please save these credentials securely!
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -172,19 +295,32 @@ function NotificationContent({ notification }: { notification: NotificationType 
         }
 
         case 'game_account_rejected': {
-            const n = notification as typeof notification & { gameName: string; adminNotes?: string };
+            const n = notification as typeof notification & {
+                gameName: string;
+                adminNotes?: string;
+            };
             return (
                 <div className='space-y-1'>
                     <div className='flex items-start gap-2'>
-                        <NeonIcon icon='lucide:x-circle' size={18} className='text-red-500 flex-shrink-0 mt-0.5' />
+                        <NeonIcon
+                            icon='lucide:x-circle'
+                            size={18}
+                            className='text-red-500 flex-shrink-0 mt-0.5'
+                        />
                         <div className='flex-1'>
-                            <p className='font-semibold'>Game Account Request Rejected</p>
+                            <p className='font-semibold'>
+                                Game Account Request Rejected
+                            </p>
                             <p className='text-xs text-foreground/80 mt-1'>
-                                Your request for a {n.gameName} account has been rejected.
+                                Your request for a {n.gameName} account has been
+                                rejected.
                             </p>
                             {n.adminNotes && (
                                 <p className='text-xs text-foreground/60 mt-1'>
-                                    <span className='font-semibold'>Reason:</span> {n.adminNotes}
+                                    <span className='font-semibold'>
+                                        Reason:
+                                    </span>{' '}
+                                    {n.adminNotes}
                                 </p>
                             )}
                         </div>
@@ -251,8 +387,13 @@ export function Notification({ children }: { children: ReactNode }) {
                 ></div>
                 {isLoading ? (
                     <div className='p-4 text-center flex items-center justify-center gap-2'>
-                        <NeonIcon icon='svg-spinners:bars-rotate-fade' size={20} />
-                        <span className='text-sm text-muted-foreground'>Loading...</span>
+                        <NeonIcon
+                            icon='svg-spinners:bars-rotate-fade'
+                            size={20}
+                        />
+                        <span className='text-sm text-muted-foreground'>
+                            Loading...
+                        </span>
                     </div>
                 ) : notifications.length > 0 ? (
                     notifications.map(notification => (
@@ -264,20 +405,30 @@ export function Notification({ children }: { children: ReactNode }) {
                         >
                             <div className='relative flex items-start'>
                                 <div className='flex-1 space-y-1 pr-6'>
-                                    <NotificationContent notification={notification} />
+                                    <NotificationContent
+                                        notification={notification}
+                                    />
                                     <div className='text-muted-foreground text-xs mt-2'>
-                                        {formatTimestamp(notification.timestamp)}
+                                        {formatTimestamp(
+                                            notification.timestamp
+                                        )}
                                     </div>
                                 </div>
                                 <div className='absolute top-0 right-0 flex items-center gap-1'>
                                     {!notification.read && (
                                         <div className='self-start mt-1'>
-                                            <span className='sr-only'>Unread</span>
+                                            <span className='sr-only'>
+                                                Unread
+                                            </span>
                                             <Dot />
                                         </div>
                                     )}
                                     <button
-                                        onClick={() => dismissNotification(getNotificationId(notification))}
+                                        onClick={() =>
+                                            dismissNotification(
+                                                getNotificationId(notification)
+                                            )
+                                        }
                                         className='p-1 hover:bg-neutral-600 rounded transition-colors'
                                         aria-label='Dismiss notification'
                                     >
