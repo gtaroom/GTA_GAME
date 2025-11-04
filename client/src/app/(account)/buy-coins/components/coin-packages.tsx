@@ -118,9 +118,6 @@ export default function CoinPackages() {
                                                     <Button
                                                         size='sm'
                                                         className='w-[64px] text-base!'
-                                                        onClick={e =>
-                                                            e.stopPropagation()
-                                                        }
                                                     >
                                                         {pkg.price}
                                                     </Button>
