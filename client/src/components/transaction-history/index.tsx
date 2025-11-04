@@ -23,8 +23,8 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useTransactions } from '@/hooks/useTransactions';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
+import { useTransactions } from '@/hooks/useTransactions';
 import { Icon } from '@iconify/react';
 import { useTransitionRouter } from 'next-transition-router';
 import { usePathname } from 'next/navigation';
@@ -104,7 +104,10 @@ export default function TransactionHistory() {
                         )}
 
                         {/* Type Filter */}
-                        <Select onValueChange={handleTypeFilter} defaultValue="all">
+                        <Select
+                            onValueChange={handleTypeFilter}
+                            defaultValue='all'
+                        >
                             <SelectTrigger showIcon={false}>
                                 <NeonBox
                                     className='py-3 px-5 rounded-lg flex items-center justify-between gap-2 cursor-pointer select-none w-[160px] flex-1 backdrop-blur-2xl'
@@ -126,15 +129,22 @@ export default function TransactionHistory() {
                                 </NeonBox>
                             </SelectTrigger>
                             <SelectContent sideOffset={5}>
-                                <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="deposit">Purchases</SelectItem>
-                                <SelectItem value="withdrawal">Redemptions</SelectItem>
+                                <SelectItem value='all'>All Types</SelectItem>
+                                <SelectItem value='deposit'>
+                                    Purchases
+                                </SelectItem>
+                                <SelectItem value='withdrawal'>
+                                    Redemptions
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     {/* Status Filter */}
-                    <Select onValueChange={handleStatusFilter} defaultValue="all">
+                    <Select
+                        onValueChange={handleStatusFilter}
+                        defaultValue='all'
+                    >
                         <SelectTrigger showIcon={false}>
                             <NeonBox
                                 className='py-3 px-5 rounded-lg flex items-center justify-between gap-2 cursor-pointer select-none w-[160px] flex-1 backdrop-blur-2xl'
@@ -156,11 +166,11 @@ export default function TransactionHistory() {
                             </NeonBox>
                         </SelectTrigger>
                         <SelectContent sideOffset={5}>
-                            <SelectItem value="all">All Status</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="failed">Failed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                            <SelectItem value='all'>All Status</SelectItem>
+                            <SelectItem value='completed'>Completed</SelectItem>
+                            <SelectItem value='pending'>Pending</SelectItem>
+                            <SelectItem value='failed'>Failed</SelectItem>
+                            <SelectItem value='cancelled'>Cancelled</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -220,11 +230,8 @@ export default function TransactionHistory() {
                     {loading ? (
                         // Loading skeleton
                         Array.from({ length: 3 }).map((_, index) => (
-                            <TableRow
-                                key={index}
-                                className='[&>td]:py-6'
-                            >
-                                {[1, 2, 3, 4, 5].map((cell) => (
+                            <TableRow key={index} className='[&>td]:py-6'>
+                                {[1, 2, 3, 4, 5].map(cell => (
                                     <TableCell key={cell}>
                                         <div className='h-6 bg-white/10 rounded animate-pulse' />
                                     </TableCell>
@@ -234,7 +241,10 @@ export default function TransactionHistory() {
                     ) : transactions.length === 0 ? (
                         // Empty state
                         <TableRow>
-                            <TableCell colSpan={5} className='text-center py-12'>
+                            <TableCell
+                                colSpan={5}
+                                className='text-center py-12'
+                            >
                                 <NeonText className='text-white/60'>
                                     No transactions found
                                 </NeonText>
@@ -242,7 +252,7 @@ export default function TransactionHistory() {
                         </TableRow>
                     ) : (
                         // Transaction data
-                        transactions.map((item) => (
+                        transactions.map(item => (
                             <TableRow
                                 key={item._id}
                                 className='[&>td]:py-6 [&>td]:font-bold [&>td]:text-base'
@@ -251,8 +261,7 @@ export default function TransactionHistory() {
                                     <span className='whitespace-nowrap'>
                                         {(item.gatewayInvoiceId ?? item._id)
                                             ? `${(item.gatewayInvoiceId ?? item._id).slice(0, 6)}...${(item.gatewayInvoiceId ?? item._id).slice(-4)}`
-                                            : ""}
-
+                                            : ''}
                                     </span>
                                 </TableCell>
                                 <TableCell>
@@ -262,7 +271,13 @@ export default function TransactionHistory() {
                                 </TableCell>
                                 <TableCell>
                                     <Badge
-                                        variant={item.type === 'coupon' ? 'coupon-redeemed' : item.type === 'deposit' ? 'gc-purchased' : 'sc-redeemed'}
+                                        variant={
+                                            item.type === 'coupon'
+                                                ? 'coupon-redeemed'
+                                                : item.type === 'deposit'
+                                                  ? 'gc-purchased'
+                                                  : 'sc-redeemed'
+                                        }
                                         type='transaction'
                                         size='md'
                                     />
@@ -275,7 +290,8 @@ export default function TransactionHistory() {
                                     }
                                 >
                                     <span className='whitespace-nowrap'>
-                                        {`${item.amount * 100} GC worth`}  ({formatAmount(item.amount)}$)
+                                        {`${item.amount * 100} GC worth`} ($
+                                        {formatAmount(item.amount)})
                                     </span>
                                 </TableCell>
                                 <TableCell>

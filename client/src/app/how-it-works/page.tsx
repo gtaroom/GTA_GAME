@@ -35,7 +35,7 @@ export default function HowItsWork() {
                             size={xl ? 'xl' : `${lg ? 'lg' : 'md'}`}
                             variant='secondary'
                             className='xl:w-[240px] md:w-[160px] lg:w-[200px] w-full'
-                            onClick={() => router.push('#')}
+                            onClick={() => router.push('/free-entry-form')}
                         >
                             Claim Free Coins
                         </Button>
