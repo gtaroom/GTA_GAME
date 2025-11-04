@@ -107,6 +107,7 @@ export const storeExistingGameAccount = asyncHandler(
 );
 
 // Request new game account
+// Request new game account
 export const requestNewGameAccount = asyncHandler(
   async (req: Request, res: Response) => {
     const { gameId, amount } = req.body;
@@ -198,6 +199,67 @@ export const requestNewGameAccount = asyncHandler(
       throw new ApiError(404, "User not found");
     }
 
+    // Send email notification to user
+    await sendEmailNotify({
+      email: user.email,
+      subject: `Game Account Request Received - ${game.name}`,
+      mailgenContent: `
+      <h2>We've Received Your Game Account Request!</h2>
+      <p>Hello ${user.name?.first || ""} ${user.name?.last || ""},</p>
+      <p>Thank you for requesting a <strong>${game.name}</strong> account.</p>
+      <p><strong>Request Details:</strong></p>
+      <ul>
+        <li><strong>Game:</strong> ${game.name}</li>
+        <li><strong>Status:</strong> Pending Review</li>
+        ${accountRequest.requestedAmount ? `<li><strong>Initial Load Amount:</strong> $${accountRequest.requestedAmount.toFixed(2)} USD (${(accountRequest.requestedAmount * 100).toFixed(0)} GC)</li>` : ""}
+      </ul>
+      <p><strong>What happens next?</strong></p>
+      <p>Our team is processing your request and will create your game account within a few minutes. You'll receive another notification with your login credentials once your account is ready.</p>
+      ${accountRequest.requestedAmount ? `<p><em>Note: ${(accountRequest.requestedAmount * 100).toFixed(0)} GC has been reserved from your wallet and will be added to your game account once it's created.</em></p>` : ""}
+      <p>If you have any questions, please contact our support team.</p>
+    `,
+    });
+
+    // Send SMS notification to user if phone number exists
+    if (user.phone) {
+      try {
+        const formattedPhone = formatPhoneNumber(user.phone);
+
+        if (formattedPhone) {
+          const firstName = user.name?.first || "User";
+
+          const smsMessage = `GTOA Request Received ✓\n\nHello ${firstName},\n\nWe've received your ${game.name} account request!\n\n${accountRequest.requestedAmount ? `Initial Load: $${accountRequest.requestedAmount.toFixed(2)} (${(accountRequest.requestedAmount * 100).toFixed(0)} GC reserved)\n\n` : ""}Our team is setting up your account now. You'll receive your login credentials shortly via email and SMS.\n\nFor help, text 702-356-3435 or DM http://m.me/105542688498394.`;
+
+          const smsResult = await twilioService.sendTransactionalSMS(
+            formattedPhone,
+            {
+              playerName: firstName,
+              transactionType: "game-account-request",
+              details: `${game.name} account request received`,
+            },
+            smsMessage
+          );
+
+          if (smsResult.success) {
+            console.log(
+              `SMS notification sent successfully to ${formattedPhone} for game account request. SID: ${smsResult.sid}`
+            );
+          } else {
+            console.error(
+              `Failed to send SMS notification to ${formattedPhone}: ${smsResult.error}`
+            );
+          }
+        } else {
+          console.warn(
+            `Invalid phone number format: ${user.phone}. Email notification sent instead.`
+          );
+        }
+      } catch (error) {
+        console.error("Error sending SMS notification:", error);
+        // Don't throw error here as the request was successful
+      }
+    }
+
     // Send email notification to admin
     await sendEmailNotify({
       email: process.env.ADMIN_EMAIL || "admin@example.com",
@@ -225,13 +287,12 @@ export const requestNewGameAccount = asyncHandler(
       userEmail: user.email,
       gameName: game.name,
       gameId: gameId,
-      // Optional: include USD requested amount for admin UIs listening to this event
       requestedAmount: accountRequest.requestedAmount,
     };
 
     // Send to admins with persistent storage
     await notificationService.sendNotification(
-      "admin", // Special case for admin notifications
+      "admin",
       SocketEvents.GAME_ACCOUNT_REQUEST,
       gameAccountNotification
     );
@@ -508,9 +569,14 @@ export const approveAccountRequest = asyncHandler(
       <p><strong>Your Account Details:</strong></p>
       <p><strong>Username:</strong> ${generatedUsername}</p>
       <p><strong>Password:</strong> ${generatedPassword}</p>
-      ${accountRequest.requestedAmount ? `<p><strong>Requested Deposit:</strong> $${accountRequest.requestedAmount.toFixed(2)} USD (\worth ${(accountRequest.requestedAmount * 100).toFixed(0)} GC) added to your game by our team.</p>` : ""}
+      ${accountRequest.requestedAmount ? `<p><strong>Requested Deposit:</strong> $${accountRequest.requestedAmount.toFixed(2)} USD (worth ${(accountRequest.requestedAmount * 100).toFixed(0)} GC) added to your game by our team.</p>` : ""}
       ${adminNotes ? `<p><strong>Note:</strong> ${adminNotes}</p>` : ""}
       <p>You can now log in to your game account and start playing!</p>
+      <p><strong>Next Steps:</strong></p>
+      <ul>
+        <li><strong>Add Game GC</strong> – Add coins to your account</li>
+        <li><strong>Redeem SC</strong> – Request redemption</li>
+      </ul>
       <p>If you have any questions, please contact our support team.</p>
     `,
     });
