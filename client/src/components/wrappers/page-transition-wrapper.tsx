@@ -115,6 +115,10 @@ export function PageTransitionWrapper({
             backgroundColor: OVERLAY_COLOR,
             boxShadow: OVERLAY_SHADOW,
             transform: 'translate3d(0,0,0) scale(0.8)',
+            backgroundImage: "url('/home-page-logged-out/hero-sec-bg.avif')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
         }),
         []
     );
@@ -239,7 +243,7 @@ export function PageTransitionWrapper({
                 />
                 <div
                     ref={labelRef}
-                    className='circle-label fixed left-1/2 top-1/2 w-full -translate-x-1/2 -translate-y-1/2 text-center'
+                    className='circle-label fixed left-1/2 top-1/2 z-[70] w-full -translate-x-1/2 -translate-y-1/2 text-center text-white'
                 />
             </div>
 
