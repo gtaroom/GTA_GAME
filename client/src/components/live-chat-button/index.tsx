@@ -2,9 +2,23 @@
 import NeonBox from '@/components/neon/neon-box';
 import { Icon } from '@iconify/react';
 
+// Declare global types for RocketChat
+declare global {
+    interface Window {
+        RocketChat: any;
+    }
+}
+
 const LiveChatButton = () => {
     const handleClick = () => {
-        window.open('https://assistcentral.net/livechat', '_blank', 'noopener,noreferrer');
+        // Check if RocketChat is loaded
+        if (window.RocketChat && window.RocketChat.livechat) {
+            // Show and maximize the widget
+            window.RocketChat.livechat.showWidget();
+            window.RocketChat.livechat.maximizeWidget();
+        } else {
+            console.error('RocketChat not loaded yet');
+        }
     };
 
     return (
