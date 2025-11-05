@@ -12,10 +12,11 @@ import bcrypt from "bcryptjs";
  * Create a new user (Admin only)
  */
 const createUser = asyncHandler(async (req: Request, res: Response) => {
-  const { 
-    firstName,lastName, 
-    email, 
-    password, 
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
     role = "USER",
     phone,
     address,
@@ -23,7 +24,7 @@ const createUser = asyncHandler(async (req: Request, res: Response) => {
     city,
     state,
     gender,
-    dob
+    dob,
   } = req.body;
 
   if (!email || !password) {
@@ -39,14 +40,14 @@ const createUser = asyncHandler(async (req: Request, res: Response) => {
   // Validate role
   const isBuiltInRole = AvailableRoles.includes(role as any);
   const customRole = await RoleModel.findOne({ name: role, isActive: true });
-  
+
   if (!isBuiltInRole && !customRole) {
     throw new ApiError(400, "Invalid role");
   }
   const user = await UserModel.create({
-    name:{
-      first:firstName,
-      last:lastName
+    name: {
+      first: firstName,
+      last: lastName,
     },
     email,
     password,
@@ -65,24 +66,24 @@ const createUser = asyncHandler(async (req: Request, res: Response) => {
   delete userResponse.password;
   delete userResponse.refreshToken;
 
-  return res.status(201).json(
-    new ApiResponse(201, userResponse, "User created successfully")
-  );
+  return res
+    .status(201)
+    .json(new ApiResponse(201, userResponse, "User created successfully"));
 });
 
 /**
  * Get all users with pagination and filters
  */
 const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
-  const { 
-    page = 1, 
-    limit = 10, 
-    role, 
+  const {
+    page = 1,
+    limit = 10,
+    role,
     search,
     isEmailVerified,
     isPhoneVerified,
     isKYC,
-    isOpted
+    isOpted,
   } = req.query;
 
   const skip = (Number(page) - 1) * Number(limit);
@@ -90,10 +91,12 @@ const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
 
   // Apply filters
   if (role) filter.role = role;
-  if (isEmailVerified !== undefined) filter.isEmailVerified = isEmailVerified === 'true';
-  if (isPhoneVerified !== undefined) filter.isPhoneVerified = isPhoneVerified === 'true';
-  if (isKYC !== undefined) filter.isKYC = isKYC === 'true';
-  if (isOpted !== undefined) filter.isOpted = isOpted === 'true';
+  if (isEmailVerified !== undefined)
+    filter.isEmailVerified = isEmailVerified === "true";
+  if (isPhoneVerified !== undefined)
+    filter.isPhoneVerified = isPhoneVerified === "true";
+  if (isKYC !== undefined) filter.isKYC = isKYC === "true";
+  if (isOpted !== undefined) filter.isOpted = isOpted === "true";
 
   // Search functionality
   if (search) {
@@ -114,15 +117,19 @@ const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
   const total = await UserModel.countDocuments(filter);
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      users,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        pages: Math.ceil(total / Number(limit)),
+    new ApiResponse(
+      200,
+      {
+        users,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit)),
+        },
       },
-    }, "Users retrieved successfully")
+      "Users retrieved successfully"
+    )
   );
 });
 
@@ -132,16 +139,17 @@ const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
 const getUserById = asyncHandler(async (req: Request, res: Response) => {
   const { userId } = req.params;
 
-  const user = await UserModel.findById(userId)
-    .select("-password -refreshToken");
+  const user = await UserModel.findById(userId).select(
+    "-password -refreshToken"
+  );
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, user, "User retrieved successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "User retrieved successfully"));
 });
 
 /**
@@ -159,8 +167,11 @@ const updateUser = asyncHandler(async (req: Request, res: Response) => {
   // If role is being updated, validate it
   if (updateData.role) {
     const isBuiltInRole = AvailableRoles.includes(updateData.role as any);
-    const customRole = await RoleModel.findOne({ name: updateData.role, isActive: true });
-    
+    const customRole = await RoleModel.findOne({
+      name: updateData.role,
+      isActive: true,
+    });
+
     if (!isBuiltInRole && !customRole) {
       throw new ApiError(400, "Invalid role");
     }
@@ -171,15 +182,13 @@ const updateUser = asyncHandler(async (req: Request, res: Response) => {
     updateData.password = await bcrypt.hash(updateData.password, 10);
   }
 
-  const updatedUser = await UserModel.findByIdAndUpdate(
-    userId,
-    updateData,
-    { new: true }
-  ).select("-password -refreshToken");
+  const updatedUser = await UserModel.findByIdAndUpdate(userId, updateData, {
+    new: true,
+  }).select("-password -refreshToken");
 
-  return res.status(200).json(
-    new ApiResponse(200, updatedUser, "User updated successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "User updated successfully"));
 });
 
 /**
@@ -200,9 +209,9 @@ const deleteUser = asyncHandler(async (req: Request, res: Response) => {
 
   await UserModel.findByIdAndDelete(userId);
 
-  return res.status(200).json(
-    new ApiResponse(200, {}, "User deleted successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "User deleted successfully"));
 });
 
 /**
@@ -222,7 +231,7 @@ const bulkAssignRole = asyncHandler(async (req: Request, res: Response) => {
   // Validate role
   const isBuiltInRole = AvailableRoles.includes(role as any);
   const customRole = await RoleModel.findOne({ name: role, isActive: true });
-  
+
   if (!isBuiltInRole && !customRole) {
     throw new ApiError(400, "Invalid role");
   }
@@ -233,10 +242,14 @@ const bulkAssignRole = asyncHandler(async (req: Request, res: Response) => {
   );
 
   return res.status(200).json(
-    new ApiResponse(200, { 
-      modifiedCount: result.modifiedCount,
-      totalRequested: userIds.length
-    }, "Roles assigned successfully")
+    new ApiResponse(
+      200,
+      {
+        modifiedCount: result.modifiedCount,
+        totalRequested: userIds.length,
+      },
+      "Roles assigned successfully"
+    )
   );
 });
 
@@ -249,25 +262,33 @@ const getUserStatistics = asyncHandler(async (req: Request, res: Response) => {
     {
       $group: {
         _id: "$role",
-        count: { $sum: 1 }
-      }
-    }
+        count: { $sum: 1 },
+      },
+    },
   ]);
 
-  const emailVerifiedUsers = await UserModel.countDocuments({ isEmailVerified: true });
-  const phoneVerifiedUsers = await UserModel.countDocuments({ isPhoneVerified: true });
+  const emailVerifiedUsers = await UserModel.countDocuments({
+    isEmailVerified: true,
+  });
+  const phoneVerifiedUsers = await UserModel.countDocuments({
+    isPhoneVerified: true,
+  });
   const kycVerifiedUsers = await UserModel.countDocuments({ isKYC: true });
   const optedUsers = await UserModel.countDocuments({ isOpted: true });
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      totalUsers,
-      usersByRole,
-      emailVerifiedUsers,
-      phoneVerifiedUsers,
-      kycVerifiedUsers,
-      optedUsers,
-    }, "User statistics retrieved successfully")
+    new ApiResponse(
+      200,
+      {
+        totalUsers,
+        usersByRole,
+        emailVerifiedUsers,
+        phoneVerifiedUsers,
+        kycVerifiedUsers,
+        optedUsers,
+      },
+      "User statistics retrieved successfully"
+    )
   );
 });
 
@@ -289,7 +310,7 @@ const searchUsers = asyncHandler(async (req: Request, res: Response) => {
       { "name.last": { $regex: query, $options: "i" } },
       { email: { $regex: query, $options: "i" } },
       { phone: { $regex: query, $options: "i" } },
-    ]
+    ],
   })
     .select("-password -refreshToken")
     .skip(skip)
@@ -302,19 +323,23 @@ const searchUsers = asyncHandler(async (req: Request, res: Response) => {
       { "name.last": { $regex: query, $options: "i" } },
       { email: { $regex: query, $options: "i" } },
       { phone: { $regex: query, $options: "i" } },
-    ]
+    ],
   });
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      users,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        pages: Math.ceil(total / Number(limit)),
+    new ApiResponse(
+      200,
+      {
+        users,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit)),
+        },
       },
-    }, "Search results retrieved successfully")
+      "Search results retrieved successfully"
+    )
   );
 });
 
@@ -327,4 +352,4 @@ export {
   bulkAssignRole,
   getUserStatistics,
   searchUsers,
-}; 
+};

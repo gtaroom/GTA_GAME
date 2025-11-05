@@ -1,5 +1,5 @@
-import LegalWrapper from '../components/legal-wrapper';
 import PDFViewer from '@/components/pdf-viewer';
+import LegalWrapper from '../components/legal-wrapper';
 
 const TermsConditions = () => {
     return (
@@ -9,10 +9,10 @@ const TermsConditions = () => {
             className='mb-12 md:mb-20 xl:mb-25' // common margin for the legal wrapper box
         >
             <div className='legal-content-wp'>
-                <PDFViewer 
-                    src="/legal/terms-conditions.pdf" 
-                    title="Terms & Conditions"
-                    className="min-h-[600px]"
+                <PDFViewer
+                    src='/legal/terms-conditions.pdf'
+                    title='Terms & Conditions'
+                    className='min-h-[600px]'
                 />
             </div>
         </LegalWrapper>

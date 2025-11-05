@@ -15,8 +15,8 @@ export default function GetHelp() {
             description:
                 'Get instant help from our support team. Average response time: 30 seconds',
             button: {
-                text: 'Start Chat Now',
-                onClick: () => router.push('#'),
+                text: 'Chat Now',
+                onClick: () => window.open('https://assistcentral.net/livechat', '_blank', 'noopener,noreferrer'),
             },
             color: '--color-cyan-500',
         },

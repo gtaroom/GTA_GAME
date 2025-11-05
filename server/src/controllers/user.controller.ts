@@ -28,6 +28,12 @@ import otpService from "../services/otp.service";
 import { formatPhoneNumber } from "../utils/phone-formatter";
 import twilioService from "../services/twilio.service";
 import { logger } from "../utils/logger";
+import UserGameAccountModel from "../models/user-game-account.model";
+import GameAccountRequestModel from "../models/game-account-request.model";
+import rechargeRequestModel from "../models/recharge-request.model";
+import withdrawalRequestModel from "../models/withdrawal-request.model";
+import NotificationModel from "../models/notification.model";
+import AmoeModel from "../models/amoe-entry.model";
 
 const generateAccessAndRefreshTokens = async (userId: string) => {
   try {
@@ -48,7 +54,8 @@ const generateAccessAndRefreshTokens = async (userId: string) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { email, name, password, role, phone, acceptSMSMarketing,isOpted } = req.body;
+  const { email, name, password, role, phone, acceptSMSMarketing, isOpted } =
+    req.body;
   const existedUser = await User.findOne({ email });
 
   const bannedStates = [
@@ -139,12 +146,12 @@ const registerUser = asyncHandler(async (req, res) => {
     // Handle database constraint violations
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
-      if (field === 'phone') {
+      if (field === "phone") {
         throw new ApiError(
           409,
           "This phone number is already registered with another account. Please use a different phone number or contact support if you believe this is an error."
         );
-      } else if (field === 'email') {
+      } else if (field === "email") {
         throw new ApiError(409, "User with email already exists", []);
       } else {
         throw new ApiError(
@@ -208,7 +215,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
 
-  
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
     createdUser._id
   );
@@ -219,11 +225,10 @@ const registerUser = asyncHandler(async (req, res) => {
     // Remove domain property to prevent cookie sharing between main domain and subdomains
   };
 
-
   return res
     .status(201)
-  .cookie("accessToken", accessToken, options)
-  .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse(
         201,
@@ -708,12 +713,12 @@ const updateProfile = asyncHandler(async (req, res) => {
     }
 
     phoneUpdated = user.phone !== formattedPhone;
-    
+
     // Check for phone number duplication if phone is being changed
     if (phoneUpdated) {
-      const existingPhoneUser = await User.findOne({ 
+      const existingPhoneUser = await User.findOne({
         phone: formattedPhone,
-        _id: { $ne: user._id } // Exclude current user
+        _id: { $ne: user._id }, // Exclude current user
       });
       if (existingPhoneUser) {
         throw new ApiError(
@@ -723,7 +728,7 @@ const updateProfile = asyncHandler(async (req, res) => {
       }
       updateData.isPhoneVerified = false;
     }
-    
+
     updateData.phone = formattedPhone;
   }
 
@@ -797,12 +802,12 @@ const updateProfile = asyncHandler(async (req, res) => {
     // Handle database constraint violations
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
-      if (field === 'phone') {
+      if (field === "phone") {
         throw new ApiError(
           409,
           "This phone number is already registered with another account. Please use a different phone number or contact support if you believe this is an error."
         );
-      } else if (field === 'email') {
+      } else if (field === "email") {
         throw new ApiError(409, "User with email already exists", []);
       } else {
         throw new ApiError(
@@ -924,16 +929,36 @@ const deleteUser = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(404, "User not found");
   }
-  const { password, ...other } = req.body;
+
+  // Delete all related user documents (except transactions which are kept for audit)
+  await Promise.all([
+    // User-specific data
+    UserBonusModel.findOneAndDelete({ userId: id }),
+    WalletModel.findOneAndDelete({ userId: id }),
+    
+    // Game account related
+    UserGameAccountModel.deleteMany({ userId: id }),
+    GameAccountRequestModel.deleteMany({ userId: id }),
+    
+    // Financial requests (not transactions)
+    rechargeRequestModel.deleteMany({ userId: id }),
+    withdrawalRequestModel.deleteMany({ userId: id }),
+    
+    // User notifications
+    NotificationModel.deleteMany({ userId: id }),
+    
+    // AMOE entries
+    AmoeModel.deleteMany({ userId: id }),
+  ]);
+
+  // Finally delete the user
   await User.findByIdAndDelete(id).select(
     "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
   );
 
-  await UserBonusModel.findOneAndDelete({ userId: id });
-
   res
     .status(200)
-    .json(new ApiResponse(200, {}, "Updated user data successfully"));
+    .json(new ApiResponse(200, {}, "User and all related data deleted successfully"));
 });
 
 export const csvUserData = asyncHandler(async (req, res) => {

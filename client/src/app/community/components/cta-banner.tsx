@@ -12,7 +12,7 @@ export default function CTABanner() {
     const { md } = useBreakPoint();
     return (
         <>
-            <section className='mb-12 sm:18 md:mb-22 lg:mb-25'>
+            {/* <section className='mb-12 sm:18 md:mb-22 lg:mb-25'>
                 <div className='container-xxl'>
                     <NeonBox
                         glowColor='--color-purple-500'
@@ -50,7 +50,7 @@ export default function CTABanner() {
                         </div>
                     </NeonBox>
                 </div>
-            </section>
+            </section> */}
             <section>
                 <div className='container-xxl'>
                     <NeonBox

@@ -16,7 +16,76 @@ export const vipProgramFaqData: FaqItem[] = [
     },
     {
         question: 'How do I level up in VIP?',
-        answer: 'You level up in the VIP Club by playing games and purchasing Gold Coins. Each activity and purchase grants you points or progress toward the next VIP tier.',
+        answer: `You level up in the VIP Club by purchasing Gold Coins (GC) and playing games. Each purchase and activity helps you earn tickets that count toward your next VIP tier.
+
+Your VIP status is reviewed on a rolling 14-day period, and perks are active for 14 days once you qualify.
+
+<strong>Quick Reference Chart:</strong>
+
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+<thead>
+<tr style="background-color: #5B21B6; color: white;">
+<th style="padding: 12px; text-align: left; border: 1px solid #7C3AED;">Tickets</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #7C3AED;">Tier</th>
+<th style="padding: 12px; text-align: left; border: 1px solid #7C3AED;">Gold Coins (GC) Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding: 10px; border: 1px solid #7C3AED;">10</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">Iron</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">50,000 GC</td>
+</tr>
+<tr>
+<td style="padding: 10px; border: 1px solid #7C3AED;">16</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">Bronze</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">80,000 GC</td>
+</tr>
+<tr>
+<td style="padding: 10px; border: 1px solid #7C3AED;">22</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">Silver</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">110,000 GC</td>
+</tr>
+<tr>
+<td style="padding: 10px; border: 1px solid #7C3AED;">28</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">Gold</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">140,000 GC</td>
+</tr>
+<tr>
+<td style="padding: 10px; border: 1px solid #7C3AED;">32</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">Platinum</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">160,000 GC</td>
+</tr>
+<tr>
+<td style="padding: 10px; border: 1px solid #7C3AED;">36</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">Onyx</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">180,000 GC</td>
+</tr>
+<tr>
+<td style="padding: 10px; border: 1px solid #7C3AED;">40</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">Sapphire</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">200,000 GC</td>
+</tr>
+<tr>
+<td style="padding: 10px; border: 1px solid #7C3AED;">46</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">Ruby</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">230,000 GC</td>
+</tr>
+<tr>
+<td style="padding: 10px; border: 1px solid #7C3AED;">50</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">Emerald</td>
+<td style="padding: 10px; border: 1px solid #7C3AED;">250,000 GC</td>
+</tr>
+</tbody>
+</table>
+
+<strong>Additional Info:</strong>
+<ul style="margin-top: 15px;">
+<li>Tiers are based on total GC purchases within the last 14 days.</li>
+<li>VIP perks last for 14 days from the date of qualification.</li>
+<li>Players must meet the GC threshold again to maintain or upgrade tiers.</li>
+<li>All tiers and perks are subject to verification and compliance review.</li>
+</ul>`,
     },
     {
         question: 'What are VIP Tiers and how are they calculated?',
@@ -119,15 +188,15 @@ export const faqData: FaqItem[] = [
     },
     {
         question: 'When and how can I redeem my rewards?',
-        answer: 'Rewards can be redeemed after earning sufficient sweepstakes entries or coins, following the platform’s redemption process as outlined in your profile.',
+        answer: "Rewards can be redeemed after earning sufficient sweepstakes entries or coins, following the platform's redemption process as outlined in your profile.",
     },
     {
         question: 'Are purchases refundable?',
-        answer: 'Generally, purchases on Golden Ticket are non-refundable, as stated in the platform’s terms and conditions.',
+        answer: "Generally, purchases on Golden Ticket are non-refundable, as stated in the platform's terms and conditions.",
     },
     {
         question: 'Is Golden Ticket available in my country?',
-        answer: 'Golden Ticket is available in select regions; please check the list of eligible countries during sign up or on the platform’s availability page.',
+        answer: "Golden Ticket is available in select regions; please check the list of eligible countries during sign up or on the platform's availability page.",
     },
     {
         question: 'How do you ensure compliance with sweepstakes laws?',

@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import Script from 'next/script';
 import { useEffect } from 'react';
 
 import AuthWrapper from '@/components/wrappers/auth-wrapper';
@@ -10,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useTransitionRouter } from 'next-transition-router';
 import Footer from '../footer';
 import Header from '../header';
+import LiveChatButton from '../live-chat-button';
 import MobileBottomMenu from '../mobile-bottom-menu';
 import Sidebar from '../sidebar';
 
@@ -75,11 +77,26 @@ const LayoutWrapper: React.FC<Props> = ({ children }) => {
                         {children}
                     </main>
                     <Footer />
-                    {/* <LiveChatButton /> */}
+                    <LiveChatButton />
                 </div>
             )}
 
             {!md && !isAuthPage && <MobileBottomMenu />}
+
+            {/* Rocket.Chat Livechat Script */}
+            {/* <Script id='rocketchat-livechat' strategy='afterInteractive'>
+                {`
+                    (function(w, d, s, u) {
+                        w.RocketChat = function(c) { w.RocketChat._.push(c) }; 
+                        w.RocketChat._ = []; 
+                        w.RocketChat.url = u;
+                        var h = d.getElementsByTagName(s)[0], j = d.createElement(s);
+                        j.async = true; 
+                        j.src = 'https://assistcentral.net/livechat/rocketchat-livechat.min.js?_=201903270000';
+                        h.parentNode.insertBefore(j, h);
+                    })(window, document, 'script', 'https://assistcentral.net/livechat');
+                `}
+            </Script> */}
         </>
     );
 };

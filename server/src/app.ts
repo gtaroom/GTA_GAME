@@ -5,24 +5,24 @@
  */
 
 // Import required dependencies
-import compression from 'compression';          // For response compression
-import cookieParser from "cookie-parser";      // For parsing cookies
-import cors from "cors";                       // For handling Cross-Origin Resource Sharing
-import dotenv from "dotenv";                   // For environment variable management
-import express from "express";                 // Web framework
-import session from "express-session";         // For session management
-import helmet from 'helmet';                   // Security headers middleware
-import morgan from "morgan";                   // HTTP request logger
-import path from "path";                       // Path manipulation utilities
+import compression from "compression"; // For response compression
+import cookieParser from "cookie-parser"; // For parsing cookies
+import cors from "cors"; // For handling Cross-Origin Resource Sharing
+import dotenv from "dotenv"; // For environment variable management
+import express from "express"; // Web framework
+import session from "express-session"; // For session management
+import helmet from "helmet"; // Security headers middleware
+import morgan from "morgan"; // HTTP request logger
+import path from "path"; // Path manipulation utilities
 
 // Import custom configurations and utilities
-import passport from "./config/passport";      // Authentication configuration
-import { errorHandler } from "./middlewares/error-handler";  // Global error handling
-import router from "./routes";                 // Main application routes
-import "./services/bonusCron";                 // Cron service for bonus points management
-import { ApiResponse } from "./utils/api-response";  // Standardized API response format
-import { initializePaymentGateways } from "./services/payment/init";  // Payment gateway setup
-import { logger } from "./utils/logger";       // Custom logging utility
+import passport from "./config/passport"; // Authentication configuration
+import { errorHandler } from "./middlewares/error-handler"; // Global error handling
+import router from "./routes"; // Main application routes
+import "./services/bonusCron"; // Cron service for bonus points management
+import { ApiResponse } from "./utils/api-response"; // Standardized API response format
+import { initializePaymentGateways } from "./services/payment/init"; // Payment gateway setup
+import { logger } from "./utils/logger"; // Custom logging utility
 
 // Load environment variables
 dotenv.config();
@@ -31,7 +31,7 @@ dotenv.config();
 const app = express();
 
 // Trust proxy configuration - Important when running behind a reverse proxy (e.g., Nginx)
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 /**
  * Custom Request Logging Middleware
@@ -43,13 +43,14 @@ app.set('trust proxy', 1);
  * - Origin
  */
 app.use((req, res, next) => {
-  const clientIp = req.headers['x-forwarded-for'] || req.ip || req.socket.remoteAddress;
-  logger.info('Incoming Request', {
+  const clientIp =
+    req.headers["x-forwarded-for"] || req.ip || req.socket.remoteAddress;
+  logger.info("Incoming Request", {
     method: req.method,
     path: req.path,
     ip: clientIp,
-    userAgent: req.headers['user-agent'],
-    origin: req.headers.origin
+    userAgent: req.headers["user-agent"],
+    origin: req.headers.origin,
   });
   next();
 });
@@ -58,11 +59,11 @@ app.use((req, res, next) => {
 initializePaymentGateways();
 
 // Basic middleware setup
-app.use(express.json());                       // Parse JSON request bodies
+app.use(express.json()); // Parse JSON request bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bodies
-app.use(morgan("common"));                     // HTTP request logging
+app.use(morgan("common")); // HTTP request logging
 app.use("/public", express.static(path.join(__dirname, "../public"))); // Serve static files
-app.use(cookieParser());                       // Parse cookies
+app.use(cookieParser()); // Parse cookies
 
 /**
  * Session Configuration
@@ -84,14 +85,16 @@ const sessionConfig = {
  * - Specific HTTP methods allowed
  * - Credentials support for authenticated requests
  */
-const allowedOrigins = process.env.ORIGINS?.split(',') || []; 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow all origins dynamically
-    callback(null, origin);
-  },
-  credentials: true
-}));
+const allowedOrigins = process.env.ORIGINS?.split(",") || [];
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow all origins dynamically
+      callback(null, origin);
+    },
+    credentials: true,
+  })
+);
 // app.use(
 //   cors(
 //     {
@@ -114,13 +117,13 @@ app.use(cors({
 // );
 
 // Authentication and Session Middleware
-app.use(session(sessionConfig));              // Initialize session handling
-app.use(passport.initialize());               // Initialize Passport authentication
-app.use(passport.session());                  // Enable persistent login sessions
+app.use(session(sessionConfig)); // Initialize session handling
+app.use(passport.initialize()); // Initialize Passport authentication
+app.use(passport.session()); // Enable persistent login sessions
 
 // Security and Performance Middleware
-app.use(helmet());                            // Set security-related HTTP headers
-app.use(compression());                       // Compress response bodies
+app.use(helmet()); // Set security-related HTTP headers
+app.use(compression()); // Compress response bodies
 
 /**
  * Root Route Handler

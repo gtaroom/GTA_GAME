@@ -1,14 +1,16 @@
-import { Link } from 'next-transition-router';
+import { useWalletBalance } from '@/contexts/wallet-balance-context';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
+import { Link } from 'next-transition-router';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import type {
+    GameAccountStatusResponse,
+    GameModalStepProps,
+} from '../../types/game-account.types';
 import NeonIcon from '../neon/neon-icon';
 import NeonText from '../neon/neon-text';
 import { Button } from '../ui/button';
-import NeonBox from '../neon/neon-box';
 import GameModalTitle from './game-modal-title';
-import type { GameModalStepProps, GameAccountStatusResponse } from '../../types/game-account.types';
-import { useWalletBalance } from '@/contexts/wallet-balance-context';
-import { useRouter } from 'next/navigation';
 
 interface AccountSelectionStepProps extends GameModalStepProps {
     accountStatus?: GameAccountStatusResponse['data'] | null;
@@ -19,10 +21,11 @@ export default function AccountSelectionStep({
     onSelect,
     accountStatus,
 }: AccountSelectionStepProps) {
-    const { balance: userBalance, loading: balanceLoading } = useWalletBalance();
+    const { balance: userBalance, loading: balanceLoading } =
+        useWalletBalance();
     const { xs } = useBreakPoint();
     const router = useRouter();
-    
+
     // Balance validation constants
     const MIN_BALANCE_REQUIRED = 500;
     const hasEnoughBalance = userBalance >= MIN_BALANCE_REQUIRED;
@@ -53,7 +56,7 @@ export default function AccountSelectionStep({
             <GameModalTitle
                 title={game.name}
                 description={
-                    hasAccount 
+                    hasAccount
                         ? `Welcome back! You already have an account for ${game.name}.`
                         : `To play ${game.name}, you need to store or create a game account.`
                 }
@@ -64,7 +67,9 @@ export default function AccountSelectionStep({
                     glowColor='--color-blue-500'
                     className='text-base font-bold mb-5 uppercase'
                 >
-                    {hasAccount ? 'Your account is ready!' : 'Choose one of the options below'}
+                    {hasAccount
+                        ? 'Your account is ready!'
+                        : 'Choose one of the options below'}
                 </NeonText>
 
                 {hasAccount ? (
@@ -77,7 +82,10 @@ export default function AccountSelectionStep({
                         </NeonText>
                         {accountStatus?.accountDetails && (
                             <div className='text-sm opacity-80 mb-4'>
-                                Username: <span className='font-semibold'>{accountStatus.accountDetails.username}</span>
+                                Username:{' '}
+                                <span className='font-semibold'>
+                                    {accountStatus.accountDetails.username}
+                                </span>
                             </div>
                         )}
                         <Button
@@ -109,7 +117,8 @@ export default function AccountSelectionStep({
                             ⏳ Account Request Pending
                         </NeonText>
                         <p className='text-sm opacity-80 mb-4'>
-                            Your account request is being processed. You'll be notified when it's ready.
+                            Your account request is being processed. You'll be
+                            notified when it's ready.
                         </p>
                     </div>
                 ) : (
@@ -133,13 +142,25 @@ export default function AccountSelectionStep({
                                     }
                                 }}
                                 disabled={option.disabled && option.value !== 2}
-                                glowColor={option.disabled && option.value === 2 ? '--color-yellow-500' : option.color}
-                                backgroundColor={option.disabled && option.value === 2 ? '--color-yellow-500' : option.color}
+                                glowColor={
+                                    option.disabled && option.value === 2
+                                        ? '--color-yellow-500'
+                                        : option.color
+                                }
+                                backgroundColor={
+                                    option.disabled && option.value === 2
+                                        ? '--color-yellow-500'
+                                        : option.color
+                                }
                                 backgroundOpacity={0.2}
                                 glowSpread={0.6}
                             >
                                 <NeonIcon
-                                    icon={option.disabled ? 'lucide:lock' : option.icon}
+                                    icon={
+                                        option.disabled
+                                            ? 'lucide:lock'
+                                            : option.icon
+                                    }
                                     glowColor={option.color}
                                     size={xs ? 32 : 22}
                                 />
@@ -150,13 +171,19 @@ export default function AccountSelectionStep({
                                 >
                                     {option.disabled && option.value === 2 ? (
                                         <>
-                                            <span>Insufficient Balance</span>
+                                            <span>Need an Account</span>
                                             <Link
                                                 href='/buy-coins'
-                                                onClick={(e) => e.stopPropagation()}
+                                                onClick={e =>
+                                                    e.stopPropagation()
+                                                }
                                                 className='inline-flex items-center gap-1 bg-yellow-400 text-black px-2 py-[2px] rounded-md text-[0.75em] font-extrabold shadow hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400'
                                             >
-                                                <NeonIcon icon='lucide:coins' size={14} glowColor='--color-yellow-500' />
+                                                <NeonIcon
+                                                    icon='lucide:coins'
+                                                    size={14}
+                                                    glowColor='--color-yellow-500'
+                                                />
                                                 Buy Coins
                                             </Link>
                                         </>
@@ -178,22 +205,24 @@ export default function AccountSelectionStep({
                     />
                     <div className='flex-1'>
                         <NeonText
-                            glowColor={hasEnoughBalance ? '--color-yellow-500' : '--color-red-500'}
+                            glowColor={
+                                hasEnoughBalance
+                                    ? '--color-yellow-500'
+                                    : '--color-red-500'
+                            }
                             glowSpread={0.2}
                             className='text-base font-bold text-white capitalize leading-[1.3]'
                         >
-                            {balanceLoading ? (
-                                'Loading balance...'
-                            ) : hasEnoughBalance ? (
-                                `You have ${userBalance.toLocaleString()}+ Gold Coins, so you're eligible to create a game account.`
-                            ) : (
-                                `You need ${MIN_BALANCE_REQUIRED - userBalance} more Gold Coins to create a game account.`
-                            )}
+                            {balanceLoading
+                                ? 'Loading balance...'
+                                : hasEnoughBalance
+                                  ? `You have ${userBalance.toLocaleString()}+ Gold Coins, so you're eligible to create a game account.`
+                                  : `You need ${MIN_BALANCE_REQUIRED - userBalance} more Gold Coins to create a game account.`}
                         </NeonText>
                         {!hasEnoughBalance && (
                             <div className='mt-2'>
-                                <Link 
-                                    href='/buy-coins' 
+                                <Link
+                                    href='/buy-coins'
                                     className='text-blue-400 hover:text-blue-300 underline text-sm font-semibold'
                                 >
                                     Buy Gold Coins →

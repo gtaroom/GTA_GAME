@@ -4,10 +4,12 @@ import NeonIcon from '@/components/neon/neon-icon';
 import NeonText from '@/components/neon/neon-text';
 import { Button } from '@/components/ui/button';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
+import { useTransitionRouter } from '@/rootnode_modules/next-transition-router/dist';
 import Image from 'next/image';
 
 export default function ChooseGameTypes() {
     const { lg, md } = useBreakPoint();
+    const router = useTransitionRouter();
     const gameCategories = [
         {
             key: 'bonus',
@@ -20,7 +22,7 @@ export default function ChooseGameTypes() {
             ],
             button: {
                 text: 'Explore Bonus Games',
-                href: '/game-listing',
+                href: '/game-listing?tab=bonus',
             },
             color: '--color-orange-500',
         },
@@ -38,7 +40,7 @@ export default function ChooseGameTypes() {
             ],
             button: {
                 text: 'Explore Exclusive Games',
-                href: '/game-listing',
+                href: '/game-listing?tab=exclusive',
             },
             color: '--color-purple-500',
         },
@@ -56,7 +58,7 @@ export default function ChooseGameTypes() {
             ],
             button: {
                 text: 'Explore Signature Games',
-                href: '/game-listing',
+                href: '/game-listing?tab=signature',
             },
             color: '--color-cyan-500',
         },
@@ -135,6 +137,7 @@ export default function ChooseGameTypes() {
                             </ul>
 
                             <Button
+                                onClick={() => router.push(category.button.href)}
                                 className='mt-auto w-full md:w-auto'
                                 size={md ? 'lg' : 'md'}
                             >

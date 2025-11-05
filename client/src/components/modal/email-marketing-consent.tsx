@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import NeonBox from '@/components/neon/neon-box';
+import NeonIcon from '@/components/neon/neon-icon';
+import NeonText from '@/components/neon/neon-text';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import NeonText from '@/components/neon/neon-text';
-import NeonIcon from '@/components/neon/neon-icon';
-import NeonBox from '@/components/neon/neon-box';
-import { updateProfile } from '@/lib/api/auth';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/auth-context';
+import { updateProfile } from '@/lib/api/auth';
+import { useState } from 'react';
 
 interface EmailMarketingConsentProps {
     open: boolean;
@@ -29,7 +29,7 @@ export default function EmailMarketingConsent({
         setError('');
 
         try {
-            const response = await updateProfile({ isOpted: agreed }) as any;
+            const response = (await updateProfile({ isOpted: agreed })) as any;
 
             if (response.success) {
                 // Refresh user data
@@ -70,7 +70,8 @@ export default function EmailMarketingConsent({
                     </DialogTitle>
 
                     <p className='font-bold text-base leading-7.5 mb-5'>
-                        Get exclusive promotions, bonuses, and updates delivered to your inbox
+                        Get exclusive promotions, bonuses, and updates delivered
+                        to your inbox
                     </p>
 
                     <NeonBox
@@ -93,7 +94,8 @@ export default function EmailMarketingConsent({
                                         Exclusive Bonuses
                                     </NeonText>
                                     <p className='text-xs text-white/70'>
-                                        Get special bonus codes and promotional offers sent directly to you
+                                        Get special bonus codes and promotional
+                                        offers sent directly to you
                                     </p>
                                 </div>
                             </div>
@@ -109,7 +111,8 @@ export default function EmailMarketingConsent({
                                         New Game Alerts
                                     </NeonText>
                                     <p className='text-xs text-white/70'>
-                                        Be the first to know when new games and features launch
+                                        Be the first to know when new games and
+                                        features launch
                                     </p>
                                 </div>
                             </div>
@@ -125,7 +128,8 @@ export default function EmailMarketingConsent({
                                         VIP Promotions
                                     </NeonText>
                                     <p className='text-xs text-white/70'>
-                                        Receive special offers based on your VIP tier
+                                        Receive special offers based on your VIP
+                                        tier
                                     </p>
                                 </div>
                             </div>
@@ -141,7 +145,8 @@ export default function EmailMarketingConsent({
                                         Weekly Newsletter
                                     </NeonText>
                                     <p className='text-xs text-white/70'>
-                                        Max 1-2 emails per week - never spam, always value
+                                        Max 1-2 emails per week - never spam,
+                                        always value
                                     </p>
                                 </div>
                             </div>
@@ -202,11 +207,11 @@ export default function EmailMarketingConsent({
                     </div>
 
                     <p className='text-xs text-white/50 mt-4'>
-                        You can change this preference anytime in your account settings
+                        You can change this preference anytime in your account
+                        settings
                     </p>
                 </div>
             </DialogContent>
         </Dialog>
     );
 }
-
