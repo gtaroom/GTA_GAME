@@ -8,7 +8,7 @@ import type { DepositRequest, DepositResponse } from '@/types/wallet.types';
 
 export interface PaymentService {
     createPayment: (request: DepositRequest) => Promise<DepositResponse>;
-    redirectToPayment: (invoiceUrl: string) => void;
+    redirectToPayment: (invoiceUrl: string) => Promise<void>;
 }
 
 class PaymentServiceImpl implements PaymentService {
@@ -22,8 +22,14 @@ class PaymentServiceImpl implements PaymentService {
         }
     }
 
-    redirectToPayment(invoiceUrl: string): void {
-        window.location.href = invoiceUrl;
+    redirectToPayment(invoiceUrl: string): Promise<void> {
+        return new Promise((resolve) => {
+            // Small delay to ensure UI updates are visible
+            setTimeout(() => {
+                window.location.href = invoiceUrl;
+                resolve();
+            }, 500);
+        });
     }
 }
 

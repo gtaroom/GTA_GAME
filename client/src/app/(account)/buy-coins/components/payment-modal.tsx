@@ -109,6 +109,7 @@ export default function PaymentModal({ isOpen, onClose, selectedPackage }: Payme
     const {
         selectedPaymentMethod,
         isProcessing,
+        isRedirecting,
         error,
         selectPaymentMethod,
         processPayment,
@@ -141,11 +142,68 @@ export default function PaymentModal({ isOpen, onClose, selectedPackage }: Payme
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent
-                className='lg:max-w-[900px]! max-w-[calc(100%-20px)]! max-h-[90vh] overflow-y-auto'
-                neonBoxClass='max-sm:p-4! max-md:px-2!'
-            >
+        <>
+            {/* Full-Screen Redirecting Overlay */}
+            {isRedirecting && (
+                <div className='fixed inset-0 bg-gray-950/95 backdrop-blur-sm flex items-center justify-center z-[9999]'>
+                    <div className='text-center space-y-8 px-4 max-w-md mx-auto'>
+                        {/* Animated Loading Spinner */}
+                        <div className='relative w-32 h-32 mx-auto'>
+                            <div className='absolute inset-0 border-4 border-blue-500/20 rounded-full'></div>
+                            <div className='absolute inset-0 border-4 border-transparent border-t-blue-500 rounded-full animate-spin'></div>
+                            <div className='absolute inset-0 flex items-center justify-center'>
+                                <NeonIcon
+                                    icon='lucide:arrow-right'
+                                    size={48}
+                                    glowColor='--color-blue-500'
+                                    glowSpread={1.5}
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className='space-y-3'>
+                            <NeonText
+                                as='h2'
+                                className='text-3xl font-bold'
+                                glowColor='--color-blue-500'
+                                glowSpread={0.8}
+                            >
+                                Redirecting to Payment Gateway
+                            </NeonText>
+                            <p className='text-gray-400 text-lg'>
+                                Please wait while we redirect you to complete your payment...
+                            </p>
+                        </div>
+
+                        {/* Loading Progress Bar */}
+                        <div className='w-full max-w-xs h-2 bg-gray-800 rounded-full overflow-hidden mx-auto'>
+                            <div className='h-full bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 animate-pulse bg-[length:200%_100%]'></div>
+                        </div>
+
+                        {/* Loading Indicator */}
+                        <div className='flex items-center justify-center gap-2 text-blue-400'>
+                            <div 
+                                className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
+                                style={{ animationDelay: '0ms' }}
+                            ></div>
+                            <div 
+                                className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
+                                style={{ animationDelay: '150ms' }}
+                            ></div>
+                            <div 
+                                className='w-2 h-2 bg-blue-500 rounded-full animate-bounce'
+                                style={{ animationDelay: '300ms' }}
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <Dialog open={isOpen} onOpenChange={handleClose}>
+                <DialogContent
+                    className='lg:max-w-[900px]! max-w-[calc(100%-20px)]! max-h-[90vh] overflow-y-auto'
+                    neonBoxClass='max-sm:p-4! max-md:px-2!'
+                >
                 <DialogTitle asChild>
                     <NeonText
                         as='h4'
@@ -234,7 +292,7 @@ export default function PaymentModal({ isOpen, onClose, selectedPackage }: Payme
                         variant='secondary'
                         size={xl ? 'lg' : sm ? 'md' : 'sm'}
                         onClick={handleProceedToPayment}
-                        disabled={!selectedPaymentMethod || isProcessing}
+                        disabled={!selectedPaymentMethod || isProcessing || isRedirecting}
                         className='w-full max-w-xs'
                     >
                         {isProcessing ? (
@@ -256,5 +314,6 @@ export default function PaymentModal({ isOpen, onClose, selectedPackage }: Payme
                 selectedPackage={selectedPackage}
             />
         </Dialog>
+        </>
     );
 }
