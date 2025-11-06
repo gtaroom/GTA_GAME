@@ -58,6 +58,7 @@ export interface TransactionalMessageData {
     | "subscription"
     | "welcome"
     | "deposit"
+    | "game-account-request"
     | "withdrawal";
   amount?: number;
   currency?: string;
@@ -331,6 +332,13 @@ class TwilioService {
           message += `\nAmount: ${data.currency}${data.amount}`;
         }
         break;
+      // ADD THIS NEW CASE:
+      case "game-account-request":
+        message += `🎮 Game Account Request Received`;
+        if (data.details) {
+          message += `\n${data.details}`;
+        }
+        break;
       default:
         message += `📋 Transaction Update`;
     }
@@ -343,7 +351,7 @@ class TwilioService {
       message += `\nID: ${data.transactionId}`;
     }
 
-    if (data.details) {
+    if (data.details && data.transactionType !== "game-account-request") {
       message += `\n\n${data.details}`;
     }
 

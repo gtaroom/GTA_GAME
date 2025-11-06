@@ -40,7 +40,7 @@ export default function InviteFriendsBanner({
                             height={800}
                             width={800}
                             className='w-full h-full object-cover'
-                            alt='Refer friend'
+                            alt='Refer A friend'
                         />
                     </div>
                     <div className=" bg-cover bg-center bg-no-repeat h-full place-items-center grid shadow-[inset_0px_0px_100px_60px_rgba(49,10,71,1)] bg-[url('/refer-friend/banner-bg.jpg')]">
@@ -62,7 +62,7 @@ export default function InviteFriendsBanner({
                             </div>
                             <ButtonGroup className='gap-5'>
                                 <Button size={lg ? 'lg' : 'md'}>
-                                    Open Or Code
+                                    Open QR Code
                                 </Button>
                                 <Button
                                     size={lg ? 'lg' : 'md'}

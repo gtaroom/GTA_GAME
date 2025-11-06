@@ -248,7 +248,15 @@ export default function BottomNavigation() {
             icon: 'lucide:shopping-cart',
             label: 'Buy Coins',
             type: 'link',
-            showUserLoggedIn: false,
+            showUserLoggedIn: 'both',
+        },
+
+        {
+            href: '/',
+            icon: 'ic:round-home',
+            label: 'Home',
+            type: 'link',
+            showUserLoggedIn: 'both',
         },
         {
             href: '/redeem',
@@ -258,20 +266,13 @@ export default function BottomNavigation() {
             showUserLoggedIn: true,
         },
         {
-            href: '/',
-            icon: 'ic:round-home',
-            label: 'Home',
-            type: 'link',
-            showUserLoggedIn: 'both',
-        },
-        {
-            icon: 'lucide:earth',
+            icon: 'lucide:users',
             label: 'Community',
             type: 'button',
             onClick: handleSupportClick,
-            showUserLoggedIn: 'both',
+            showUserLoggedIn: false,
         },
-        {
+        {   
             href: '/buy-redeem',
             icon: 'lucide:wallet',
             label: 'Wallet',

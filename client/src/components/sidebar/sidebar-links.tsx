@@ -13,6 +13,11 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useUI } from '@/contexts/ui-context';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
 import { cn } from '@/lib/utils';
@@ -211,68 +216,136 @@ export default function SidebarLinks({ links, className, onNavigate }: Props) {
                     </div>
                 );
 
+                const wrappedContent = (() => {
+                    if (hasChildren && !sidebarOpen) {
+                        // Collapsed sidebar with children: Show Popover with Tooltip
+                        return (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div>
+                                        <Popover 
+                                            open={openPopovers[key] || false}
+                                            onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [key]: open }))}
+                                        >
+                                            <PopoverTrigger asChild>
+                                                <div>{mainContent}</div>
+                                            </PopoverTrigger>
+                                            <PopoverContent
+                                                side='right'
+                                                sideOffset={38}
+                                                className='w-54 bg-background border-white/30'
+                                            >
+                                                {link.subLinks!.map(sub => {
+                                                    const subKey =
+                                                        sub.id ?? `${key}-${sub.title}`;
+                                                    const active = isActive(
+                                                        pathname,
+                                                        sub.href,
+                                                        isLoggedIn
+                                                    );
+                                                    return (
+                                                        <Link
+                                                            key={subKey}
+                                                            href={getSmartHref(sub.href)}
+                                                            onClick={() => {
+                                                                setOpenPopovers(prev => ({ ...prev, [key]: false }));
+                                                                onNavigate?.();
+                                                            }}
+                                                            className={cn(
+                                                                'flex items-center gap-3 text-base font-bold transition-colors duration-200 hover:bg-white/10 px-3 py-2 rounded-sm',
+                                                                active && 'bg-white/20'
+                                                            )}
+                                                        >
+                                                            <MemoIcon
+                                                                icon={sub.icon}
+                                                                color={getColor(
+                                                                    sub.color ??
+                                                                        undefined
+                                                                )}
+                                                            />
+                                                            <span>{sub.title}</span>
+                                                        </Link>
+                                                    );
+                                                })}
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent 
+                                    side='right'
+                                    sideOffset={12}
+                                    glowColor={glow}
+                                    backgroundColor={bg}
+                                    backgroundOpacity={0.95}
+                                    intensity={2}
+                                    glowSpread={4}
+                                    glowLayers={3}
+                                    borderColor={glow}
+                                    borderWidth={1}
+                                    className='border-0 px-4 py-2.5 backdrop-blur-2xl'
+                                >
+                                    <p className='font-bold text-sm text-white tracking-wide'>
+                                        {link.title}
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        );
+                    }
+                    
+                    if (link.href && !hasChildren) {
+                        // Simple link (with or without sidebar open)
+                        const linkContent = (
+                            <Link href={getSmartHref(link.href)} onClick={onNavigate}>
+                                {mainContent}
+                            </Link>
+                        );
+                        
+                        // Add tooltip when sidebar is collapsed
+                        if (!sidebarOpen) {
+                            return (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        {linkContent}
+                                    </TooltipTrigger>
+                                    <TooltipContent 
+                                        side='right'
+                                        sideOffset={12}
+                                        glowColor={glow}
+                                        backgroundColor={bg}
+                                        backgroundOpacity={0.95}
+                                        intensity={2}
+                                        glowSpread={4}
+                                        glowLayers={3}
+                                        borderColor={glow}
+                                        borderWidth={1}
+                                        className='border-0 px-4 py-2.5 backdrop-blur-2xl'
+                                    >
+                                        <p className='font-bold text-sm text-white tracking-wide'>
+                                            {link.title}
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            );
+                        }
+                        
+                        return linkContent;
+                    }
+                    
+                    // Expanded sidebar with children (accordion view)
+                    return (
+                        <>
+                            {mainContent}
+                            {hasChildren &&
+                                sidebarOpen &&
+                                renderSublinks(key, link.subLinks!)}
+                        </>
+                    );
+                })();
+
                 return (
                     <div key={key} className='w-full'>
                         <NeonWrapper active={active} glow={glow} bg={bg}>
-                            {hasChildren && !sidebarOpen ? (
-                                <Popover 
-                                    open={openPopovers[key] || false}
-                                    onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [key]: open }))}
-                                >
-                                    <PopoverTrigger asChild>
-                                        <div>{mainContent}</div>
-                                    </PopoverTrigger>
-                                    <PopoverContent
-                                        side='right'
-                                        sideOffset={38}
-                                        className='w-54 bg-background border-white/30'
-                                    >
-                                        {link.subLinks!.map(sub => {
-                                            const subKey =
-                                                sub.id ?? `${key}-${sub.title}`;
-                                            const active = isActive(
-                                                pathname,
-                                                sub.href,
-                                                isLoggedIn
-                                            );
-                                            return (
-                                                <Link
-                                                    key={subKey}
-                                                    href={getSmartHref(sub.href)}
-                                                    onClick={() => {
-                                                        setOpenPopovers(prev => ({ ...prev, [key]: false }));
-                                                        onNavigate?.();
-                                                    }}
-                                                    className={cn(
-                                                        'flex items-center gap-3 text-base font-bold transition-colors duration-200 hover:bg-white/10 px-3 py-2 rounded-sm',
-                                                        active && 'bg-white/20'
-                                                    )}
-                                                >
-                                                    <MemoIcon
-                                                        icon={sub.icon}
-                                                        color={getColor(
-                                                            sub.color ??
-                                                                undefined
-                                                        )}
-                                                    />
-                                                    <span>{sub.title}</span>
-                                                </Link>
-                                            );
-                                        })}
-                                    </PopoverContent>
-                                </Popover>
-                            ) : link.href && !hasChildren ? (
-                                <Link href={getSmartHref(link.href)} onClick={onNavigate}>
-                                    {mainContent}
-                                </Link>
-                            ) : (
-                                <>
-                                    {mainContent}
-                                    {hasChildren &&
-                                        sidebarOpen &&
-                                        renderSublinks(key, link.subLinks!)}
-                                </>
-                            )}
+                            {wrappedContent}
                         </NeonWrapper>
                     </div>
                 );

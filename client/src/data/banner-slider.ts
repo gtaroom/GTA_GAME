@@ -32,7 +32,7 @@ export const bannerSliderData: BannerSliderDataProps[] = [
         title: 'Invite Friends, Unlock Rewards',
         description: 'Get bonus spins for every friend who joins.',
         button: {
-            text: 'Refer Now',
+            text: 'Refer A Friend',
             href: '/refer-friend',
         },
         images: {

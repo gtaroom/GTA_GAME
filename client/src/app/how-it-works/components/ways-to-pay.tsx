@@ -3,6 +3,11 @@ import NeonBox from '@/components/neon/neon-box';
 import NeonIcon from '@/components/neon/neon-icon';
 import NeonText from '@/components/neon/neon-text';
 import { Button } from '@/components/ui/button';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -42,6 +47,8 @@ export default function WaysToPay() {
             button: {
                 title: 'How I Earn Gold Coins',
                 href: '#',
+                type: 'primary',
+                tooltip: 'Learn how to collect and use Gold Coins for fun and exclusive gameplay.',
             },
             color: '--color-yellow-500',
         },
@@ -60,6 +67,8 @@ export default function WaysToPay() {
             button: {
                 title: 'How I Earn Sweeps Coins',
                 href: '#',
+                type: 'secondary',
+                tooltip: 'Find out how to earn Sweeps Coins for a chance to redeem rewards.',
             },
             color: '--color-green-500',
         },
@@ -140,12 +149,36 @@ export default function WaysToPay() {
                                 ))}
                             </ul>
                             {ways.extras && ways.extras(ways.color)}
-                            <Button
-                                className='mt-auto w-full md:w-auto'
-                                size={md ? 'lg' : 'md'}
-                            >
-                                {ways.button.title}
-                            </Button>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        className='mt-auto w-full md:w-auto'
+                                        size={md ? 'lg' : 'md'}
+                                        variant={ways.button.type as 'primary' | 'secondary' | 'neon'}
+                                    >
+                                        {ways.button.title}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent 
+                                    side='top'
+                                    sideOffset={8}
+                                    className='border-0 px-4 py-3 backdrop-blur-2xl max-w-[280px]'
+                                    style={{
+                                        backgroundColor: `var(${ways.color})`,
+                                        opacity: 0.95,
+                                        boxShadow: `
+                                            0 0 ${2 * 4}px var(${ways.color}),
+                                            0 0 ${2 * 2 * 4}px var(${ways.color}),
+                                            0 0 ${2 * 3 * 4}px var(${ways.color})
+                                        `,
+                                        border: `1px solid var(${ways.color})`,
+                                    }}
+                                >
+                                    <p className='font-bold text-sm text-white tracking-wide text-center'>
+                                        {ways.button.tooltip}
+                                    </p>
+                                </PopoverContent>
+                            </Popover>
                         </NeonBox>
                     ))}
                 </div>

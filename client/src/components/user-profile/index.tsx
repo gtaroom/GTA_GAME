@@ -9,21 +9,21 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useAuth } from '@/contexts/auth-context';
 import { useVip } from '@/contexts/vip-context';
-import { getTierImage, getTierColor, getTierDisplayName } from '@/lib/vip-utils';
+import { useWalletBalance } from '@/contexts/wallet-balance-context';
+import { profileDropdownLinks } from '@/data/links';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
+import { logout as logoutApi } from '@/lib/api/auth';
 import { cn } from '@/lib/utils';
+import { getTierColor, getTierImage } from '@/lib/vip-utils';
 import { Link, useTransitionRouter } from 'next-transition-router';
 import Image from 'next/image';
 import { useState } from 'react';
-import { logout as logoutApi } from '@/lib/api/auth';
 import NeonBox from '../neon/neon-box';
 import NeonIcon from '../neon/neon-icon';
 import NeonText from '../neon/neon-text';
 import { Button } from '../ui/button';
-import { useAuth } from '@/contexts/auth-context';
-import { useWalletBalance } from '@/contexts/wallet-balance-context';
-import { profileDropdownLinks } from '@/data/links';
 
 const UserProfile = () => {
     const { lg, sm, xs } = useBreakPoint();
@@ -58,41 +58,45 @@ const UserProfile = () => {
 
     // Get user avatar URL
     const getUserAvatar = () => {
-        if (user?.avatar?.url) return `${process.env.NEXT_PUBLIC_IMAGE_URL}/public${user.avatar.url}`;
+        if (user?.avatar?.url)
+            return `${process.env.NEXT_PUBLIC_IMAGE_URL}/public${user.avatar.url}`;
         return '/account/avatar.jpg'; // Default avatar
     };
 
     const avatarUrl = getUserAvatar();
 
-	// Format numbers with compact K/M/B/T for large values, locale for small values
-	const formatNumber = (num: number) => {
-		if (num === null || num === undefined || Number.isNaN(num)) return '0';
-		const abs = Math.abs(num);
-		const sign = num < 0 ? '-' : '';
+    // Format numbers with compact K/M/B/T for large values, locale for small values
+    const formatNumber = (num: number) => {
+        if (num === null || num === undefined || Number.isNaN(num)) return '0';
+        const abs = Math.abs(num);
+        const sign = num < 0 ? '-' : '';
 
-		// Use compact notation for >= 10,000 (5+ digits only)
-		if (abs >= 10_000) {
-			const units = [
-				{ value: 1_000_000_000_000, symbol: 'T' },
-				{ value: 1_000_000_000, symbol: 'B' },
-				{ value: 1_000_000, symbol: 'M' },
-				{ value: 1_000, symbol: 'K' },
-			];
+        // Use compact notation for >= 10,000 (5+ digits only)
+        if (abs >= 10_000) {
+            const units = [
+                { value: 1_000_000_000_000, symbol: 'T' },
+                { value: 1_000_000_000, symbol: 'B' },
+                { value: 1_000_000, symbol: 'M' },
+                { value: 1_000, symbol: 'K' },
+            ];
 
-			for (const u of units) {
-				if (abs >= u.value) {
-					const raw = abs / u.value;
-					// One decimal for smaller magnitudes (e.g., 1.2K, 9.5M), none for big (e.g., 120K)
-					const withPrecision = raw < 100 ? Number(raw.toFixed(1)) : Math.round(raw);
-					const numPart = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(withPrecision);
-					return `${sign}${numPart}${u.symbol}`;
-				}
-			}
-		}
+            for (const u of units) {
+                if (abs >= u.value) {
+                    const raw = abs / u.value;
+                    // One decimal for smaller magnitudes (e.g., 1.2K, 9.5M), none for big (e.g., 120K)
+                    const withPrecision =
+                        raw < 100 ? Number(raw.toFixed(1)) : Math.round(raw);
+                    const numPart = new Intl.NumberFormat('en-US', {
+                        maximumFractionDigits: 1,
+                    }).format(withPrecision);
+                    return `${sign}${numPart}${u.symbol}`;
+                }
+            }
+        }
 
-		// Fallback: standard locale formatting
-		return new Intl.NumberFormat('en-US').format(num);
-	};
+        // Fallback: standard locale formatting
+        return new Intl.NumberFormat('en-US').format(num);
+    };
 
     // Handle logout with API call
     const handleLogout = async () => {
@@ -100,13 +104,13 @@ const UserProfile = () => {
         setLogoutError(null);
 
         try {
-            const response = await logoutApi() as any;
+            const response = (await logoutApi()) as any;
 
             if (response.success) {
                 // Clear user state
                 setUser(null);
                 setLoggedIn(false);
-                
+
                 // Redirect to home page
                 router.push('/');
             } else {
@@ -114,7 +118,11 @@ const UserProfile = () => {
             }
         } catch (error) {
             console.error('Logout error:', error);
-            setLogoutError(error instanceof Error ? error.message : 'An error occurred during logout');
+            setLogoutError(
+                error instanceof Error
+                    ? error.message
+                    : 'An error occurred during logout'
+            );
         } finally {
             setIsLoggingOut(false);
         }
@@ -130,7 +138,7 @@ const UserProfile = () => {
             },
             color: '--color-yellow-500',
             label: 'Bonus Gold Coins',
-            description: 'Free coins for bonus games'
+            description: 'Free coins for bonus games',
         },
         {
             type: 'gameGC',
@@ -141,7 +149,8 @@ const UserProfile = () => {
             },
             color: '--color-yellow-500',
             label: 'Exclusive Gold Coins',
-            description: 'These coins are exclusively for Signature and Exclusive games'
+            description:
+                'These coins are exclusively for Signature and Exclusive games',
         },
         {
             type: 'sweepCoins',
@@ -152,17 +161,21 @@ const UserProfile = () => {
             },
             color: '--color-green-500',
             label: 'Sweep Coins',
-            description: 'For redemption only'
+            description: 'For redemption only',
         },
         {
             type: 'tier',
-            image: vipStatus ? getTierImage(vipStatus.tier) : '/vip-program/iron.png',
+            image: vipStatus
+                ? getTierImage(vipStatus.tier)
+                : '/vip-program/iron.png',
             display: {
                 neon: true,
                 text: vipStatus ? vipStatus.tierName : 'Standard',
                 color: '--color-white',
             },
-            color: vipStatus ? getTierColor(vipStatus.tier) : '--color-gray-400',
+            color: vipStatus
+                ? getTierColor(vipStatus.tier)
+                : '--color-gray-400',
         },
     ];
 
@@ -179,13 +192,13 @@ const UserProfile = () => {
 
     return (
         <>
-            <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenu
+                open={isDropdownOpen}
+                onOpenChange={setIsDropdownOpen}
+            >
                 <DropdownMenuTrigger asChild>
-                    {xs ? (
-                        <Button size={lg ? 'lg' : sm ? 'md' : 'sm'}>
-                            {displayName}
-                        </Button>
-                    ) : (
+                    {/* {xs ? (
+                        // MOBILE: Show avatar instead of name
                         <NeonBox
                             glowSpread={0.8}
                             backgroundColor='--color-purple-500'
@@ -200,7 +213,23 @@ const UserProfile = () => {
                                 className='h-full w-full object-cover object-center rounded-full'
                             />
                         </NeonBox>
-                    )}
+                    ) : ( */}
+                        {/* // DESKTOP: Show avatar too (or you can keep the button if you prefer) */}
+                        <NeonBox
+                            glowSpread={0.8}
+                            backgroundColor='--color-purple-500'
+                            backgroundOpacity={0.2}
+                            className='p-1 w-[48px] aspect-square rounded-full overflow-hidden backdrop-blur-2xl cursor-pointer'
+                        >
+                            <Image
+                                src={avatarUrl}
+                                width={200}
+                                height={200}
+                                alt='Profile Avatar'
+                                className='h-full w-full object-cover object-center rounded-full'
+                            />
+                        </NeonBox>
+                    {/* )} */}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align='end'
@@ -276,7 +305,9 @@ const UserProfile = () => {
                                                                     icon='lucide:info'
                                                                     size={14}
                                                                     className='opacity-60 hover:opacity-100 transition-opacity'
-                                                                    glowColor={badge.color}
+                                                                    glowColor={
+                                                                        badge.color
+                                                                    }
                                                                 />
                                                             </div>
                                                         </TooltipTrigger>
@@ -286,9 +317,15 @@ const UserProfile = () => {
                                                             className='max-w-[200px]'
                                                         >
                                                             <div className='text-center'>
-                                                                <div className='font-bold text-white mb-1'>{badge.label}</div>
+                                                                <div className='font-bold text-white mb-1'>
+                                                                    {
+                                                                        badge.label
+                                                                    }
+                                                                </div>
                                                                 <div className='text-sm text-white opacity-90'>
-                                                                    {badge.description}
+                                                                    {
+                                                                        badge.description
+                                                                    }
                                                                 </div>
                                                             </div>
                                                         </TooltipContent>
@@ -340,7 +377,7 @@ const UserProfile = () => {
 
                         <div className='px-4 mb-5'>
                             <Seprator className='mt-2 mb-5' />
-                            
+
                             {/* Error message */}
                             {logoutError && (
                                 <div className='mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg'>
