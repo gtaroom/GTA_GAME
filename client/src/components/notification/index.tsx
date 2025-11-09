@@ -63,6 +63,9 @@ function NotificationContent({
             const n = notification as typeof notification & {
                 amount: number;
                 coins: number;
+                metadata?: {
+                    amount?: number;
+                };
             };
             return (
                 <div className='space-y-1'>
@@ -77,7 +80,10 @@ function NotificationContent({
                                 Payment Successful! 🎉
                             </p>
                             <p className='text-xs text-foreground/80 mt-1'>
-                                Your payment of ${n.amount} has been processed.{' '}
+                                Your payment of ${n.amount ||
+                                    (n.metadata?.amount
+                                        ? n.metadata.amount
+                                        : 0)}{' '} has been processed.{' '}
                                 {n.coins} Gold Coins added to your wallet.
                             </p>
                         </div>
@@ -416,24 +422,46 @@ export function Notification({ children }: { children: ReactNode }) {
                                 </div>
                                 <div className='absolute top-0 right-0 flex items-center gap-1'>
                                     {!notification.read && (
-                                        <div className='self-start mt-1'>
-                                            <span className='sr-only'>
-                                                Unread
-                                            </span>
-                                            <Dot />
-                                        </div>
+                                        <>
+                                            <div className='self-start mt-1'>
+                                                <span className='sr-only'>
+                                                    Unread
+                                                </span>
+                                                <Dot />
+                                            </div>
+                                            <button
+                                                onClick={() =>
+                                                    markAsRead(
+                                                        getNotificationId(
+                                                            notification
+                                                        )
+                                                    )
+                                                }
+                                                className='p-1 hover:bg-neutral-600 rounded transition-colors'
+                                                aria-label='Mark as read'
+                                                disabled={isLoading}
+                                                title='Mark as read'
+                                            >
+                                                <NeonIcon
+                                                    icon='lucide:check'
+                                                    size={14}
+                                                />
+                                            </button>
+                                        </>
                                     )}
-                                    <button
+                                    {/* <button
                                         onClick={() =>
                                             dismissNotification(
                                                 getNotificationId(notification)
                                             )
                                         }
                                         className='p-1 hover:bg-neutral-600 rounded transition-colors'
-                                        aria-label='Dismiss notification'
+                                        aria-label='Delete notification'
+                                        disabled={isLoading}
+                                        title='Delete notification'
                                     >
                                         <NeonIcon icon='lucide:x' size={14} />
-                                    </button>
+                                    </button> */}
                                 </div>
                             </div>
                         </div>

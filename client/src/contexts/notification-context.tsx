@@ -2,6 +2,7 @@
 
 import { disconnectSocket, useSocket } from '@/hooks/useSocket';
 import {
+    deleteNotification as deleteNotificationApi,
     deleteReadNotifications as deleteReadApi,
     getNotifications,
     markAllNotificationsAsRead as markAllAsReadApi,
@@ -299,14 +300,39 @@ export function NotificationProvider({
         }
     };
 
-    // Dismiss a notification (client-side only)
-    const dismissNotification = (notificationId: string) => {
+    // Dismiss/Delete a notification
+    const dismissNotification = async (notificationId: string) => {
+        // Find the notification to check if it's unread
+        const notificationToDelete = notifications.find(
+            n => getNotificationId(n) === notificationId
+        );
+        const wasUnread = notificationToDelete ? !notificationToDelete.read : false;
+
+        // Optimistically update UI
         setNotifications(prev =>
             prev.filter(
                 notification =>
                     getNotificationId(notification) !== notificationId
             )
         );
+
+        // Update unread count if the deleted notification was unread
+        if (wasUnread) {
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        }
+
+        try {
+            await deleteNotificationApi(notificationId);
+        } catch (error) {
+            console.error('Failed to delete notification:', error);
+            // Revert on error - restore the notification
+            if (notificationToDelete) {
+                setNotifications(prev => [...prev, notificationToDelete]);
+                if (wasUnread) {
+                    setUnreadCount(prev => prev + 1);
+                }
+            }
+        }
     };
 
     // Clear all read notifications

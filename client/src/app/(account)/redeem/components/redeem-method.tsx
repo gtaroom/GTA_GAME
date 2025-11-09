@@ -43,7 +43,7 @@ export default function RedeemMethod() {
     const ELEMENT_SIZE = xl ? 'lg' : sm ? 'md' : 'sm';
 
     // State management
-    const [gameType, setGameType] = useState<GameType>('signature');
+    const [gameType, setGameType] = useState<GameType>('exclusive');
     const [paymentGateway, setPaymentGateway] = useState<PaymentGateway | null>(null);
     const [exclusiveGames, setExclusiveGames] = useState<Game[]>([]);
     const [selectedGame, setSelectedGame] = useState<string>('');
@@ -170,7 +170,7 @@ export default function RedeemMethod() {
                 {/* Game Type Selection */}
                 <SecBox title='Select Game Type*'>
                     <ButtonGroup className='xl:gap-8 lg:gap-7 gap-6'>
-                        <Button
+                        {/* <Button
                             neon
                             variant='neon'
                             size={ELEMENT_SIZE}
@@ -193,7 +193,7 @@ export default function RedeemMethod() {
                                 glowColor='--color-cyan-500'
                             />
                             Signature Games
-                        </Button>
+                        </Button> */}
                         <Button
                             neon
                             variant='neon'
