@@ -482,7 +482,7 @@ export const rejectWithdrawalRequest = asyncHandler(
               },
               {
                 item: "Amount",
-                description: `${withdrawalRequest.amount} SC (worth: ${withdrawalRequest.amount} USD)`,
+                description: `${withdrawalRequest.amount} SC`,
               },
               {
                 item: "Status",
