@@ -569,7 +569,7 @@ export const approveAccountRequest = asyncHandler(
       <p><strong>Your Account Details:</strong></p>
       <p><strong>Username:</strong> ${generatedUsername}</p>
       <p><strong>Password:</strong> ${generatedPassword}</p>
-      ${accountRequest.requestedAmount ? `<p><strong>Requested Deposit:</strong> $${accountRequest.requestedAmount.toFixed(2)} USD (worth ${(accountRequest.requestedAmount * 100).toFixed(0)} GC) added to your game by our team.</p>` : ""}
+      ${accountRequest.requestedAmount ? `<p><strong>Requested Deposit:</strong> ${(accountRequest.requestedAmount * 100).toFixed(0)} GC) added to your game by our team.</p>` : ""}
       ${adminNotes ? `<p><strong>Note:</strong> ${adminNotes}</p>` : ""}
       <p>You can now log in to your game account and start playing!</p>
       <p><strong>Next Steps:</strong></p>

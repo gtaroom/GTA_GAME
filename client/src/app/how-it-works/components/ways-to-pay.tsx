@@ -17,7 +17,7 @@ export default function WaysToPay() {
     const waysInfo = [
         {
             coin: 'gold-coin',
-            image: '/coins/gold-coin.svg',
+            image: ['/coins/gold-coin.svg', '/coins/bronze-coin.svg'],
             title: 'Gold Coins Mode',
             description:
                 'Choose this mode to enjoy Bonus Games, Exclusive Games, and Signature Games using Gold Coins.',
@@ -54,7 +54,7 @@ export default function WaysToPay() {
         },
         {
             coin: 'sweep-coin',
-            image: '/coins/sweep-coin.svg',
+            image: ['/coins/sweep-coin.svg'],
             title: 'Sweeps Coins Mode',
             description:
                 'Choose this mode to play sweepstakes-style games using SC (Sweeps Coins) for a chance to win redeemable rewards no purchase needed.',
@@ -90,19 +90,24 @@ export default function WaysToPay() {
                             backgroundOpacity={0.2}
                             className='rounded-2xl backdrop-blur-2xl p-[24px] xl:p-[50px] lg:p-[40px] md:p-[30px] flex flex-col items-center'
                         >
-                            <div className='relative mb-6'>
-                                <Image
-                                    src={ways.image}
-                                    alt={ways.coin}
-                                    width={lg ? '80' : '60'}
-                                    height={lg ? '80' : '60'}
-                                />
-                                <div
-                                    className='absolute left-1/2 top-1/2 aspect-square w-[100px] rounded-full transform -translate-x-1/2 -translate-y-1/2 -z-[1] blur-2xl'
-                                    style={{
-                                        backgroundColor: `var(${ways.color})`,
-                                    }}
-                                ></div>
+                            <div className='relative mb-6 flex items-center justify-center gap-4'>
+                            {ways.image.map((image, index) => (
+                                    <div key={index} className='relative mb-6'>
+                                        <Image
+                                            src={image}
+                                            alt={ways.coin}
+                                            width={lg ? '80' : '60'}
+                                            height={lg ? '80' : '60'}
+                                            className='motion-safe:motion-scale-loop-[1.06] motion-safe:motion-duration-2000 motion-safe:motion-ease-linear'
+                                        />
+                                        <div
+                                            className='absolute left-1/2 top-1/2 aspect-square w-[100px] rounded-full transform -translate-x-1/2 -translate-y-1/2 -z-[1] blur-2xl'
+                                            style={{
+                                                backgroundColor: `var(${ways.color})`,
+                                            }}
+                                        ></div>
+                                    </div>
+                                ))}
                             </div>
 
                             <NeonText

@@ -439,7 +439,7 @@ const generateUserNotificationContent = (
         <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
           <h3 style="color: ${BRAND_COLORS.primary}; margin-top: 0;">Transaction Details</h3>
           <p><strong>Game:</strong> ${data.gameName}</p>
-          <p><strong>Amount:</strong> ${data.amount} gold coins (worth: ${data.usdAmount} USD)</p>
+          <p><strong>Amount:</strong> ${data.amount} gold coins</p>
           <p><strong>Game Coins:</strong> ${data.gameCoins} game coins</p>
           <p><strong>Status:</strong> <span class="highlight">Approved</span></p>
           <p><strong>Request ID:</strong> ${data.requestId}</p>
@@ -468,7 +468,7 @@ const generateUserNotificationContent = (
         <div style="background: rgba(255, 107, 107, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
           <h3 style="color: ${BRAND_COLORS.accent}; margin-top: 0;">Transaction Details</h3>
           <p><strong>Game:</strong> ${data.gameName}</p>
-          <p><strong>Amount:</strong> ${data.amount} GC (worth: ${data.usdAmount} USD)</p>
+          <p><strong>Amount:</strong> ${data.amount} GC</p>
           <p><strong>Status:</strong> <span style="color: ${BRAND_COLORS.accent};">Rejected</span></p>
           <p><strong>Reason:</strong> ${data.reason || "Not specified"}</p>
         </div>
