@@ -11,10 +11,12 @@ declare global {
 
 const LiveChatButton = () => {
     const handleClick = () => {
+        console.log('Live Chat Button Clicked');
         // Check if RocketChat is loaded
         if (window.RocketChat && window.RocketChat.livechat) {
             // Show and maximize the widget
             window.RocketChat.livechat.showWidget();
+
             window.RocketChat.livechat.maximizeWidget();
         } else {
             console.error('RocketChat not loaded yet');

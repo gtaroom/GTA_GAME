@@ -56,8 +56,11 @@ const generateAccessAndRefreshTokens = async (userId: string) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { email, name, password, role, phone, acceptSMSMarketing, isOpted } =
     req.body;
-  const existedUser = await User.findOne({ email });
 
+  // Collect all validation errors
+  const validationErrors: string[] = [];
+
+  // Check banned states
   const bannedStates = [
     "Washington",
     "Michigan",
@@ -68,66 +71,80 @@ const registerUser = asyncHandler(async (req, res) => {
   ];
 
   if (req.body.state && bannedStates.includes(req.body.state)) {
-    throw new ApiError(
-      403,
+    validationErrors.push(
       "Sorry, this platform isn't available for your address!"
     );
   }
 
-  // Check for phone number duplication if phone is provided
+  // Check for existing email
+  const existedUser = await User.findOne({ email });
+
+  // Check for existing phone
+  let existingPhoneUser = null;
   if (phone) {
     const formattedPhone = formatPhoneNumber(phone);
     if (formattedPhone) {
-      const existingPhoneUser = await User.findOne({ phone: formattedPhone });
-      if (existingPhoneUser) {
-        throw new ApiError(
-          409,
-          "This phone number is already registered with another account. Please use a different phone number or contact support if you believe this is an error."
-        );
-      }
+      existingPhoneUser = await User.findOne({ phone: formattedPhone });
     }
   }
 
-  if (existedUser) {
-    if (!existedUser.isEmailVerified) {
-      const { password, ...other } = req.body;
-      const updatingUser = await User.findByIdAndUpdate(
-        { _id: existedUser._id },
-        { ...other },
-        { new: true }
+  // Add email error if exists and is verified
+  if (existedUser && existedUser.isEmailVerified) {
+    validationErrors.push(
+      "This email is already registered. Please use a different email or login."
+    );
+  }
+
+  // Add phone error if exists
+  if (existingPhoneUser) {
+    validationErrors.push(
+      "This phone number is already registered with another account. Please use a different phone number."
+    );
+  }
+
+  // If there are validation errors, return them all at once
+  if (validationErrors.length > 0) {
+    throw new ApiError(409, validationErrors.join(" | "), []);
+  }
+
+  // Handle unverified existing user
+  if (existedUser && !existedUser.isEmailVerified) {
+    const { password, ...other } = req.body;
+    const updatingUser = await User.findByIdAndUpdate(
+      { _id: existedUser._id },
+      { ...other },
+      { new: true }
+    );
+
+    const { unHashedToken, hashedToken, tokenExpiry } =
+      updatingUser.generateTemporaryToken();
+    updatingUser.password = password;
+    updatingUser.emailVerificationToken = hashedToken;
+    updatingUser.emailVerificationExpiry = tokenExpiry;
+    await updatingUser.save();
+
+    const user = await User.findById(updatingUser._id).select(
+      "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
+    );
+
+    await sendEmail({
+      email: existedUser.email,
+      subject: "Please verify your email",
+      mailgenContent: emailVerificationMailgenContent(
+        `${user.name.first} ${user.name.middle} ${user.name.last}`,
+        `${req.protocol}://${req.get("host")}/api/v1/user/verify-email/${unHashedToken}?email=${user.email}`
+      ),
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          201,
+          { user: existedUser },
+          "User verification email has been sent to your email."
+        )
       );
-
-      const { unHashedToken, hashedToken, tokenExpiry } =
-        updatingUser.generateTemporaryToken();
-      updatingUser.password = password;
-      updatingUser.emailVerificationToken = hashedToken;
-      updatingUser.emailVerificationExpiry = tokenExpiry;
-      await updatingUser.save();
-
-      const user = await User.findById(updatingUser._id).select(
-        "-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
-      );
-
-      await sendEmail({
-        email: existedUser.email,
-        subject: "Please verify your email",
-        mailgenContent: emailVerificationMailgenContent(
-          `${user.name.first} ${user.name.middle} ${user.name.last}`,
-          `${req.protocol}://${req.get("host")}/api/v1/user/verify-email/${unHashedToken}?email=${user.email}`
-        ),
-      });
-
-      return res
-        .status(200)
-        .json(
-          new ApiResponse(
-            201,
-            { user: existedUser },
-            "User verification email has been sent to your email."
-          )
-        );
-    }
-    throw new ApiError(409, "User with email already exists", []);
   }
 
   let user;
@@ -149,10 +166,14 @@ const registerUser = asyncHandler(async (req, res) => {
       if (field === "phone") {
         throw new ApiError(
           409,
-          "This phone number is already registered with another account. Please use a different phone number or contact support if you believe this is an error."
+          "This phone number is already registered with another account. Please use a different phone number."
         );
       } else if (field === "email") {
-        throw new ApiError(409, "User with email already exists", []);
+        throw new ApiError(
+          409,
+          "This email is already registered. Please use a different email.",
+          []
+        );
       } else {
         throw new ApiError(
           409,
@@ -160,7 +181,6 @@ const registerUser = asyncHandler(async (req, res) => {
         );
       }
     }
-    // Re-throw other errors
     throw error;
   }
 
@@ -203,7 +223,6 @@ const registerUser = asyncHandler(async (req, res) => {
       }
     } catch (error) {
       logger.error("Error sending registration SMS OTP:", error);
-      // Don't fail registration if SMS fails
     }
   }
 
@@ -222,7 +241,6 @@ const registerUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    // Remove domain property to prevent cookie sharing between main domain and subdomains
   };
 
   return res
@@ -935,18 +953,18 @@ const deleteUser = asyncHandler(async (req, res) => {
     // User-specific data
     UserBonusModel.findOneAndDelete({ userId: id }),
     WalletModel.findOneAndDelete({ userId: id }),
-    
+
     // Game account related
     UserGameAccountModel.deleteMany({ userId: id }),
     GameAccountRequestModel.deleteMany({ userId: id }),
-    
+
     // Financial requests (not transactions)
     rechargeRequestModel.deleteMany({ userId: id }),
     withdrawalRequestModel.deleteMany({ userId: id }),
-    
+
     // User notifications
     NotificationModel.deleteMany({ userId: id }),
-    
+
     // AMOE entries
     AmoeModel.deleteMany({ userId: id }),
   ]);
@@ -958,7 +976,9 @@ const deleteUser = asyncHandler(async (req, res) => {
 
   res
     .status(200)
-    .json(new ApiResponse(200, {}, "User and all related data deleted successfully"));
+    .json(
+      new ApiResponse(200, {}, "User and all related data deleted successfully")
+    );
 });
 
 export const csvUserData = asyncHandler(async (req, res) => {

@@ -33,7 +33,8 @@ const ManualregisterOption = () => {
     const [open, setOpen] = useState<boolean>(false);
     const [value, setValue] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string>('');
+    const [errors, setErrors] = useState<string[]>([]);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [form, setForm] = useState({
         fullName: '',
         email: '',
@@ -50,13 +51,9 @@ const ManualregisterOption = () => {
 
     // Format phone number as user types: (XXX) XXX-XXXX
     const formatPhoneNumber = (value: string) => {
-        // Remove all non-digits
         const phoneNumber = value.replace(/\D/g, '');
-
-        // Limit to 10 digits
         const limitedPhone = phoneNumber.slice(0, 10);
 
-        // Format based on length
         if (limitedPhone.length <= 3) {
             return limitedPhone;
         } else if (limitedPhone.length <= 6) {
@@ -71,16 +68,105 @@ const ManualregisterOption = () => {
         const digits = phone.replace(/\D/g, '');
         if (digits.length !== 10) return false;
 
-        // Area code and central office code cannot start with 0 or 1
         const areaCode = parseInt(digits.charAt(0));
         const centralOffice = parseInt(digits.charAt(3));
 
         return areaCode >= 2 && centralOffice >= 2;
     };
 
+    // Validate all fields at once
+    const validateForm = () => {
+        const validationErrors: string[] = [];
+        const newFieldErrors: Record<string, string> = {};
+
+        // Full Name validation
+        if (!form.fullName.trim()) {
+            validationErrors.push('Full name is required');
+            newFieldErrors.fullName = 'Full name is required';
+        }
+
+        // Email validation
+        if (!form.email.trim()) {
+            validationErrors.push('Email is required');
+            newFieldErrors.email = 'Email is required';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+            validationErrors.push('Please enter a valid email address');
+            newFieldErrors.email = 'Invalid email format';
+        }
+
+        // Phone validation
+        if (!form.phone.trim()) {
+            validationErrors.push('Phone number is required');
+            newFieldErrors.phone = 'Phone number is required';
+        } else if (!validateUSPhone(form.phone)) {
+            validationErrors.push(
+                'Please enter a valid 10-digit US phone number'
+            );
+            newFieldErrors.phone = 'Invalid phone number';
+        }
+
+        // State validation
+        if (!value) {
+            validationErrors.push('Please select a state');
+            newFieldErrors.state = 'State is required';
+        }
+
+        // Password validation
+        if (!form.password) {
+            validationErrors.push('Password is required');
+            newFieldErrors.password = 'Password is required';
+        } else if (form.password.length < 8) {
+            validationErrors.push(
+                'Password must be at least 8 characters long'
+            );
+            newFieldErrors.password = 'Password too short';
+        }
+
+        // Confirm Password validation
+        if (!form.confirmPassword) {
+            validationErrors.push('Please confirm your password');
+            newFieldErrors.confirmPassword = 'Confirm password is required';
+        } else if (form.password !== form.confirmPassword) {
+            validationErrors.push('Passwords do not match');
+            newFieldErrors.confirmPassword = 'Passwords do not match';
+        }
+
+        // Terms validation
+        if (!form.acceptTerms) {
+            validationErrors.push(
+                'Please accept the Terms & Conditions and Privacy Policy'
+            );
+            newFieldErrors.acceptTerms = 'You must accept the terms';
+        }
+
+        setFieldErrors(newFieldErrors);
+        return validationErrors;
+    };
+
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const formatted = formatPhoneNumber(e.target.value);
         setForm(s => ({ ...s, phone: formatted }));
+        if (fieldErrors.phone) {
+            setFieldErrors(prev => ({ ...prev, phone: '' }));
+        }
+    };
+
+    const clearFieldError = (fieldName: string) => {
+        if (fieldErrors[fieldName]) {
+            setFieldErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[fieldName];
+                return newErrors;
+            });
+        }
+        // Also clear from general errors if it contains the field name
+        if (errors.length > 0) {
+            setErrors(prev =>
+                prev.filter(
+                    err => !err.toLowerCase().includes(fieldName.toLowerCase())
+                )
+            );
+        }
     };
 
     return (
@@ -89,22 +175,17 @@ const ManualregisterOption = () => {
             className='mb-7.5 w-full'
             onSubmit={async e => {
                 e.preventDefault();
-                setError('');
-                if (!form.acceptTerms) {
-                    setError(
-                        'Please accept the Terms & Conditions and Privacy Policy.'
-                    );
+                setErrors([]);
+                setFieldErrors({});
+
+                // Validate all fields at once
+                const validationErrors = validateForm();
+
+                if (validationErrors.length > 0) {
+                    setErrors(validationErrors);
                     return;
                 }
-                if (form.password !== form.confirmPassword) {
-                    setError('Passwords do not match');
-                    return;
-                }
-                // Validate US phone number
-                if (!validateUSPhone(form.phone)) {
-                    setError('Please enter a valid 10-digit US phone number.');
-                    return;
-                }
+
                 setLoading(true);
                 try {
                     const parts = form.fullName.trim().split(/\s+/);
@@ -113,13 +194,11 @@ const ManualregisterOption = () => {
                     let middle = parts[1] || '';
                     let last = parts.slice(2).join(' ') || '';
 
-                    // if no last name but there is a middle, treat middle as last
                     if (!last && middle) {
                         last = middle;
                         middle = '';
                     }
 
-                    // Convert phone to E.164 format
                     const phoneDigits = form.phone.replace(/\D/g, '');
                     const e164Phone = `+1${phoneDigits}`;
 
@@ -135,163 +214,269 @@ const ManualregisterOption = () => {
                     };
                     const response = (await registerUser(payload)) as any;
 
-                    // If registration includes user data and cookies are set, mark as logged in
                     if (response.success && response.data?.data?.user) {
                         setLoggedIn(true);
                         setUser(response.data.data.user);
                     }
 
-                    // router.push(
-                    //     `/email-verification?email=${encodeURIComponent(form.email)}&phone=${encodeURIComponent(form.phone)}`
-                    // );
                     router.push(
                         `/phone-verification?phone=${encodeURIComponent(form.phone)}`
                     );
                 } catch (err: unknown) {
-                    setError(
+                    // Handle backend errors
+                    const errorMessage =
                         err instanceof Error
                             ? err.message
-                            : 'Registration failed'
-                    );
+                            : 'Registration failed';
+
+                    // Split multiple errors if backend sends them separated by " | "
+                    const errorMessages = errorMessage.includes(' | ')
+                        ? errorMessage.split(' | ')
+                        : [errorMessage];
+
+                    const backendFieldErrors: Record<string, string> = {};
+
+                    errorMessages.forEach(msg => {
+                        const lowerMsg = msg.toLowerCase();
+                        if (lowerMsg.includes('email')) {
+                            backendFieldErrors.email = msg;
+                        }
+                        if (lowerMsg.includes('phone')) {
+                            backendFieldErrors.phone = msg;
+                        }
+                        if (
+                            lowerMsg.includes('state') ||
+                            lowerMsg.includes('address')
+                        ) {
+                            backendFieldErrors.state = msg;
+                        }
+                    });
+
+                    setErrors(errorMessages);
+                    setFieldErrors(backendFieldErrors);
                 } finally {
                     setLoading(false);
                 }
             }}
         >
             <div className='mb-7 space-y-6.5'>
+                {/* Show all errors at the top */}
+                {errors.length > 0 && (
+                    <div className='bg-red-500/10 border border-red-500 rounded-lg p-4'>
+                        <p className='text-red-500 font-semibold mb-2'>
+                            Please fix the following errors:
+                        </p>
+                        <ul className='list-disc list-inside space-y-1'>
+                            {errors.map((error, index) => (
+                                <li
+                                    key={index}
+                                    className='text-red-400 text-sm'
+                                >
+                                    {error}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 {/* Full Name */}
-                <Input
-                    type='text'
-                    placeholder='Full Name'
-                    {...inputSettings}
-                    value={form.fullName}
-                    onChange={e =>
-                        setForm(s => ({ ...s, fullName: e.target.value }))
-                    }
-                />
+                <div>
+                    <Input
+                        type='text'
+                        placeholder='Full Name'
+                        {...inputSettings}
+                        value={form.fullName}
+                        onChange={e => {
+                            setForm(s => ({ ...s, fullName: e.target.value }));
+                            clearFieldError('fullName');
+                        }}
+                        className={fieldErrors.fullName ? 'border-red-500' : ''}
+                    />
+                    {fieldErrors.fullName && (
+                        <p className='text-red-400 text-xs mt-1'>
+                            {fieldErrors.fullName}
+                        </p>
+                    )}
+                </div>
 
                 {/* Email Address */}
-                <Input
-                    type='email'
-                    placeholder='Email Address'
-                    {...inputSettings}
-                    value={form.email}
-                    onChange={e =>
-                        setForm(s => ({ ...s, email: e.target.value }))
-                    }
-                />
+                <div>
+                    <Input
+                        type='email'
+                        placeholder='Email Address'
+                        {...inputSettings}
+                        value={form.email}
+                        onChange={e => {
+                            setForm(s => ({ ...s, email: e.target.value }));
+                            clearFieldError('email');
+                        }}
+                        className={fieldErrors.email ? 'border-red-500' : ''}
+                    />
+                    {fieldErrors.email && (
+                        <p className='text-red-400 text-xs mt-1'>
+                            {fieldErrors.email}
+                        </p>
+                    )}
+                </div>
 
                 {/* Phone Number with US Flag and +1 */}
-                <div className='relative'>
-                    <div className='absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2.5 pointer-events-none z-10'>
-                        <span className='text-base leading-none'>🇺🇸</span>
-                        <span className='text-white text-base font-medium'>
-                            +1
-                        </span>
+                <div>
+                    <div className='relative'>
+                        <div className='absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-2.5 pointer-events-none z-10'>
+                            <span className='text-base leading-none'>🇺🇸</span>
+                            <span className='text-white text-base font-medium'>
+                                +1
+                            </span>
+                        </div>
+                        <Input
+                            type='tel'
+                            {...inputSettings}
+                            style={{ paddingLeft: '6rem' }}
+                            value={form.phone}
+                            onChange={e => {
+                                handlePhoneChange(e);
+                                clearFieldError('phone');
+                            }}
+                            inputMode='numeric'
+                            className={
+                                fieldErrors.phone ? 'border-red-500' : ''
+                            }
+                        />
                     </div>
-                    <Input
-                        type='tel'
-                        // placeholder='(555) 123-4567'
-                        {...inputSettings}
-                        style={{ paddingLeft: '6rem' }}
-                        value={form.phone}
-                        onChange={handlePhoneChange}
-                        inputMode='numeric'
-                    />
+                    {fieldErrors.phone && (
+                        <p className='text-red-400 text-xs mt-1'>
+                            {fieldErrors.phone}
+                        </p>
+                    )}
                 </div>
 
                 {/* Select States */}
-                <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            id={id}
-                            role='combobox'
-                            aria-expanded={open}
-                            className='w-full px-6'
-                            neonBoxClass='rounded-[8px]'
-                            btnInnerClass='w-full'
-                            variant='neon'
-                            neon={true}
-                            {...inputSettings}
-                        >
-                            <div className='flex w-full items-center justify-between'>
-                                <span className={cn(!value && 'text-white/80')}>
-                                    {value
-                                        ? statesData.find(
-                                              state => state.value === value
-                                          )?.label
-                                        : 'Select State'}
-                                </span>
+                <div>
+                    <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                id={id}
+                                role='combobox'
+                                aria-expanded={open}
+                                className='w-full px-6'
+                                neonBoxClass={cn(
+                                    'rounded-[8px]',
+                                    fieldErrors.state && 'border-red-500'
+                                )}
+                                btnInnerClass='w-full'
+                                variant='neon'
+                                neon={true}
+                                {...inputSettings}
+                            >
+                                <div className='flex w-full items-center justify-between'>
+                                    <span
+                                        className={cn(
+                                            !value && 'text-white/80'
+                                        )}
+                                    >
+                                        {value
+                                            ? statesData.find(
+                                                  state => state.value === value
+                                              )?.label
+                                            : 'Select State'}
+                                    </span>
 
-                                <ChevronDownIcon
-                                    size={16}
-                                    className='shrink-0 text-white/60'
-                                    aria-hidden='true'
-                                />
-                            </div>
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                        className='border-input w-full min-w-[var(--radix-popper-anchor-width)] p-0'
-                        align='start'
-                    >
-                        <Command>
-                            <CommandInput placeholder='Search States...' />
-                            <CommandList>
-                                <CommandEmpty>No state found.</CommandEmpty>
-                                <CommandGroup>
-                                    {statesData.map(state => (
-                                        <CommandItem
-                                            key={state.value}
-                                            value={state.value}
-                                            onSelect={currentValue => {
-                                                setValue(
-                                                    currentValue === value
-                                                        ? ''
-                                                        : currentValue
-                                                );
-                                                setOpen(false);
-                                            }}
-                                        >
-                                            {state.label}
-                                            {value === state.value && (
-                                                <CheckIcon
-                                                    size={16}
-                                                    className='ml-auto'
-                                                />
-                                            )}
-                                        </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
-                    </PopoverContent>
-                </Popover>
+                                    <ChevronDownIcon
+                                        size={16}
+                                        className='shrink-0 text-white/60'
+                                        aria-hidden='true'
+                                    />
+                                </div>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                            className='border-input w-full min-w-[var(--radix-popper-anchor-width)] p-0'
+                            align='start'
+                        >
+                            <Command>
+                                <CommandInput placeholder='Search States...' />
+                                <CommandList>
+                                    <CommandEmpty>No state found.</CommandEmpty>
+                                    <CommandGroup>
+                                        {statesData.map(state => (
+                                            <CommandItem
+                                                key={state.value}
+                                                value={state.value}
+                                                onSelect={currentValue => {
+                                                    setValue(
+                                                        currentValue === value
+                                                            ? ''
+                                                            : currentValue
+                                                    );
+                                                    setOpen(false);
+                                                    clearFieldError('state');
+                                                }}
+                                            >
+                                                {state.label}
+                                                {value === state.value && (
+                                                    <CheckIcon
+                                                        size={16}
+                                                        className='ml-auto'
+                                                    />
+                                                )}
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                    {fieldErrors.state && (
+                        <p className='text-red-400 text-xs mt-1'>
+                            {fieldErrors.state}
+                        </p>
+                    )}
+                </div>
 
                 {/* Password */}
-                <Input
-                    type='password'
-                    placeholder='Password'
-                    {...inputSettings}
-                    value={form.password}
-                    onChange={e =>
-                        setForm(s => ({ ...s, password: e.target.value }))
-                    }
-                />
+                <div>
+                    <Input
+                        type='password'
+                        placeholder='Password'
+                        {...inputSettings}
+                        value={form.password}
+                        onChange={e => {
+                            setForm(s => ({ ...s, password: e.target.value }));
+                            clearFieldError('password');
+                        }}
+                        className={fieldErrors.password ? 'border-red-500' : ''}
+                    />
+                    {fieldErrors.password && (
+                        <p className='text-red-400 text-xs mt-1'>
+                            {fieldErrors.password}
+                        </p>
+                    )}
+                </div>
 
                 {/* Confirm Password */}
-                <Input
-                    type='password'
-                    placeholder='Confirm Password'
-                    {...inputSettings}
-                    value={form.confirmPassword}
-                    onChange={e =>
-                        setForm(s => ({
-                            ...s,
-                            confirmPassword: e.target.value,
-                        }))
-                    }
-                />
+                <div>
+                    <Input
+                        type='password'
+                        placeholder='Confirm Password'
+                        {...inputSettings}
+                        value={form.confirmPassword}
+                        onChange={e => {
+                            setForm(s => ({
+                                ...s,
+                                confirmPassword: e.target.value,
+                            }));
+                            clearFieldError('confirmPassword');
+                        }}
+                        className={
+                            fieldErrors.confirmPassword ? 'border-red-500' : ''
+                        }
+                    />
+                    {fieldErrors.confirmPassword && (
+                        <p className='text-red-400 text-xs mt-1'>
+                            {fieldErrors.confirmPassword}
+                        </p>
+                    )}
+                </div>
 
                 {/* Terms and SMS Consent */}
                 <div className='flex flex-col gap-4'>
@@ -300,17 +485,21 @@ const ManualregisterOption = () => {
                         <Checkbox
                             id='terms-policy'
                             checked={form.acceptTerms}
-                            onCheckedChange={v =>
+                            onCheckedChange={v => {
                                 setForm(s => ({
                                     ...s,
                                     acceptTerms: Boolean(v),
-                                }))
-                            }
+                                }));
+                                clearFieldError('acceptTerms');
+                            }}
                         />
                         <NeonText
                             as='label'
                             htmlFor='terms-policy'
-                            className='text-sm! lg:text-base!'
+                            className={cn(
+                                'text-sm! lg:text-base!',
+                                fieldErrors.acceptTerms && 'text-red-400'
+                            )}
                             glowSpread={0.5}
                         >
                             I confirm I am 21+ and accept the{' '}
@@ -379,11 +568,6 @@ const ManualregisterOption = () => {
                         </NeonText>
                     </NeonBox>
                 </div>
-                {error && (
-                    <p className='text-red-500 text-base font-semibold'>
-                        {error}
-                    </p>
-                )}
             </div>
 
             {/* Register Button */}
