@@ -228,28 +228,28 @@ class OTPService {
       await OTPModel.updateOne({ _id: otpRecord._id }, { isUsed: true });
 
       // Send welcome SMS after successful verification
-      try {
-        const welcomeMessage = `Welcome to GTOA! 🎉\n\nYour account is now verified. You’ll receive SMS notifications for important updates, including account activity, security alerts, and general platform information.`;
+      // try {
+      //   const welcomeMessage = `Welcome to GTOA! 🎉\n\nYour account is now verified. You’ll receive SMS notifications for important updates, including account activity, security alerts, and general platform information.`;
 
-        await twilioService.sendTransactionalSMS(
-          formattedPhone,
-          {
-            playerName: "Valued Player",
-            transactionType: "welcome", // Using the new welcome type
-          },
-          welcomeMessage
-        );
+      //   await twilioService.sendTransactionalSMS(
+      //     formattedPhone,
+      //     {
+      //       playerName: "Valued Player",
+      //       transactionType: "welcome", // Using the new welcome type
+      //     },
+      //     welcomeMessage
+      //   );
 
-        logger.info(
-          `Welcome SMS sent to ${formattedPhone} after successful verification`
-        );
-      } catch (smsError) {
-        // Log the error but don't fail the verification process
-        logger.error(
-          `Failed to send welcome SMS to ${formattedPhone}:`,
-          smsError
-        );
-      }
+      //   logger.info(
+      //     `Welcome SMS sent to ${formattedPhone} after successful verification`
+      //   );
+      // } catch (smsError) {
+      //   // Log the error but don't fail the verification process
+      //   logger.error(
+      //     `Failed to send welcome SMS to ${formattedPhone}:`,
+      //     smsError
+      //   );
+      // }
 
       logger.info(
         `OTP verified successfully for ${formattedPhone} for phone verification`
