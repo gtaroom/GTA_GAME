@@ -262,6 +262,7 @@ export const headerLinks: LinkProps[] = [
     aboutLink,
     supportLink,
     communityLink,
+    howItWorkLink
 ];
 
 // Footer Links

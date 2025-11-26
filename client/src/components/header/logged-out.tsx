@@ -88,16 +88,22 @@ const HeaderLoggedOut = ({
                     {lg && (
                         <nav className='ms-auto flex justify-end w-full'>
                             <ul className='inline-flex items-center justify-center 2xl:gap-[54px] xxl:gap-10 gap-8 max-xl:[&>li]:last:hidden'>
-                                {headerLinks.map(link => (
-                                    <li key={link.href}>
-                                        <MenuLink
-                                            title={link.title}
-                                            href={link.href || '#'}
-                                            isActive={pathname === link.href}
-                                            size='base'
-                                        />
-                                    </li>
-                                ))}
+                                {headerLinks
+                                    .filter(
+                                        link => link.href !== '/how-it-works'
+                                    )
+                                    .map(link => (
+                                        <li key={link.href}>
+                                            <MenuLink
+                                                title={link.title}
+                                                href={link.href || '#'}
+                                                isActive={
+                                                    pathname === link.href
+                                                }
+                                                size='base'
+                                            />
+                                        </li>
+                                    ))}
                             </ul>
                             <VIPprogramBtn className='2xl:ml-[50px] xxl:ml-[40px] xl:ml-[32px] ml-[24px] max-lg:ml-0 w-full 2xl:max-w-[260px] xxl:max-w-[240px] xl:max-w-[220px] max-w-[200px] ' />
                         </nav>
