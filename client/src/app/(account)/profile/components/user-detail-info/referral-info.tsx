@@ -111,7 +111,7 @@ export default function ReferralInfo() {
             content: (
                 <div className='inline-flex items-center gap-2'>
                     <Image
-                        src='/coins/gold-coin.svg'
+                        src='/coins/bronze-coin.svg'
                         height={20}
                         width={20}
                         alt='Gold Coin'
