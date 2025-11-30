@@ -98,7 +98,7 @@ export default function Statistics({ isLoggedIn }: { isLoggedIn?: boolean }) {
                         ) : (
                             [
                                 {
-                                    image: '/coins/gold-coin.svg',
+                                    image: '/coins/bronze-coin.svg',
                                     label: 'Total rewards earned',
                                     value: stats.totalRewards || 0,
                                     subtext: '1,000 Gold Coins per qualified friend',
