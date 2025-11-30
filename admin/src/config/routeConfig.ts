@@ -98,22 +98,30 @@ export const routeConfigs: RouteConfig[] = [
     requiredPermissions: ["canManageSystem"],
     isActive: true,
   },
-  //   {
-  //     path: '/support',
-  //     title: 'Support Management',
-  //     description: 'Manage support team and tickets',
-  //     icon: 'Users',
-  //     requiredPermissions: ['canManageSupportTeam'],
-  //     isActive: true
-  //   },
-  //   {
-  //     path: '/moderation',
-  //     title: 'Content Moderation',
-  //     description: 'Moderate user content and ban users',
-  //     icon: 'Shield',
-  //     requiredPermissions: ['canModerateContent'],
-  //     isActive: true
-  //   }
+  {
+    path: '/affiliates',
+    title: 'Affiliate Management',
+    description: 'Manage affiliate applications',
+    icon: 'UserCheck',
+    requiredPermissions: ['ADMIN'],
+    isActive: true
+  },
+//   {
+//     path: '/support',
+//     title: 'Support Management',
+//     description: 'Manage support team and tickets',
+//     icon: 'Users',
+//     requiredPermissions: ['canManageSupportTeam'],
+//     isActive: true
+//   },
+//   {
+//     path: '/moderation',
+//     title: 'Content Moderation',
+//     description: 'Moderate user content and ban users',
+//     icon: 'Shield',
+//     requiredPermissions: ['canModerateContent'],
+//     isActive: true
+//   }
 ];
 
 // Helper function to get routes accessible by a user based on their permissions
@@ -177,28 +185,23 @@ export const getRoutesByCategory = (
     "Content Moderation": [],
   };
 
-  routesToShow.forEach((route) => {
-    if (route.path === "/") {
-      categories["Analytics & Reports"].push(route);
-    } else if (route.path === "/users" || route.path === "/roles") {
-      categories["User Management"].push(route);
-    } else if (
-      route.path === "/balance" ||
-      route.path === "/withdrawals" ||
-      route.path === "/recharges"
-    ) {
-      categories["Financial Management"].push(route);
-    } else if (
-      route.path === "/draw-winners" ||
-      route.path === "/game-accounts"
-    ) {
-      categories["Game Management"].push(route);
-    } else if (route.path === "/email" || route.path === "/coupons") {
-      categories["System Management"].push(route);
-    } else if (route.path === "/support") {
-      categories["Support & Communication"].push(route);
-    } else if (route.path === "/moderation") {
-      categories["Content Moderation"].push(route);
+  routesToShow.forEach(route => {
+    if (route.path === '/') {
+      categories['Analytics & Reports'].push(route);
+    } else if (route.path === '/users' || route.path === '/roles') {
+      categories['User Management'].push(route);
+    } else if (route.path === '/balance' || route.path === '/withdrawals' || route.path === '/recharges') {
+      categories['Financial Management'].push(route);
+    } else if (route.path === '/draw-winners' || route.path === '/game-accounts') {
+      categories['Game Management'].push(route);
+    } else if (route.path === '/email' || route.path === '/coupons') {
+      categories['System Management'].push(route);
+    } else if (route.path === '/affiliates') {
+      categories['System Management'].push(route);
+    } else if (route.path === '/support') {
+      categories['Support & Communication'].push(route);
+    } else if (route.path === '/moderation') {
+      categories['Content Moderation'].push(route);
     }
   });
 

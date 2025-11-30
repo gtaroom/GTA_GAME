@@ -49,6 +49,8 @@ export const baseUserApi = createApi({
     "RoleStatistics",
     "Transactions",
     "SystemHealth",
+    "Affiliates",
+    "AffiliateStatistics",
     "Mailchimp",
     "MailchimpLists",
     "MailchimpSubscribers",

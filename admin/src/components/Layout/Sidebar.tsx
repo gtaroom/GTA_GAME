@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Megaphone,
   FileText,
+  UserCheck,
   Image as ImageIcon,
 } from "lucide-react";
 import React, { useState } from "react";
@@ -103,6 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       Gamepad2: <UserPlus className="mr-3" size={20} />,
       Mail: <Mail className="mr-3" size={20} />,
       Tag: <GiftIcon className="mr-3" size={20} />,
+      'UserCheck': <UserCheck className="mr-3" size={20} />,
       MessageSquare: <MessageSquare className="mr-3" size={20} />,
       Megaphone: <Megaphone className="mr-3" size={20} />,
       FileText: <FileText className="mr-3" size={20} />,

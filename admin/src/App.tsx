@@ -18,6 +18,7 @@ import { HomeRedirect } from "./components/HomeRedirect";
 // import SupportManagement from './pages/SupportManagement';
 import Withdrawals from "./pages/Withdrawals";
 import Transactions from "./pages/Transactions";
+import AffiliateManagement from './pages/AffiliateManagement';
 import PrivateRoute from "./PrivateRoute";
 // import SmsBroadcast from "./pages/SmsSender";
 import MailchimpManagement from "./pages/MailchimpManagement";
@@ -88,17 +89,14 @@ function App() {
               />
 
               {/* Draw Winners - accessible by users with game management permissions */}
-              <Route
-                path="/draw-winners"
-                element={
-                  <RoleBasedRoute requiredPermissions={["canAccessEverything"]}>
-                    <MainLayout>
-                      <DrawWinners />
-                    </MainLayout>
-                  </RoleBasedRoute>
-                }
-              />
-
+              <Route path="/draw-winners" element={
+                <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                  <MainLayout>
+                    <DrawWinners />
+                  </MainLayout>
+                </RoleBasedRoute>
+              } />
+              
               {/* Email Communication - accessible by users with system management permissions */}
               <Route
                 path="/email"
@@ -176,6 +174,15 @@ function App() {
                   </RoleBasedRoute>
                 }
               />
+              
+              {/* Affiliates - accessible only by ADMIN */}
+              <Route path="/affiliates" element={
+                <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                  <MainLayout>
+                    <AffiliateManagement />
+                  </MainLayout>
+                </RoleBasedRoute>
+              } />
               <Route
                 path="/email-marketing"
                 element={
