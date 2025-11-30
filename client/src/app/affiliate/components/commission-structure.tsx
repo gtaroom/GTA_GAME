@@ -5,46 +5,49 @@ import NeonText from '@/components/neon/neon-text';
 function CommissionStructure() {
     const commissionInfo = [
         {
-            key: 'revenueShare',
-            badge: 'Revenue Share',
-            headline: '10–25%',
+            key: 'affiliate',
+            badge: 'Affiliate Program',
+            headline: 'One-Time Commission',
             description:
-                'Earn a percentage of net gold coin package purchases from each qualified user you refer, for up to 60 days.',
+                'Earn a percentage commission when your referrals first reach $20 in total spending. Commission is calculated on the full amount spent at qualification, not just the minimum threshold.',
             features: [
-                '60-day recurring commissions',
-                'Transparent purchase tracking',
-                'No negative carryover',
+                'One-time commission at qualification',
+                'Commission on full total (not just $20)',
+                '$20 minimum threshold to qualify',
+                'Performance-based commission rates',
                 'Monthly payouts (Min. $100 threshold)',
             ],
             color: '--color-green-500',
         },
         {
-            key: 'cpa',
-            badge: 'CPA (Cost Per Acquisition)',
-            headline: '$50–$150',
+            key: 'how-it-works',
+            badge: 'How It Works',
+            headline: 'Simple Process',
             description:
-                'Earn a fixed one-time payment for each referred player who makes a qualifying gold coin purchase.',
+                'When a user signs up via your affiliate link and reaches $20 in total spending, you receive a one-time commission based on their total spent amount.',
             features: [
-                'One-time payment per player',
-                'Quick cash flow',
-                'Performance-based bonuses',
-                'Volume tier increases',
-            ],
-            color: '--color-pink-500',
-        },
-        {
-            key: 'hybrid',
-            badge: 'Hybrid Model',
-            headline: 'Custom',
-            description:
-                'Combine CPA + Revenue Share for flexible commissions based on your traffic quality.',
-            features: [
-                'Balanced risk & reward',
-                'Volume-based negotiation',
-                'Personalized affiliate dashboard',
-                'Requires pre-approval',
+                'User signs up via your link',
+                'User reaches $20 minimum spending',
+                'Commission calculated on total spent',
+                'One-time payment (no recurring)',
+                'Track all referrals in dashboard',
             ],
             color: '--color-blue-500',
+        },
+        {
+            key: 'benefits',
+            badge: 'Program Benefits',
+            headline: 'Why Join?',
+            description:
+                'Join our affiliate network and access powerful tools to grow your earnings with transparent tracking and reliable payouts.',
+            features: [
+                'Public can apply (no account needed)',
+                'Dashboard access for approved affiliates',
+                'Real-time tracking and analytics',
+                'Transparent commission structure',
+                'Dedicated support team',
+            ],
+            color: '--color-purple-500',
         },
     ];
 
