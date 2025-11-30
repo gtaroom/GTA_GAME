@@ -11,23 +11,30 @@ export default function HowDoseItWork({
     const referralSteps = [
         {
             icon: 'lucide:send',
-            title: 'Send the Invite',
+            title: 'Share Your Link',
             description:
-                'Share your personal invite link through social media, email, or text. Your friend must be a new player and meet the referral requirements.',
+                'Every user automatically gets a unique referral code. Share your personal invite link (with ?ref=CODE) through social media, email, or text. Your friend must be a new player.',
             color: '--color-green-500',
         },
         {
-            icon: 'lucide:shield-check',
-            title: "Friend's Way",
+            icon: 'lucide:user-plus',
+            title: 'Friend Signs Up',
             description:
-                'Your friend signs up, completes their first Gold Coin purchase, and gets rewarded. You’ll earn a bonus too once they qualify.',
+                'Your friend clicks your link and registers. The system automatically creates a referral record with status "pending" and tracks their purchases.',
             color: '--color-pink-500',
         },
         {
-            icon: 'lucide:gift',
-            title: 'Celebrate Together',
+            icon: 'lucide:shopping-cart',
+            title: 'Friend Makes Purchases',
             description:
-                'Once verified, both you and your friend receive rewards. It’s a win-win when they play and stay.',
+                'Your friend makes deposit transactions. The system tracks their total spending. When they reach $20 in total purchases, they qualify automatically.',
+            color: '--color-yellow-500',
+        },
+        {
+            icon: 'lucide:gift',
+            title: 'Rewards Given Automatically',
+            description:
+                'Once your friend reaches $20 total spending, both of you get rewards automatically: You receive 1,000 Gold Coins ($10) and your friend receives 500 Gold Coins ($5).',
             color: '--color-blue-500',
         },
     ];
@@ -38,7 +45,7 @@ export default function HowDoseItWork({
                 <AccountPageTitle as='h2' className='mb-8 max-lg:text-center'>
                     How does it work?
                 </AccountPageTitle>
-                <div className='grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-8'>
+                <div className='grid grid-cols-1 lg:grid-cols-4 md:grid-cols-2 gap-8'>
                     {referralSteps.map((referral, index) => (
                         <NeonBox
                             key={index}

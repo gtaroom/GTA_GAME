@@ -17,6 +17,7 @@ export type RegisterPayload = {
 	phone?: string;
 	state?: string;
 	acceptSMSMarketing?: boolean;
+	referralCode?: string;
 };
 
 export type LoginPayload = {

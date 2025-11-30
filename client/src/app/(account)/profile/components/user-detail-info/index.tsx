@@ -5,6 +5,8 @@ import PersonalInfo from './personal-info';
 import ReferralEarning from './referral-earning';
 import SocialConnect from './social-connect';
 import SubscriptionDetails from './subscription-details';
+import ReferralInfo from './referral-info';
+import AffiliateInfo from './affiliate-info';
 
 export default function UserDetailInfo() {
     const userDetailInfoData = [
@@ -32,18 +34,18 @@ export default function UserDetailInfo() {
             color: '--color-lime-500',
             content: <SubscriptionDetails />,
         },
-        // {
-        //     title: 'Referral Earning',
-        //     icon: 'lucide:hand-coins',
-        //     color: '--color-yellow-500',
-        //     content: <ReferralEarning />,
-        // },
-        // {
-        //     title: 'Social Connect',
-        //     icon: 'lucide:hash',
-        //     color: '--color-pink-500',
-        //     content: <SocialConnect />,
-        // },
+        {
+            title: 'Referral Program',
+            icon: 'lucide:user-plus',
+            color: '--color-yellow-500',
+            content: <ReferralInfo />,
+        },
+        {
+            title: 'Affiliate Program',
+            icon: 'lucide:hand-coins',
+            color: '--color-purple-500',
+            content: <AffiliateInfo />,
+        },
     ];
 
     return (

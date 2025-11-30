@@ -26,13 +26,13 @@ export default function ExclusiveProgram() {
                     isLock: false,
                     color: '--color-green-500',
                 },
-                {
-                    label: 'Weekly SC Reward',
-                    icon: 'lucide:coins',
-                    rightSec: 'Available',
-                    isLock: false,
-                    color: '--color-yellow-500',
-                },
+                // {
+                //     label: 'Weekly SC Reward',
+                //     icon: 'lucide:coins',
+                //     rightSec: 'Available',
+                //     isLock: false,
+                //     color: '--color-yellow-500',
+                // },
                 {
                     label: 'VIP Wheel',
                     icon: 'lucide:ferris-wheel',

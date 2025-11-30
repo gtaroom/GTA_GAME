@@ -386,6 +386,46 @@ const generateAdminNotificationContent = (
       `;
       break;
 
+    case "affiliate_application":
+      icon = "🤝";
+      content = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 48px; margin-bottom: 20px;">${icon}</div>
+          <h2 style="color: ${BRAND_COLORS.primary}; margin: 0; font-size: 24px;">${title}</h2>
+        </div>
+        
+        <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="color: ${BRAND_COLORS.primary}; margin-top: 0;">Application Details</h3>
+          <p><strong>Name:</strong> ${data.firstName || "N/A"} ${data.lastName || "N/A"}</p>
+          <p><strong>Email:</strong> ${data.email || "N/A"}</p>
+          <p><strong>Company:</strong> ${data.company || "N/A"}</p>
+          <p><strong>Website:</strong> ${data.website ? `<a href="${data.website}" style="color: ${BRAND_COLORS.primary};">${data.website}</a>` : "N/A"}</p>
+          <p><strong>Phone:</strong> ${data.phone || "N/A"}</p>
+          <p><strong>Audience Size:</strong> ${data.audienceSize || "N/A"}</p>
+          ${data.socialMedia ? `
+          <p><strong>Social Media:</strong></p>
+          <ul style="margin: 10px 0; padding-left: 20px;">
+            ${data.socialMedia.instagram ? `<li>Instagram: ${data.socialMedia.instagram}</li>` : ""}
+            ${data.socialMedia.twitter ? `<li>Twitter: ${data.socialMedia.twitter}</li>` : ""}
+            ${data.socialMedia.facebook ? `<li>Facebook: ${data.socialMedia.facebook}</li>` : ""}
+            ${data.socialMedia.youtube ? `<li>YouTube: ${data.socialMedia.youtube}</li>` : ""}
+            ${data.socialMedia.tiktok ? `<li>TikTok: ${data.socialMedia.tiktok}</li>` : ""}
+          </ul>
+          ` : ""}
+          ${data.promotionMethods && data.promotionMethods.length > 0 ? `
+          <p><strong>Promotion Methods:</strong> ${data.promotionMethods.join(", ")}</p>
+          ` : ""}
+          <p><strong>Application ID:</strong> ${data.applicationId || "N/A"}</p>
+          <p><strong>Status:</strong> <span class="highlight">${data.status || "Pending"}</span></p>
+          <p><strong>Applied At:</strong> ${data.appliedAt || "N/A"}</p>
+        </div>
+        
+        <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
+          Please review this affiliate partnership application in the admin dashboard.
+        </p>
+      `;
+      break;
+
     default:
       content = `
         <div style="text-align: center; margin-bottom: 30px;">
@@ -507,6 +547,78 @@ const generateUserNotificationContent = (
       `;
       break;
 
+    case "affiliate_approved":
+      icon = "🎉";
+      content = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 48px; margin-bottom: 20px;">${icon}</div>
+          <h2 style="color: ${BRAND_COLORS.primary}; margin: 0; font-size: 24px;">${title}</h2>
+        </div>
+        
+        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.firstName || "Partner"}</span>,</p>
+        
+        <p style="font-size: 16px; margin-bottom: 20px;">
+          Congratulations! Your affiliate partnership application has been <span class="highlight">approved</span>.
+        </p>
+        
+        <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="color: ${BRAND_COLORS.primary}; margin-top: 0;">Your Affiliate Details</h3>
+          <p><strong>Affiliate Code:</strong> <span style="color: ${BRAND_COLORS.primary}; font-weight: 700; font-size: 20px;">${data.affiliateCode}</span></p>
+          <p><strong>Commission Rate:</strong> ${data.commissionRate || 0}%</p>
+          <p><strong>Affiliate Link:</strong> <a href="${data.affiliateLink}" style="color: ${BRAND_COLORS.primary}; word-break: break-all;">${data.affiliateLink}</a></p>
+          <p><strong>Status:</strong> <span class="highlight">Active</span></p>
+        </div>
+        
+        <p style="font-size: 16px; margin-bottom: 20px;">
+          You can now start promoting our platform and earn commissions on every qualified referral!
+        </p>
+        
+        ${data.dashboardLink ? `
+        <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center;">
+          <p style="font-size: 16px; margin-bottom: 15px; color: ${BRAND_COLORS.primary}; font-weight: 600;">
+            Access Your Dashboard:
+          </p>
+          <a href="${data.dashboardLink}" style="display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, #ffd700 100%); color: ${BRAND_COLORS.darkText}; text-decoration: none; border-radius: 25px; font-weight: 700; font-size: 16px;">
+            View Dashboard
+          </a>
+          <p style="font-size: 14px; color: ${BRAND_COLORS.secondary}; margin-top: 15px;">
+            Use this secure link to access your affiliate dashboard anytime without creating an account.
+          </p>
+        </div>
+        ` : ""}
+        
+        <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
+          ${data.userId ? "You can also access your affiliate dashboard by logging into your account." : data.dashboardLink ? "Save this dashboard link - you can use it anytime to check your earnings and referrals!" : "Please create an account to access your affiliate dashboard and track your earnings."}
+        </p>
+      `;
+      break;
+
+    case "affiliate_rejected":
+      icon = "❌";
+      content = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 48px; margin-bottom: 20px;">${icon}</div>
+          <h2 style="color: ${BRAND_COLORS.accent}; margin: 0; font-size: 24px;">${title}</h2>
+        </div>
+        
+        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.firstName || "Applicant"}</span>,</p>
+        
+        <p style="font-size: 16px; margin-bottom: 20px;">
+          We're sorry, but your affiliate partnership application could not be approved at this time.
+        </p>
+        
+        <div style="background: rgba(255, 107, 107, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="color: ${BRAND_COLORS.accent}; margin-top: 0;">Application Status</h3>
+          <p><strong>Status:</strong> <span style="color: ${BRAND_COLORS.accent};">Rejected</span></p>
+          ${data.rejectionReason ? `<p><strong>Reason:</strong> ${data.rejectionReason}</p>` : ""}
+        </div>
+        
+        <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
+          If you have any questions or would like to reapply in the future, please contact our support team.
+        </p>
+      `;
+      break;
+
     default:
       content = `
         <div style="text-align: center; margin-bottom: 30px;">
@@ -522,13 +634,9 @@ const generateUserNotificationContent = (
       `;
   }
 
-  return generateBrandedEmailTemplate(
-    title,
-    content,
-    buttonText,
-    buttonLink,
-    process.env.LOGO_URL
-  );
+  // Return just the content, not the full template
+  // sendEmailNotify will wrap it with the branded template
+  return content;
 };
 
 export {

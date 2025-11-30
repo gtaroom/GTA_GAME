@@ -90,6 +90,8 @@ export default function RootLayout({
                 />
             </head>
             <style
+                precedence='default'
+                href='rocketchat-widget-styles'
                 dangerouslySetInnerHTML={{
                     __html: `
             .rocketchat-widget {

@@ -162,7 +162,7 @@ export default function VipPerks({ className = '' }: VipPerksProps) {
                     </NeonBox>
 
                     {/* Weekly SC Reward - Always Available */}
-                    <NeonBox
+                    {/* <NeonBox
                         glowColor='--color-yellow-500'
                         glowSpread={0.4}
                         className='w-full p-2 md:px-4 md:py-3 lg:px-4 lg:py-3 2xl:px-5 2xl:py-4 flex flex-wrap items-center justify-between rounded-lg'
@@ -186,7 +186,7 @@ export default function VipPerks({ className = '' }: VipPerksProps) {
                         <span className='font-bold text-base capitalize leading-normal'>
                         Available
                         </span>
-                    </NeonBox>
+                    </NeonBox> */}
 
                     {/* VIP Wheel */}
                     <NeonBox

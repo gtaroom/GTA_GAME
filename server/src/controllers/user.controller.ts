@@ -34,6 +34,7 @@ import rechargeRequestModel from "../models/recharge-request.model";
 import withdrawalRequestModel from "../models/withdrawal-request.model";
 import NotificationModel from "../models/notification.model";
 import AmoeModel from "../models/amoe-entry.model";
+import ReferralModel from "../models/referral.model";
 
 const generateAccessAndRefreshTokens = async (userId: string) => {
   try {
@@ -56,6 +57,8 @@ const generateAccessAndRefreshTokens = async (userId: string) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { email, name, password, role, phone, acceptSMSMarketing, isOpted } =
     req.body;
+
+
 
   // Collect all validation errors
   const validationErrors: string[] = [];
@@ -148,9 +151,10 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   let user;
+  const { referralCode:codeY,...other } = req.body;
   try {
     user = await User.create({
-      ...req.body,
+      ...other,
       email,
       password,
       name,
@@ -191,6 +195,50 @@ const registerUser = asyncHandler(async (req, res) => {
   user.emailVerificationExpiry = tokenExpiry;
   await user.save();
   await UserBonusModel.create({ userId: user._id });
+
+  // Handle referral code (from query param or body)
+  const referralCode = req.query.ref || req.body.referralCode || req.query.aff || req.body.affiliateCode;
+  if (referralCode) {
+    try {
+      const code = String(referralCode).toUpperCase().trim();
+      
+      // Check if it's a user referral code
+      const referrer = await User.findOne({ referralCode: code });
+      if (referrer && referrer._id.toString() !== user._id.toString()) {
+        // Create referral record
+        await ReferralModel.create({
+          referrerId: referrer._id,
+          referredId: user._id,
+          referralCode: code,
+          status: "pending",
+        });
+        logger.info(`Referral created: ${referrer._id} referred ${user._id} with code ${code}`);
+      } else {
+        // Check if it's an affiliate code
+        const AffiliateModel = (await import("../models/affiliate.model")).default;
+        const affiliate = await AffiliateModel.findOne({
+          affiliateCode: code,
+          status: "approved",
+        });
+        
+        if (affiliate) {
+          // Create referral record with affiliate code
+          await ReferralModel.create({
+            referrerId: affiliate.userId || null,
+            referredId: user._id,
+            referralCode: code,
+            status: "pending",
+          });
+          logger.info(`Affiliate referral created: affiliate ${affiliate._id} referred ${user._id} with code ${code}`);
+        } else {
+          logger.warn(`Invalid referral code used during registration: ${code}`);
+        }
+      }
+    } catch (error) {
+      // Don't fail registration if referral code handling fails
+      logger.error("Error processing referral code during registration:", error);
+    }
+  }
 
   // Send email verification
   await sendEmail({
