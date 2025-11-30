@@ -66,7 +66,7 @@ export default function AffiliateDashboard() {
 
     const handleGenerateQR = async () => {
         try {
-            let linkToUse = affiliateLink;
+            let linkToUse: string | null = affiliateLink;
             if (!linkToUse) {
                 linkToUse = await fetchAffiliateLink();
             }
