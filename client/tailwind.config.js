@@ -1,0 +1,51 @@
+import bootstrapGrid from 'tailwind-bootstrap-grid';
+export default {
+    content: {
+        files: ['./src/**/*.{js,ts,jsx,tsx}'],
+    },
+    safelist: [
+        'bg-lime-500',
+        'bg-indigo-500',
+        'bg-violet-500',
+        'bg-teal-500',
+        'bg-amber-500',
+        'bg-cyan-500',
+        'bg-emerald-500',
+        'bg-pink-500',
+        'bg-rose-500',
+        'data-[side=bottom]:translate-y-2',
+        'data-[side=bottom]:translate-y-3',
+        'data-[side=bottom]:translate-y-4',
+        'data-[side=left]:-translate-x-2',
+        'data-[side=left]:-translate-x-3',
+        'data-[side=left]:-translate-x-4',
+        'data-[side=right]:translate-x-2',
+        'data-[side=right]:translate-x-3',
+        'data-[side=right]:translate-x-4',
+        'data-[side=top]:-translate-y-2',
+        'data-[side=top]:-translate-y-3',
+        'data-[side=top]:-translate-y-4',
+        'space-y-[24px]',
+        '[&>div]:py-[12px]',
+        '[&>div]:py-[8px]',
+        'before:h-[calc(100%+48px)]',
+        'before:h-[calc(100%+40px)]',
+    ],
+
+    plugins: [
+        bootstrapGrid({
+            container_max_widths: [
+                'sm',
+                '540px',
+                'md',
+                '720px',
+                'lg',
+                '960px',
+                'xl',
+                '1140px',
+                '2xl',
+                '1320px',
+            ],
+        }),
+    ],
+};

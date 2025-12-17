@@ -1,0 +1,246 @@
+/* Fortune Wheel Animation */
+@keyframes wheelGlow {
+    0% {
+        transform: scale(1);
+        filter: brightness(1) drop-shadow(0 0 5px rgba(255, 215, 0, 0.3));
+    }
+    100% {
+        transform: scale(1.05);
+        filter: brightness(1.2) drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
+    }
+}
+
+.display-1 {
+    @apply text-display-1 leading-[1.3] font-normal! tracking-[1px];
+}
+
+.h1-title {
+    @apply text-h1-title leading-[1.3];
+}
+
+.h2-title {
+    @apply text-h2-title;
+}
+
+.h3-title {
+    @apply text-h3-title leading-[1.3]!;
+}
+
+.h4-title {
+    @apply text-h4-title;
+}
+
+.h5-title {
+    @apply text-h5-title;
+}
+
+.h6-title {
+    @apply text-h6-title;
+}
+
+:where(.h1-title, .h2-title, .h3-title, .h4-title, .h5-title, .h6-title) {
+    @apply leading-normal font-bold;
+}
+
+.scale-effect {
+    @apply transform-gpu touch-manipulation transition-transform duration-200 ease-out will-change-transform hover:scale-[1.03] focus-visible:scale-[1.03] active:scale-[0.98];
+}
+
+.container-header-logged-out {
+    @apply mx-auto max-w-[1768px] px-4 sm:px-6;
+}
+
+.container-xl {
+    @apply mx-auto max-w-[1328px] px-4 lg:px-6;
+}
+.container-xxl {
+    @apply mx-auto max-w-[1408px] px-4 lg:px-6;
+}
+.container-2xl {
+    @apply mx-auto max-w-[1484px] px-4 lg:px-6;
+}
+.home-loggedout-center-title {
+    @apply mx-auto flex max-w-[800px] justify-center text-center;
+}
+
+.user-logged-in {
+    .container-xl {
+        @apply mx-auto max-w-[1280px] px-0!;
+    }
+
+    .container-xxl {
+        @apply mx-auto max-w-[1360px] px-0!;
+    }
+
+    .container-2xl {
+        @apply mx-auto max-w-[1436px] px-0!;
+    }
+}
+
+.site-checkbox {
+    label {
+        @apply tracking-common text-base font-bold;
+
+        a {
+            @apply underline;
+        }
+    }
+}
+
+.exclusive-games-slider {
+    @apply py-5!;
+
+    .swiper-slide {
+        @apply relative before:pointer-events-none before:absolute before:inset-0 before:z-[1] before:bg-black/20 before:transition-all before:duration-300 before:content-[''] hover:before:bg-transparent;
+    }
+
+    .swiper-slide-active {
+        @apply before:bg-transparent;
+    }
+}
+
+.row-gap-16 {
+    --bs-gutter-x: 1rem;
+    --bs-gutter-y: 1rem;
+}
+
+.row-gap-24 {
+    --bs-gutter-x: 1.5rem;
+    --bs-gutter-y: 1.5rem;
+}
+
+.row-gap-32 {
+    --bs-gutter-x: 2rem;
+    --bs-gutter-y: 2rem;
+}
+
+.row-gap-40 {
+    --bs-gutter-x: 40px;
+    --bs-gutter-y: 40px;
+}
+
+.hamburger-react > div {
+    box-shadow:
+        0 0 1.5999999999999996px var(--color-yellow-500),
+        0 0 2.199999999999999px var(--color-yellow-500),
+        0 0 2.799999999999999px var(--color-yellow-500),
+        inset 0 0 1.5999999999999996px var(--color-yellow-500);
+}
+
+div[data-slot="scroll-area-viewport"] {
+    & > div {
+        display: block !important;
+    }
+}
+
+.slider-right-overflow {
+    @apply relative overflow-hidden;
+
+    &::before {
+        @apply pointer-events-none absolute top-0 right-0 z-[8] h-full w-[200px] bg-gradient-to-r from-[rgba(49,10,71,0)] to-[rgba(49,10,71,1)] content-[''];
+    }
+}
+
+.home-banner-slider {
+    --vw: 23vw;
+    width: calc(100% + var(--vw)) !important;
+
+    .swiper-pagination {
+        width: calc(100% - var(--vw)) !important;
+        position: relative;
+    }
+
+    .swiper-pagination-bullet {
+        width: 12px;
+        height: 12px;
+        transition: 0.3s;
+        border-radius: 20px;
+        border: 2px solid var(--color-white);
+        background-color: transparent;
+        box-shadow:
+            0 0 6px var(--color-purple-500),
+            0 0 12px var(--color-purple-500),
+            0 0 18px var(--color-purple-500),
+            inset 0 0 6px var(--color-purple-500);
+        opacity: 1;
+
+        &.swiper-pagination-bullet-active {
+            width: 45px;
+        }
+    }
+}
+
+.circle-label {
+    @apply text-h1-title font-nunito font-extrabold;
+    text-shadow:
+        0 0 2px var(--color-purple-500),
+        0 0 4px var(--color-purple-500),
+        0 0 6px var(--color-purple-500);
+}
+
+.spin-wheel-wrapper {
+    position: relative;
+    z-index: 1;
+
+    &::before {
+        --size: 100%;
+        border-radius: 100%;
+        position: absolute;
+        content: "";
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: var(--size);
+        height: var(--size);
+        background-image: url("/spin-wheel/wheel-border.avif");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        z-index: 2;
+    }
+
+    &::after {
+        --size: calc(100% - 72px);
+        border-radius: 100%;
+        position: absolute;
+        content: "";
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: var(--size);
+        height: var(--size);
+        box-shadow:
+            0 0 12px var(--color-purple-500),
+            0 0 24px var(--color-purple-500),
+            0 0 32px var(--color-purple-500),
+            inset 0 0 6px var(--color-purple-500);
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        z-index: -1;
+        border: 2px solid var(--color-white);
+    }
+}
+/* Hide RocketChat default launcher*/
+.rocketchat-widget,
+.rocketchat-container > div:first-child,
+#rocketchat-widget,
+div[class*="rocketchat"] > button,
+button[class*="rocketchat"],
+button[class*="launcher"],
+[style*="position: fixed"][style*="bottom: 20px"],
+iframe[src*="livechat"] + div,
+iframe[src*="livechat"] ~ div > button {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Keep chat window visible when opened */
+.rocketchat-widget iframe,
+.rocketchat-container iframe,
+iframe[src*="livechat"] {
+    display: block !important;
+    visibility: visible !important;
+}

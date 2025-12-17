@@ -1,0 +1,38 @@
+{
+    "display": "standalone",
+    "name": "NextCasino",
+    "short_name": "Golden Ticket",
+    "description": "Next.js Casino – play your favorite games like a native app",
+    "start_url": "/?source=pwa",
+    "scope": "/",
+    "orientation": "portrait",
+    "background_color": "#310a47",
+    "theme_color": "#310a47",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "public/manifest-icon-192.maskable.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "public/manifest-icon-192.maskable.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "public/manifest-icon-512.maskable.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "public/manifest-icon-512.maskable.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

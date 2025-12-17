@@ -1,0 +1,13 @@
+@config "../../tailwind.config.js";
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./variables.css";
+@import "./theme.css";
+@import "./base.css";
+@import "./common.css";
+
+/* Fix for page transition opacity issues */
+main {
+    opacity: 1 !important;
+    transition: opacity 0.3s ease-in-out;
+}

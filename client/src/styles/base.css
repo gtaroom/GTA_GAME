@@ -1,0 +1,59 @@
+@layer base {
+    * {
+        @apply selection:bg-purple-400;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    html,
+    body {
+        @apply overflow-x-hidden!;
+    }
+
+    body {
+        @apply bg-background text-foreground font-figtree;
+    }
+
+    :where(h1, h2, h3, h4, h5, h6, input) {
+        @apply font-nunito uppercase;
+    }
+
+    ::-webkit-scrollbar {
+        @apply hidden;
+    }
+
+    [type="email"] {
+        @apply lowercase!;
+    }
+
+    button {
+        @apply cursor-pointer select-none;
+    }
+
+    img {
+        @apply pointer-events-auto select-none;
+    }
+
+    tr:has(> th) {
+        @apply border-b-[0]!;
+    }
+
+    th:first-child {
+        @apply rounded-tl-[8px];
+    }
+
+    th:last-child {
+        @apply rounded-tr-[8px];
+    }
+
+    /* header, */
+    /* footer, */
+    aside {
+        transition: 0.3s linear !important;
+    }
+
+    section,
+    .motion {
+        @apply relative z-[2];
+    }
+}

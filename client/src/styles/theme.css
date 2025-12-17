@@ -1,0 +1,101 @@
+@theme inline {
+    /* Font Family */
+    --font-nunito: var(--nunito-font-family);
+    --font-figtree: var(--figtree-font-family);
+
+    /* Font Size */
+    --text-display-1: clamp(3rem, 1.5rem + 5vw, 6.875rem);
+    --text-h1-title: clamp(2rem, 1.2rem + 2vw, 3rem);
+    --text-h2-title: clamp(1.75rem, 1.1rem + 1.5vw, 2.625rem);
+    --text-h3-title: clamp(1.5rem, 1rem + 1.3vw, 2.125rem);
+    --text-h4-title: clamp(1.25rem, 0.9rem + 1vw, 1.875rem);
+    --text-h5-title: clamp(1rem, 0.8rem + 0.7vw, 1.5rem);
+    --text-h6-title: clamp(0.875rem, 0.7rem + 0.5vw, 1.25rem);
+
+    /* Element Height */
+    --spacing-el-xs: 38px;
+    --spacing-el-sm: 48px;
+    --spacing-el-md: 52px;
+    --spacing-el-lg: 58px;
+    --spacing-el-xl: 70px;
+
+    /* Background and Foreground Color */
+    --color-background: #310a47;
+    --color-foreground: #ffffff;
+
+    /* Table Header Color  */
+    --color-table-header: #310a47;
+    --color-table-header-2: #442582;
+
+    /* Footer Color */
+    --color-footer: #260737;
+    --color-footer-bottom: #180522;
+
+    /* Button Color */
+    --color-btn-primary-top: #fa6b49;
+    --color-btn-primary-bottom: #feb749;
+    --color-btn-primary-border: #fde049;
+
+    --color-btn-secondary-top: #21cf46;
+    --color-btn-secondary-bottom: #67ff7d;
+    --color-btn-secondary-border: #bdf8c7;
+
+    --color-btn-text: #310a47;
+
+    --color-card: oklch(1 0 0);
+    --color-card-foreground: oklch(0.145 0 0);
+
+    --color-popover: oklch(1 0 0);
+    --color-popover-foreground: oklch(0.145 0 0);
+
+    --color-primary: oklch(0.205 0 0);
+    --color-primary-foreground: oklch(0.985 0 0);
+
+    --color-secondary: oklch(0.97 0 0);
+    --color-secondary-foreground: oklch(0.205 0 0);
+
+    --color-muted: oklch(0.97 0 0);
+    --color-muted-foreground: oklch(0.556 0 0);
+
+    --color-accent: oklch(0.97 0 0);
+    --color-accent-foreground: oklch(0.205 0 0);
+
+    --color-destructive: oklch(0.577 0.245 27.325);
+
+    --color-border: oklch(0.922 0 0);
+    --color-input: oklch(0.922 0 0);
+    --color-ring: oklch(0.708 0 0);
+
+    --color-chart-1: oklch(0.646 0.222 41.116);
+    --color-chart-2: oklch(0.6 0.118 184.704);
+    --color-chart-3: oklch(0.398 0.07 227.392);
+    --color-chart-4: oklch(0.828 0.189 84.429);
+    --color-chart-5: oklch(0.769 0.188 70.08);
+
+    --color-sidebar: oklch(0.985 0 0);
+    --color-sidebar-foreground: oklch(0.145 0 0);
+    --color-sidebar-primary: oklch(0.205 0 0);
+    --color-sidebar-primary-foreground: oklch(0.985 0 0);
+    --color-sidebar-accent: oklch(0.97 0 0);
+    --color-sidebar-accent-foreground: oklch(0.205 0 0);
+    --color-sidebar-border: oklch(0.922 0 0);
+    --color-sidebar-ring: oklch(0.708 0 0);
+
+    /* Box Shadow */
+    --shadow-btn-primary: 0 4px 30px 0 rgba(253, 237, 73, 0.4);
+    --shadow-btn-secondary: 0 4px 40px 0 rgba(63, 228, 94, 0.6);
+
+    /* Border Radius */
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-xl: calc(var(--radius) + 4px);
+    --radius-pill: 9999px;
+
+    /* Letter Spacing */
+    --tracking-common: 0.16px;
+
+    /* Custom Breakpoint */
+    --breakpoint-xxl: 1360px;
+    --breakpoint-xs: 480px;
+}
