@@ -1,0 +1,114 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Production Deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_KEY }}
+          known_hosts: "placeholder"
+          if_key_exists: replace
+
+      - name: Update Known Hosts
+        run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Syncing project files to /app
+        run: |
+          rsync -avz --delete \
+            --rsync-path="sudo rsync" \
+            --exclude 'node_modules' \
+            --exclude '.git' \
+            --exclude '.next' \
+            --exclude '.env*' \
+            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/app/
+
+      - name: Execute Remote Deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /app
+
+            # 1. Preparation
+            echo "Ensuring storage directories and permissions..."
+            sudo mkdir -p uploads/avatars
+            sudo chown -R 1001:1001 uploads
+
+            # 2. Environment Configuration
+            echo "Injecting environment variables..."
+            sudo bash -c "cat <<ENV > .env.prod
+            # Backend
+            PORT=3000
+            MONGODB_URI='${{ secrets.MONGODB_URI }}'
+            ORIGINS='${{ secrets.ORIGINS }}'
+            DOMAIN='${{ secrets.DOMAIN }}'
+            EXPRESS_SESSION_SECRET='${{ secrets.EXPRESS_SESSION_SECRET }}'
+            REFRESH_TOKEN_SECRET='${{ secrets.REFRESH_TOKEN_SECRET }}'
+            ACCESS_TOKEN_SECRET='${{ secrets.ACCESS_TOKEN_SECRET }}'
+            EZTEXTING_API_KEY='${{ secrets.EZTEXTING_API_KEY }}'
+            EZTEXTING_API_SECRET='${{ secrets.EZTEXTING_API_SECRET }}'
+            SMTP_USER='${{ secrets.SMTP_USER }}'
+            SMTP_PASS='${{ secrets.SMTP_PASS }}'
+            SMTP_PORT='${{ secrets.SMTP_PORT }}'
+            SMTP_HOST='${{ secrets.SMTP_HOST }}'
+            ACCESS_TOKEN_EXPIRY='${{ secrets.ACCESS_TOKEN_EXPIRY }}'
+            REFRESH_TOKEN_EXPIRY='${{ secrets.REFRESH_TOKEN_EXPIRY }}'
+            GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
+            GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}'
+            GOOGLE_CLIENT_CALLBACK_URI='${{ secrets.GOOGLE_CLIENT_CALLBACK_URI }}'
+            CLIENT_SSO_REDIRECT_URL='${{ secrets.CLIENT_SSO_REDIRECT_URL }}'
+            FORGOT_PASSWORD_REDIRECT_URL='${{ secrets.FORGOT_PASSWORD_REDIRECT_URL }}'
+            CLIENT_URL='${{ secrets.CLIENT_URL }}'
+            WEBHOOK_CALLBACK_URL='${{ secrets.WEBHOOK_CALLBACK_URL }}'
+            PLISIO_API_KEY='${{ secrets.PLISIO_API_KEY }}'
+            SOAP_API_KEY='${{ secrets.SOAP_API_KEY }}'
+            SOAP_WEBHOOK_SECRET='${{ secrets.SOAP_WEBHOOK_SECRET }}'
+            SOAP_RETURN_URL='${{ secrets.SOAP_RETURN_URL }}'
+            ADMIN_EMAIL='${{ secrets.ADMIN_EMAIL }}'
+            NOWPAYMENTS_API_KEY='${{ secrets.NOWPAYMENTS_API_KEY }}'
+            TWILIO_MESSAGING_SERVICE_SID='${{ secrets.TWILIO_MESSAGING_SERVICE_SID }}'
+            TWILIO_PHONE_NUMBER='${{ secrets.TWILIO_PHONE_NUMBER }}'
+            TWILIO_AUTH_TOKEN='${{ secrets.TWILIO_AUTH_TOKEN }}'
+            TWILIO_ACCOUNT_SID='${{ secrets.TWILIO_ACCOUNT_SID }}'
+            GOAT_PAYMENTS_USERNAME='${{ secrets.GOAT_PAYMENTS_USERNAME }}'
+            GOAT_PAYMENTS_PASSWORD='${{ secrets.GOAT_PAYMENTS_PASSWORD }}'
+            CENTRYOS_API_KEY='${{ secrets.CENTRYOS_API_KEY }}'
+            CENTRYOS_WEBHOOK_SECRET='${{ secrets.CENTRYOS_WEBHOOK_SECRET }}'
+            CENTRYOS_RETURN_URL='${{ secrets.CENTRYOS_RETURN_URL }}'
+            CENTRYOS_ACCESS_TOKEN='${{ secrets.CENTRYOS_ACCESS_TOKEN }}'
+
+            # Client (Next.js Build Args)
+            NEXT_PUBLIC_API_URL='${{ secrets.NEXT_PUBLIC_API_URL }}'
+            NEXT_PUBLIC_IMAGE_URL='${{ secrets.NEXT_PUBLIC_IMAGE_URL }}'
+            NEXT_PUBLIC_VERIFF_API_KEY='${{ secrets.NEXT_PUBLIC_VERIFF_API_KEY }}'
+            NEXT_PUBLIC_PRODUCT_ID='${{ secrets.NEXT_PUBLIC_PRODUCT_ID }}'
+
+            # Admin (Vite Build Args)
+            VITE_APP_API_URL='${{ secrets.VITE_APP_API_URL }}'
+            VITE_SERVER_URI='${{ secrets.VITE_SERVER_URI }}'
+            ENV"
+
+            # 3. Container Orchestration
+            echo "Starting containers..."
+            sudo docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
+
+            # 4. Cleanup
+            echo "Cleaning up dangling images..."
+            sudo docker system prune -f
+
+            echo "Deployment successful!"
