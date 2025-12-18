@@ -68,15 +68,12 @@ jobs:
             echo "Context: $(pwd)"
 
             # 1. Preparation
-            echo "Ensuring storage directories and permissions..."
+            echo "Ensuring storage directories..."
             mkdir -p uploads/avatars
-            # We use sudo for chown because it involves UID 1001 (standard for docker)
-            sudo chown -R 1001:1001 uploads
 
             # 2. Environment Configuration
             echo "Injecting environment variables..."
-            cat <<ENV > .env.prod
-            # Backend
+            cat <<EOF > .env.prod
             PORT=3000
             MONGODB_URI='${{ secrets.MONGODB_URI }}'
             ORIGINS='${{ secrets.ORIGINS }}'
@@ -115,24 +112,25 @@ jobs:
             CENTRYOS_WEBHOOK_SECRET='${{ secrets.CENTRYOS_WEBHOOK_SECRET }}'
             CENTRYOS_RETURN_URL='${{ secrets.CENTRYOS_RETURN_URL }}'
             CENTRYOS_ACCESS_TOKEN='${{ secrets.CENTRYOS_ACCESS_TOKEN }}'
-
-            # Client (Next.js Build Args)
             NEXT_PUBLIC_API_URL='${{ secrets.NEXT_PUBLIC_API_URL }}'
             NEXT_PUBLIC_IMAGE_URL='${{ secrets.NEXT_PUBLIC_IMAGE_URL }}'
             NEXT_PUBLIC_VERIFF_API_KEY='${{ secrets.NEXT_PUBLIC_VERIFF_API_KEY }}'
             NEXT_PUBLIC_PRODUCT_ID='${{ secrets.NEXT_PUBLIC_PRODUCT_ID }}'
-
-            # Admin (Vite Build Args)
             VITE_APP_API_URL='${{ secrets.VITE_APP_API_URL }}'
             VITE_SERVER_URI='${{ secrets.VITE_SERVER_URI }}'
-            ENV
+            EOF
 
             # 3. Container Orchestration
             echo "Starting containers..."
-            sudo docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
+            # Try docker-compose (older/hyphenated) first, then docker compose (v2)
+            if command -v docker-compose &> /dev/null; then
+              docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
+            else
+              docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
+            fi
 
             # 4. Cleanup
             echo "Cleaning up dangling images..."
-            sudo docker system prune -f
+            docker system prune -f
 
             echo "Deployment successful!"
