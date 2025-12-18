@@ -69,12 +69,13 @@ jobs:
 
             # 1. Preparation
             echo "Ensuring storage directories and permissions..."
-            sudo mkdir -p uploads/avatars
+            mkdir -p uploads/avatars
+            # We use sudo for chown because it involves UID 1001 (standard for docker)
             sudo chown -R 1001:1001 uploads
 
             # 2. Environment Configuration
             echo "Injecting environment variables..."
-            sudo bash -c "cat <<ENV > .env.prod
+            cat <<ENV > .env.prod
             # Backend
             PORT=3000
             MONGODB_URI='${{ secrets.MONGODB_URI }}'
@@ -124,7 +125,7 @@ jobs:
             # Admin (Vite Build Args)
             VITE_APP_API_URL='${{ secrets.VITE_APP_API_URL }}'
             VITE_SERVER_URI='${{ secrets.VITE_SERVER_URI }}'
-            ENV"
+            ENV
 
             # 3. Container Orchestration
             echo "Starting containers..."
