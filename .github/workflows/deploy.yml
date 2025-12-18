@@ -29,25 +29,38 @@ jobs:
               StrictHostKeyChecking no
 
       - name: Pre-flight SSH Connectivity Check
+        env:
+          HOST: ${{ secrets.SSH_HOST }}
+          PORT: ${{ secrets.SSH_PORT || '22' }}
         run: |
-          echo "Verifying connection to ${{ secrets.SSH_HOST }} on port ${{ secrets.SSH_PORT || 22 }}..."
-          ssh -O check production || {
-            echo "Failed to connect to host. Checking if port is open..."
-            nc -zv -w5 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT || 22 }}
+          echo "Verifying connection to $HOST on port $PORT..."
+          if ! ssh -q -o ConnectTimeout=10 production exit; then
+            echo "::error::Failed to connect to $HOST! This is likely a firewall issue."
+            echo "Checking if port $PORT is reachable..."
+            nc -zv -w10 $HOST $PORT || {
+              echo "::error::Port $PORT is CLOSED or filtered. Please check your VPS firewall (e.g., sudo ufw allow $PORT/tcp)."
+              exit 1
+            }
+            echo "::error::Port is open but SSH authentication failed. Verify your SSH_KEY and SSH_USER."
             exit 1
-          }
+          fi
+          echo "SSH connectivity verified."
 
       - name: Syncing project files to /app
+        env:
+          HOST: ${{ secrets.SSH_HOST }}
+          USER: ${{ secrets.SSH_USER }}
+          PORT: ${{ secrets.SSH_PORT || '22' }}
         run: |
           echo "Starting file synchronization..."
           rsync -avz --delete \
-            -e "ssh -p ${{ secrets.SSH_PORT || 22 }}" \
+            -e "ssh -p $PORT" \
             --rsync-path="sudo rsync" \
             --exclude 'node_modules' \
             --exclude '.git' \
             --exclude '.next' \
             --exclude '.env*' \
-            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/app/
+            ./ $USER@$HOST:/app/
 
       - name: Execute Remote Deployment
         uses: appleboy/ssh-action@v1.0.3
