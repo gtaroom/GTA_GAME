@@ -170,8 +170,8 @@ jobs:
                   - NODE_ENV=production
                   - VIRTUAL_HOST=api.gtoarcade.com
                   - LETSENCRYPT_HOST=api.gtoarcade.com
-                  - VIRTUAL_PORT=3000
-                  - PORT=3000
+                  - VIRTUAL_PORT=3500
+                  - PORT=3500
                   - MONGODB_URI=\${MONGODB_URI}
                   - ORIGINS=\${ORIGINS}
                   - DOMAIN=\${DOMAIN}
@@ -210,7 +210,7 @@ jobs:
                   - CENTRYOS_RETURN_URL=\${CENTRYOS_RETURN_URL}
                   - CENTRYOS_ACCESS_TOKEN=\${CENTRYOS_ACCESS_TOKEN}
                 ports:
-                  - "3000:3000"
+                  - "3500:3500"
                 volumes:
                   - ./uploads:/app/uploads
                 deploy:
