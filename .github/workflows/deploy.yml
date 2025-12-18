@@ -19,15 +19,29 @@ jobs:
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_KEY }}
-          known_hosts: "placeholder"
+          known_hosts: "placeholder" # Will be updated by ssh-keyscan if not using config
           if_key_exists: replace
+          config: |
+            Host production
+              HostName ${{ secrets.SSH_HOST }}
+              User ${{ secrets.SSH_USER }}
+              Port ${{ secrets.SSH_PORT || 22 }}
+              StrictHostKeyChecking no
 
-      - name: Update Known Hosts
-        run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      - name: Pre-flight SSH Connectivity Check
+        run: |
+          echo "Verifying connection to ${{ secrets.SSH_HOST }} on port ${{ secrets.SSH_PORT || 22 }}..."
+          ssh -O check production || {
+            echo "Failed to connect to host. Checking if port is open..."
+            nc -zv -w5 ${{ secrets.SSH_HOST }} ${{ secrets.SSH_PORT || 22 }}
+            exit 1
+          }
 
       - name: Syncing project files to /app
         run: |
+          echo "Starting file synchronization..."
           rsync -avz --delete \
+            -e "ssh -p ${{ secrets.SSH_PORT || 22 }}" \
             --rsync-path="sudo rsync" \
             --exclude 'node_modules' \
             --exclude '.git' \
@@ -41,8 +55,11 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
           script: |
+            set -e
             cd /app
+            echo "Context: $(pwd)"
 
             # 1. Preparation
             echo "Ensuring storage directories and permissions..."
