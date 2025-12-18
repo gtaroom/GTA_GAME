@@ -118,7 +118,6 @@ jobs:
               mongodb:
                 image: mongo:latest
                 container_name: mongodb
-                command: mongod --auth
                 restart: always
                 ports:
                   - "127.0.0.1:27017:27017"
