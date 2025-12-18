@@ -261,7 +261,8 @@ jobs:
             EOF
 
             echo "Injecting environment variables..."
-            cat <<EOF | sed 's/^[[:space:]]*//' > .env.prod
+            # Using standard .env file so docker-compose automatically picks it up for interpolation
+            cat <<EOF | sed 's/^[[:space:]]*//' > .env
                 PORT=3000
                 MONGODB_URI='${{ secrets.MONGODB_URI }}'
                 ORIGINS='${{ secrets.ORIGINS }}'
@@ -311,8 +312,9 @@ jobs:
             (sudo fuser -k 3000/tcp || true) 2>/dev/null
             (sudo fuser -k 5173/tcp || true) 2>/dev/null
 
-            echo "Deploying with Correct Port Mapping..."
-            ./docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate --remove-orphans
+            echo "Deploying with Correct Port Mapping & Secrets..."
+            # Removed --env-file .env.prod because we are now using .env which is auto-loaded
+            ./docker-compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
 
             echo "Cleaning up..."
             rm docker-compose
