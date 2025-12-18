@@ -43,7 +43,7 @@ RUN chown -R node-prod:node-prod /app
 USER node-prod
 
 # Expose the application port
-EXPOSE 3000
+EXPOSE 3500
 
 # Optimization: Use production environment
 ENV NODE_ENV=production

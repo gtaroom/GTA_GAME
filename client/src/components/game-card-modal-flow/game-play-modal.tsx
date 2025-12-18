@@ -1,3 +1,5 @@
+import PaymentModal from '@/app/(account)/buy-coins/components/payment-modal';
+import type { CoinPackage } from '@/app/(account)/buy-coins/types';
 import { useAuth } from '@/contexts/auth-context';
 import { useWalletBalance } from '@/contexts/wallet-balance-context';
 import { useKYCVerification } from '@/hooks/useKYCVerification';
@@ -21,6 +23,8 @@ import GameModalTitle from './game-modal-title';
 const MIN_ADD_LOOT = 5;
 const MIN_REDEEM = 40;
 const MAX_REDEEM = 500;
+const CONVERSION_RATE = 100; // 1 USD = 100 GC
+const MIN_BALANCE_REQUIRED = 500; // Minimum GC required to add game loot
 
 interface GamePlayStepProps extends GamePlayModalProps {
     onTriggerSaveCredentials?: (username: string, password: string) => void;
@@ -54,12 +58,61 @@ export default function GamePlayStep({
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
+    // Payment Modal State
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(
+        null
+    );
+    const [purchaseAmount, setPurchaseAmount] = useState('');
+    const [showAmountError, setShowAmountError] = useState<string | null>(null);
+
+    // Check if user has enough balance
+    const hasEnoughBalance = userBalance >= MIN_BALANCE_REQUIRED;
+
     const fetchBalance = async () => {
         try {
             await refresh();
         } catch (err) {
             console.error('Failed to fetch balance:', err);
         }
+    };
+
+    const handleBuyCoinsClick = () => {
+        const amount = parseFloat(purchaseAmount);
+
+        // Validate amount
+        if (!purchaseAmount || isNaN(amount) || amount < MIN_ADD_LOOT) {
+            setShowAmountError(
+                `Please enter a valid amount (minimum $${MIN_ADD_LOOT})`
+            );
+            return;
+        }
+
+        // Clear any errors
+        setShowAmountError(null);
+
+        // Calculate coins
+        const baseCoins = amount * CONVERSION_RATE;
+        let bonusCoins = 0;
+
+        // Bonus calculation: Every $10 gets bonus, capped at 500
+        if (amount >= 5) {
+            const bonusTier = Math.floor(amount / 10);
+            bonusCoins = Math.min((bonusTier + 1) * 100, 500);
+        }
+
+        // Create package object for payment modal
+        const packageData: CoinPackage = {
+            totalGC: baseCoins,
+            bonusGC: bonusCoins > 0 ? bonusCoins : undefined,
+            tag: bonusCoins > 0 ? 'Custom Package' : undefined,
+            price: `$${amount}`,
+            amount: amount,
+            productId: process.env.NEXT_PUBLIC_PRODUCT_ID || 'custom_package',
+        };
+
+        setSelectedPackage(packageData);
+        setIsPaymentModalOpen(true);
     };
 
     const handleAddGameLoot = async () => {
@@ -215,7 +268,7 @@ export default function GamePlayStep({
                             Game Account
                         </NeonText>
                     </div>
-                    
+
                     <div className='space-y-3'>
                         {/* Username Input - Styled */}
                         <div>
@@ -227,12 +280,14 @@ export default function GamePlayStep({
                             <input
                                 type='text'
                                 value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                onChange={e => setUsername(e.target.value)}
                                 placeholder='Enter username'
                                 className='w-full bg-transparent border border-blue-500/30 rounded-md px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all'
                                 style={{
-                                    boxShadow: username ? '0 0 10px rgba(59, 130, 246, 0.2)' : 'none',
-                                    textTransform: 'none'
+                                    boxShadow: username
+                                        ? '0 0 10px rgba(59, 130, 246, 0.2)'
+                                        : 'none',
+                                    textTransform: 'none',
                                 }}
                             />
                         </div>
@@ -248,43 +303,71 @@ export default function GamePlayStep({
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={e => setPassword(e.target.value)}
                                     placeholder='Enter password'
                                     className='w-full bg-transparent border border-blue-500/30 rounded-md px-3 py-2 pr-10 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50 transition-all'
                                     style={{
-                                        boxShadow: password ? '0 0 10px rgba(59, 130, 246, 0.2)' : 'none',
-                                        textTransform: 'none'
+                                        boxShadow: password
+                                            ? '0 0 10px rgba(59, 130, 246, 0.2)'
+                                            : 'none',
+                                        textTransform: 'none',
                                     }}
                                 />
                                 <button
                                     type='button'
-                                    onClick={() => setShowPassword(!showPassword)}
+                                    onClick={() =>
+                                        setShowPassword(!showPassword)
+                                    }
                                     className='absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 hover:text-blue-300 transition-colors'
                                 >
                                     <NeonIcon
-                                        icon={showPassword ? 'lucide:eye-off' : 'lucide:eye'}
+                                        icon={
+                                            showPassword
+                                                ? 'lucide:eye-off'
+                                                : 'lucide:eye'
+                                        }
                                         size={16}
                                     />
                                 </button>
                             </div>
                         </div>
 
-                        {/* Save Credentials Link */}
-                        {username && password && onTriggerSaveCredentials && (
+                        {/* Save Credentials Link - ALWAYS VISIBLE */}
+                        {onTriggerSaveCredentials && (
                             <div className='pt-2 border-t border-gray-700/50'>
                                 <button
                                     onClick={() => {
-                                        onTriggerSaveCredentials(username, password);
+                                        if (username && password) {
+                                            onTriggerSaveCredentials(
+                                                username,
+                                                password
+                                            );
+                                        } else {
+                                            setError(
+                                                'Please enter both username and password to save'
+                                            );
+                                        }
                                     }}
-                                    className='text-cyan-400 hover:text-cyan-300 text-sm font-medium flex items-center gap-1.5 transition-colors'
+                                    disabled={!username || !password}
+                                    className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${
+                                        username && password
+                                            ? 'text-cyan-400 hover:text-cyan-300'
+                                            : 'text-gray-500 cursor-not-allowed'
+                                    }`}
                                 >
                                     <NeonIcon
                                         icon='lucide:save'
                                         size={14}
-                                        glowColor='--color-cyan-500'
+                                        glowColor={
+                                            username && password
+                                                ? '--color-cyan-500'
+                                                : undefined
+                                        }
                                     />
                                     Save credentials{' '}
-                                    <span className='text-xs opacity-70'>(optional)</span>
+                                    <span className='text-xs opacity-70'>
+                                        (optional)
+                                    </span>
                                 </button>
                             </div>
                         )}
@@ -294,7 +377,9 @@ export default function GamePlayStep({
                             <span className='text-gray-400'>Status:</span>
                             <span className='font-semibold text-green-400 flex items-center gap-1'>
                                 <span className='w-2 h-2 bg-green-400 rounded-full'></span>
-                                {accountDetails?.isCredentialsStored ? 'Saved' : 'Active (This Session)'}
+                                {accountDetails?.isCredentialsStored
+                                    ? 'Saved'
+                                    : 'Active (This Session)'}
                             </span>
                         </div>
                     </div>
@@ -331,6 +416,144 @@ export default function GamePlayStep({
                     </div>
                 </NeonBox>
 
+                {/* Insufficient Balance Warning - Show if balance is below MIN_BALANCE_REQUIRED */}
+                {!hasEnoughBalance && !userBalanceLoading && (
+                    <NeonBox
+                        glowColor='--color-red-500'
+                        backgroundColor='--color-red-500'
+                        backgroundOpacity={0.1}
+                        className='p-5 rounded-lg'
+                    >
+                        <div className='flex items-start gap-4'>
+                            <NeonIcon
+                                icon='lucide:alert-triangle'
+                                size={24}
+                                glowColor='--color-red-500'
+                            />
+                            <div className='flex-1'>
+                                <NeonText
+                                    glowColor='--color-red-500'
+                                    className='text-lg font-bold text-red-400 mb-3'
+                                >
+                                    💰 Insufficient Balance
+                                </NeonText>
+
+                                <div className='bg-red-900/30 border border-red-500/30 rounded-lg p-4 mb-4'>
+                                    <div className='flex items-center justify-between mb-2'>
+                                        <span className='text-sm text-red-300'>
+                                            Current Balance:
+                                        </span>
+                                        <span className='text-sm font-bold text-red-200'>
+                                            {userBalance.toLocaleString()} GC
+                                        </span>
+                                    </div>
+                                    <div className='flex items-center justify-between mb-2'>
+                                        <span className='text-sm text-red-300'>
+                                            Required:
+                                        </span>
+                                        <span className='text-sm font-bold text-red-200'>
+                                            {MIN_BALANCE_REQUIRED.toLocaleString()}{' '}
+                                            GC
+                                        </span>
+                                    </div>
+                                    <div className='flex items-center justify-between'>
+                                        <span className='text-sm text-red-300'>
+                                            You need:
+                                        </span>
+                                        <span className='text-sm font-bold text-yellow-400'>
+                                            {(
+                                                MIN_BALANCE_REQUIRED -
+                                                userBalance
+                                            ).toLocaleString()}{' '}
+                                            GC
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className='space-y-4 mb-4'>
+                                    <div className='space-y-2'>
+                                        <label className='text-sm font-semibold text-red-300 flex items-center gap-2'>
+                                            <NeonIcon
+                                                icon='lucide:dollar-sign'
+                                                size={14}
+                                                glowColor='--color-red-500'
+                                            />
+                                            Purchase Amount
+                                        </label>
+                                        <Input
+                                            type='number'
+                                            placeholder={`Enter amount (min $${MIN_ADD_LOOT})`}
+                                            value={purchaseAmount}
+                                            onChange={e => {
+                                                setPurchaseAmount(
+                                                    e.target.value
+                                                );
+                                                setShowAmountError(null);
+                                            }}
+                                            disabled={loading}
+                                            min={MIN_ADD_LOOT}
+                                            step='1'
+                                            className='w-full bg-red-900/20 border-red-500/30 focus:border-red-500/50 text-white'
+                                        />
+                                        {purchaseAmount &&
+                                            !isNaN(
+                                                parseFloat(purchaseAmount)
+                                            ) &&
+                                            parseFloat(purchaseAmount) >=
+                                                MIN_ADD_LOOT && (
+                                                <div className='text-xs text-red-300 flex items-center gap-1'>
+                                                    <NeonIcon
+                                                        icon='lucide:info'
+                                                        size={12}
+                                                        glowColor='--color-red-500'
+                                                    />
+                                                    <span>
+                                                        This equals{' '}
+                                                        {(
+                                                            parseFloat(
+                                                                purchaseAmount
+                                                            ) * CONVERSION_RATE
+                                                        ).toLocaleString()}{' '}
+                                                        GC that will be added to
+                                                        your wallet
+                                                    </span>
+                                                </div>
+                                            )}
+                                    </div>
+
+                                    {showAmountError && (
+                                        <div className='flex items-center gap-2 text-red-400 text-sm'>
+                                            <NeonIcon
+                                                icon='lucide:alert-circle'
+                                                size={14}
+                                                glowColor='--color-red-500'
+                                            />
+                                            <span>{showAmountError}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className='flex flex-col gap-3'>
+                                    <Button
+                                        onClick={handleBuyCoinsClick}
+                                        className='bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-bold text-base px-6 py-3 rounded-lg shadow-lg hover:shadow-yellow-500/25 transition-all duration-200 flex items-center justify-center gap-2'
+                                    >
+                                        <NeonIcon
+                                            icon='lucide:coins'
+                                            size={20}
+                                            glowColor='--color-yellow-500'
+                                        />
+                                        💰 Buy Gold Coins Now
+                                    </Button>
+                                    <p className='text-xs text-red-300 text-center'>
+                                        Purchase coins to continue playing and
+                                        adding game loot
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </NeonBox>
+                )}
                 {/* Success Message */}
                 {success && (
                     <NeonBox
@@ -383,7 +606,9 @@ export default function GamePlayStep({
                                         </span>
                                     </div>
                                     <button
-                                        onClick={() => router.push('/buy-coins')}
+                                        onClick={() =>
+                                            router.push('/buy-coins')
+                                        }
                                         className='mt-2 text-blue-400 hover:text-blue-300 underline text-sm font-semibold'
                                     >
                                         Buy Gold Coins →
@@ -627,9 +852,9 @@ export default function GamePlayStep({
                 </NeonBox>
 
                 {/* Play Button */}
-                <Button 
-                    onClick={handlePlayGame} 
-                    size='lg' 
+                <Button
+                    onClick={handlePlayGame}
+                    size='lg'
                     className='w-full'
                     disabled={!username || !password}
                 >
@@ -647,6 +872,13 @@ export default function GamePlayStep({
                     </button>
                 </div>
             </div>
+
+            {/* Payment Modal */}
+            <PaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                selectedPackage={selectedPackage}
+            />
         </div>
     );
 }

@@ -44,7 +44,7 @@ ENV NODE_ENV=production
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD bun run server.js --help || exit 1
 
-EXPOSE 3001
+EXPOSE 3000
 
 # Nextjs standalone entry point is server.js
 CMD ["bun", "run", "server.js"]

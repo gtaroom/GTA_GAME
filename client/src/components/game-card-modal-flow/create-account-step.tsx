@@ -57,9 +57,40 @@ export default function CreateAccountStep({
     ];
 
     const handleBuyCoinsClick = () => {
-        // For users with sufficient balance, just open the payment modal
-        // Let them choose from standard packages
-        setSelectedPackage(null);
+        const amount = parseFloat(rechargeAmount);
+
+        // Validate amount
+        if (!rechargeAmount || isNaN(amount) || amount < MIN_ADD_LOOT) {
+            setShowAmountError(
+                `Please enter a valid amount (minimum $${MIN_ADD_LOOT})`
+            );
+            return;
+        }
+
+        // Clear any errors
+        setShowAmountError(null);
+
+        // Calculate coins
+        const baseCoins = amount * CONVERSION_RATE;
+        let bonusCoins = 0;
+
+        // Bonus calculation: Every $10 gets bonus, capped at 500
+        if (amount >= 5) {
+            const bonusTier = Math.floor(amount / 10);
+            bonusCoins = Math.min((bonusTier + 1) * 100, 500);
+        }
+
+        // Create package object for payment modal
+        const packageData: CoinPackage = {
+            totalGC: baseCoins,
+            bonusGC: bonusCoins > 0 ? bonusCoins : undefined,
+            tag: bonusCoins > 0 ? 'Custom Package' : undefined,
+            price: `$${amount}`,
+            amount: amount,
+            productId: process.env.NEXT_PUBLIC_PRODUCT_ID || 'custom_package',
+        };
+
+        setSelectedPackage(packageData);
         setIsPaymentModalOpen(true);
     };
 
@@ -68,8 +99,8 @@ export default function CreateAccountStep({
         setShowAmountError(null);
 
         if (!hasEnoughBalance) {
-            // Redirect to buy coins page
-            router.push('/buy-coins');
+            // Show payment modal instead of redirecting
+            handleBuyCoinsClick();
             return;
         }
 
@@ -149,7 +180,7 @@ export default function CreateAccountStep({
                     </NeonBox>
                 )}
 
-                {/* Balance warning - WITHOUT Amount Input */}
+                {/* Balance warning with Amount Input */}
                 {!hasEnoughBalance && !hasPendingRequest && !balanceLoading && (
                     <NeonBox
                         glowColor='--color-red-500'
@@ -202,11 +233,95 @@ export default function CreateAccountStep({
                                     </div>
                                 </div>
 
+                                {/* NEW: Amount Input Section for Insufficient Balance */}
+                                <div className='space-y-4 mb-4'>
+                                    <div className='space-y-2'>
+                                        <label className='text-sm font-semibold text-red-300 flex items-center gap-2'>
+                                            <NeonIcon
+                                                icon='lucide:dollar-sign'
+                                                size={14}
+                                                glowColor='--color-red-500'
+                                            />
+                                            Amount to load into Game
+                                        </label>
+                                        <Input
+                                            type='number'
+                                            placeholder={`Enter amount (min $${MIN_ADD_LOOT})`}
+                                            value={rechargeAmount}
+                                            onChange={e => {
+                                                setRechargeAmount(
+                                                    e.target.value
+                                                );
+                                                setShowAmountError(null);
+                                            }}
+                                            disabled={isLoading}
+                                            min={MIN_ADD_LOOT}
+                                            step='1'
+                                            className='w-full bg-red-900/20 border-red-500/30 focus:border-red-500/50 text-white'
+                                        />
+                                        {rechargeAmount &&
+                                            !isNaN(
+                                                parseFloat(rechargeAmount)
+                                            ) &&
+                                            parseFloat(rechargeAmount) >=
+                                                MIN_ADD_LOOT && (
+                                                <div className='text-xs text-red-300 flex items-center gap-1'>
+                                                    <NeonIcon
+                                                        icon='lucide:info'
+                                                        size={12}
+                                                        glowColor='--color-red-500'
+                                                    />
+                                                    <span>
+                                                        This equals{' '}
+                                                        {(
+                                                            parseFloat(
+                                                                rechargeAmount
+                                                            ) * CONVERSION_RATE
+                                                        ).toLocaleString()}{' '}
+                                                        GC that will be loaded
+                                                        into your game
+                                                    </span>
+                                                </div>
+                                            )}
+                                    </div>
+
+                                    {/* Amount Error */}
+                                    {showAmountError && (
+                                        <div className='flex items-center gap-2 text-red-400 text-sm'>
+                                            <NeonIcon
+                                                icon='lucide:alert-circle'
+                                                size={14}
+                                                glowColor='--color-red-500'
+                                            />
+                                            <span>{showAmountError}</span>
+                                        </div>
+                                    )}
+
+                                    {/* <div className='p-3 bg-red-900/30 rounded-lg border border-red-500/20'>
+                                        <div className='flex items-start gap-2 text-xs text-red-300'>
+                                            <NeonIcon
+                                                icon='lucide:lightbulb'
+                                                size={14}
+                                                glowColor='--color-red-500'
+                                                className='mt-0.5 flex-shrink-0'
+                                            />
+                                            <div>
+                                                <span className='font-semibold'>
+                                                    Note:
+                                                </span>{' '}
+                                                Enter the amount you want loaded
+                                                into your game. After purchasing
+                                                coins, this amount will be
+                                                automatically loaded when your
+                                                account is created.
+                                            </div>
+                                        </div>
+                                    </div> */}
+                                </div>
+
                                 <div className='flex flex-col gap-3'>
                                     <Button
-                                        onClick={() =>
-                                            router.push('/buy-coins')
-                                        }
+                                        onClick={handleBuyCoinsClick}
                                         className='bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-bold text-base px-6 py-3 rounded-lg shadow-lg hover:shadow-yellow-500/25 transition-all duration-200 flex items-center justify-center gap-2'
                                     >
                                         <NeonIcon
@@ -217,8 +332,8 @@ export default function CreateAccountStep({
                                         💰 Buy Gold Coins Now
                                     </Button>
                                     <p className='text-xs text-red-300 text-center'>
-                                        Click to purchase coins and return to
-                                        complete your account
+                                        Click to open payment options and
+                                        purchase coins
                                     </p>
                                 </div>
                             </div>
@@ -264,7 +379,7 @@ export default function CreateAccountStep({
                                         </div>
                                     </div>
 
-                                    {/* Amount Input with Buy Coins Badge */}
+                                    {/* Amount Input */}
                                     <div className='space-y-2'>
                                         <label className='text-sm font-semibold text-purple-300 flex items-center justify-between gap-2'>
                                             <span className='flex items-center gap-2'>
@@ -277,9 +392,8 @@ export default function CreateAccountStep({
                                             </span>
                                             {/* Buy Coins Badge */}
                                             <button
-                                                onClick={() =>
-                                                    router.push('/buy-coins')
-                                                }
+                                                onClick={handleBuyCoinsClick}
+                                                type='button'
                                                 className='inline-flex items-center gap-1 bg-yellow-400 text-black px-2 py-1 rounded-md text-xs font-extrabold shadow hover:bg-yellow-300 transition-colors'
                                             >
                                                 <NeonIcon
