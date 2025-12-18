@@ -113,6 +113,19 @@ jobs:
             # Using direct interpolation for Repo/Tag to avoid shell expansion bugs
             cat <<EOF_COMPOSE | sed 's/^            //' > docker-compose.prod.yml
             services:
+              mongodb:
+                image: mongo:latest
+                container_name: mongodb
+                restart: always
+                ports:
+                  - "27017:27017"
+                volumes:
+                  - mongodb_data:/data/db
+                deploy:
+                  resources:
+                    limits:
+                      memory: 512M
+
               nginx-proxy:
                 image: nginxproxy/nginx-proxy
                 container_name: nginx-proxy
@@ -162,6 +175,8 @@ jobs:
                   - LETSENCRYPT_HOST=api.gtoarcade.com
                   - VIRTUAL_PORT=3500
                   - PORT=3500
+                extra_hosts:
+                  - "host.docker.internal:host-gateway"
                 ports:
                   - "3500:3500"
                 volumes:
@@ -203,6 +218,7 @@ jobs:
                       memory: 256M
 
             volumes:
+              mongodb_data:
               certs:
               vhost:
               html:
@@ -250,6 +266,8 @@ jobs:
             CENTRYOS_WEBHOOK_SECRET=${{ secrets.CENTRYOS_WEBHOOK_SECRET }}
             CENTRYOS_RETURN_URL=${{ secrets.CENTRYOS_RETURN_URL }}
             CENTRYOS_ACCESS_TOKEN=${{ secrets.CENTRYOS_ACCESS_TOKEN }}
+            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
+            SENDGRID_FROM_EMAIL=${{ secrets.SENDGRID_FROM_EMAIL }}
             PORT=3500
             EOF_ENV_FILE
 
