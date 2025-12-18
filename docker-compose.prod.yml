@@ -21,8 +21,6 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3500
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     ports:
       - "3500:3500"
     volumes:
