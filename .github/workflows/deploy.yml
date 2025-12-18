@@ -39,14 +39,16 @@ jobs:
           PORT: ${{ secrets.SSH_PORT || '22' }}
         run: |
           echo "Verifying connection to $HOST on port $PORT..."
-          if ! ssh -q -o ConnectTimeout=10 production exit; then
-            echo "::error::Failed to connect to $HOST! This is likely a firewall issue."
-            echo "Checking if port $PORT is reachable..."
+          # Using -v for verbose output to diagnose authentication issues
+          if ! ssh -v -o ConnectTimeout=10 -o BatchMode=yes production exit; then
+            echo "::error::Failed to connect to production alias! This is likely an authentication or configuration issue."
+            echo "Detailed error logs above should indicate why 'publickey' was rejected."
+            
+            echo "Checking if port $PORT is reachable via network..."
             nc -zv -w10 $HOST $PORT || {
               echo "::error::Port $PORT is CLOSED or filtered. Please check your VPS firewall (e.g., sudo ufw allow $PORT/tcp)."
               exit 1
             }
-            echo "::error::Port is open but SSH authentication failed. Verify your SSH_KEY and SSH_USER."
             exit 1
           fi
           echo "SSH connectivity verified."
@@ -58,6 +60,7 @@ jobs:
           PORT: ${{ secrets.SSH_PORT || '22' }}
         run: |
           echo "Starting file synchronization..."
+          # Use the 'production' Host alias for consistency and reliability
           rsync -avz --delete \
             -e "ssh -p $PORT" \
             --rsync-path="sudo rsync" \
@@ -65,7 +68,7 @@ jobs:
             --exclude '.git' \
             --exclude '.next' \
             --exclude '.env*' \
-            ./ $USER@$HOST:/app/
+            ./ production:/app/
 
       - name: Execute Remote Deployment
         uses: appleboy/ssh-action@v1.0.3
