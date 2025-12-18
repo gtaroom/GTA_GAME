@@ -117,27 +117,34 @@ jobs:
             curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
             chmod +x docker-compose
 
-            echo "Generating Hybrid IP/Domain docker-compose.prod.yml..."
+            echo "Generating Final Port-Optimized docker-compose.prod.yml..."
             cat <<EOF > docker-compose.prod.yml
             services:
-              # Nginx Reverse Proxy (Handles Routing & SSL)
+              # Nginx Proxy: Handles Port 80/443 Traffic
               nginx-proxy:
                 image: nginxproxy/nginx-proxy
+                container_name: nginx-proxy
                 restart: always
                 ports:
                   - "80:80"
                   - "443:443"
                 environment:
-                  - DEFAULT_HOST=admin.gtoarcade.com
+                  # DEFAULT_HOST: Traffic to IP/Port 80 goes to Client
+                  - DEFAULT_HOST=gtoarcade.com
                 volumes:
                   - certs:/etc/nginx/certs
                   - vhost:/etc/nginx/vhost.d
                   - html:/usr/share/nginx/html
                   - /var/run/docker.sock:/tmp/docker.sock:ro
+                deploy:
+                  resources:
+                    limits:
+                      memory: 128M
 
-              # Let's Encrypt SSL Companion
+              # SSL Companion: Links to nginx-proxy to prevent restart loop
               acme-companion:
                 image: nginxproxy/acme-companion
+                container_name: nginx-proxy-acme
                 restart: always
                 volumes:
                   - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -147,7 +154,15 @@ jobs:
                   - html:/usr/share/nginx/html
                 environment:
                   - DEFAULT_EMAIL=\${ADMIN_EMAIL}
+                  - NGINX_PROXY_CONTAINER=nginx-proxy
+                depends_on:
+                  - nginx-proxy
+                deploy:
+                  resources:
+                    limits:
+                      memory: 128M
 
+              # Backend: Served on Port 3000 + api.gtoarcade.com
               backend:
                 image: ghcr.io/$REPO/backend:$IMG_TAG
                 restart: always
@@ -194,7 +209,6 @@ jobs:
                   - CENTRYOS_WEBHOOK_SECRET=\${CENTRYOS_WEBHOOK_SECRET}
                   - CENTRYOS_RETURN_URL=\${CENTRYOS_RETURN_URL}
                   - CENTRYOS_ACCESS_TOKEN=\${CENTRYOS_ACCESS_TOKEN}
-                # ALLOW HYBRID ACCESS (IP:Port AND Domain)
                 ports:
                   - "3000:3000"
                 volumes:
@@ -202,9 +216,11 @@ jobs:
                 deploy:
                   resources:
                     limits:
-                      cpus: '0.50'
+                      cpus: '0.40'
                       memory: 512M
 
+              # Client: Served on Port 80 (via Proxy) + gtoarcade.com
+              # Internal Port is now strictly 3000.
               client:
                 image: ghcr.io/$REPO/client:$IMG_TAG
                 restart: always
@@ -212,16 +228,16 @@ jobs:
                   - NODE_ENV=production
                   - VIRTUAL_HOST=gtoarcade.com
                   - LETSENCRYPT_HOST=gtoarcade.com
-                  - VIRTUAL_PORT=3001
-                # ALLOW HYBRID ACCESS (IP:Port AND Domain)
-                ports:
-                  - "5173:3001"
+                  - VIRTUAL_PORT=3000
+                  - PORT=3000
+                # No external port mapping needed, Proxy handles Port 80
                 deploy:
                   resources:
                     limits:
-                      cpus: '0.50'
+                      cpus: '0.40'
                       memory: 1024M
 
+              # Admin: Served on Port 5173 + admin.gtoarcade.com
               admin:
                 image: ghcr.io/$REPO/admin:$IMG_TAG
                 restart: always
@@ -229,12 +245,12 @@ jobs:
                   - VIRTUAL_HOST=admin.gtoarcade.com
                   - LETSENCRYPT_HOST=admin.gtoarcade.com
                   - VIRTUAL_PORT=80
-                # NOTE: Port 80 is taken by Proxy, so this is Internal ONLY.
-                # Access via IP is handled by Proxy DEFAULT_HOST.
+                ports:
+                  - "5173:80"
                 deploy:
                   resources:
                     limits:
-                      cpus: '0.25'
+                      cpus: '0.20'
                       memory: 256M
 
             volumes:
@@ -295,7 +311,7 @@ jobs:
             (sudo fuser -k 3000/tcp || true) 2>/dev/null
             (sudo fuser -k 5173/tcp || true) 2>/dev/null
 
-            echo "Deploying Proxy & Services..."
+            echo "Deploying with Correct Port Mapping..."
             ./docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate --remove-orphans
 
             echo "Cleaning up..."
