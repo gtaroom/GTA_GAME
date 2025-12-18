@@ -11,15 +11,73 @@ jobs:
     name: Production Deployment
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase Repository Name
+        run: echo "REPO_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Build and Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/backend:latest
+            ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Push Client
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/client:latest
+            ghcr.io/${{ env.REPO_LOWER }}/client:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_IMAGE_URL=${{ secrets.NEXT_PUBLIC_IMAGE_URL }}
+            NEXT_PUBLIC_VERIFF_API_KEY=${{ secrets.NEXT_PUBLIC_VERIFF_API_KEY }}
+            NEXT_PUBLIC_PRODUCT_ID=${{ secrets.NEXT_PUBLIC_PRODUCT_ID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Push Admin
+        uses: docker/build-push-action@v5
+        with:
+          context: ./admin
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/admin:latest
+            ghcr.io/${{ env.REPO_LOWER }}/admin:${{ github.sha }}
+          build-args: |
+            VITE_APP_API_URL=${{ secrets.VITE_APP_API_URL }}
+            VITE_SERVER_URI=${{ secrets.VITE_SERVER_URI }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Setup SSH
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_KEY }}
-          known_hosts: "placeholder" # Will be updated by ssh-keyscan if not using config
+          known_hosts: "placeholder"
           if_key_exists: replace
           config: |
             Host production
@@ -42,19 +100,6 @@ jobs:
           fi
           echo "SSH connectivity verified."
 
-      - name: Syncing project files to /app
-        env:
-          PORT: ${{ secrets.SSH_PORT || '22' }}
-        run: |
-          echo "Starting file synchronization..."
-          rsync -avz --delete \
-            -e "ssh -p $PORT" \
-            --exclude 'node_modules' \
-            --exclude '.git' \
-            --exclude '.next' \
-            --exclude '.env*' \
-            ./ production:/app/
-
       - name: Execute Remote Deployment
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -62,75 +107,147 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
+          envs: GITHUB_TOKEN,GITHUB_ACTOR,GITHUB_SHA,REPO_LOWER
           script: |
             set -e
+            mkdir -p /app
             cd /app
-            echo "Context: $(pwd)"
 
-            # 1. Preparation
-            echo "Ensuring storage directories..."
-            mkdir -p uploads/avatars
+            echo "Logging into GHCR..."
+            echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-            # 2. Environment Configuration
-            echo "Injecting environment variables..."
-            cat <<EOF > .env.prod
-            PORT=3000
-            MONGODB_URI='${{ secrets.MONGODB_URI }}'
-            ORIGINS='${{ secrets.ORIGINS }}'
-            DOMAIN='${{ secrets.DOMAIN }}'
-            EXPRESS_SESSION_SECRET='${{ secrets.EXPRESS_SESSION_SECRET }}'
-            REFRESH_TOKEN_SECRET='${{ secrets.REFRESH_TOKEN_SECRET }}'
-            ACCESS_TOKEN_SECRET='${{ secrets.ACCESS_TOKEN_SECRET }}'
-            EZTEXTING_API_KEY='${{ secrets.EZTEXTING_API_KEY }}'
-            EZTEXTING_API_SECRET='${{ secrets.EZTEXTING_API_SECRET }}'
-            SMTP_USER='${{ secrets.SMTP_USER }}'
-            SMTP_PASS='${{ secrets.SMTP_PASS }}'
-            SMTP_PORT='${{ secrets.SMTP_PORT }}'
-            SMTP_HOST='${{ secrets.SMTP_HOST }}'
-            ACCESS_TOKEN_EXPIRY='${{ secrets.ACCESS_TOKEN_EXPIRY }}'
-            REFRESH_TOKEN_EXPIRY='${{ secrets.REFRESH_TOKEN_EXPIRY }}'
-            GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
-            GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}'
-            GOOGLE_CLIENT_CALLBACK_URI='${{ secrets.GOOGLE_CLIENT_CALLBACK_URI }}'
-            CLIENT_SSO_REDIRECT_URL='${{ secrets.CLIENT_SSO_REDIRECT_URL }}'
-            FORGOT_PASSWORD_REDIRECT_URL='${{ secrets.FORGOT_PASSWORD_REDIRECT_URL }}'
-            CLIENT_URL='${{ secrets.CLIENT_URL }}'
-            WEBHOOK_CALLBACK_URL='${{ secrets.WEBHOOK_CALLBACK_URL }}'
-            PLISIO_API_KEY='${{ secrets.PLISIO_API_KEY }}'
-            SOAP_API_KEY='${{ secrets.SOAP_API_KEY }}'
-            SOAP_WEBHOOK_SECRET='${{ secrets.SOAP_WEBHOOK_SECRET }}'
-            SOAP_RETURN_URL='${{ secrets.SOAP_RETURN_URL }}'
-            ADMIN_EMAIL='${{ secrets.ADMIN_EMAIL }}'
-            NOWPAYMENTS_API_KEY='${{ secrets.NOWPAYMENTS_API_KEY }}'
-            TWILIO_MESSAGING_SERVICE_SID='${{ secrets.TWILIO_MESSAGING_SERVICE_SID }}'
-            TWILIO_PHONE_NUMBER='${{ secrets.TWILIO_PHONE_NUMBER }}'
-            TWILIO_AUTH_TOKEN='${{ secrets.TWILIO_AUTH_TOKEN }}'
-            TWILIO_ACCOUNT_SID='${{ secrets.TWILIO_ACCOUNT_SID }}'
-            GOAT_PAYMENTS_USERNAME='${{ secrets.GOAT_PAYMENTS_USERNAME }}'
-            GOAT_PAYMENTS_PASSWORD='${{ secrets.GOAT_PAYMENTS_PASSWORD }}'
-            CENTRYOS_API_KEY='${{ secrets.CENTRYOS_API_KEY }}'
-            CENTRYOS_WEBHOOK_SECRET='${{ secrets.CENTRYOS_WEBHOOK_SECRET }}'
-            CENTRYOS_RETURN_URL='${{ secrets.CENTRYOS_RETURN_URL }}'
-            CENTRYOS_ACCESS_TOKEN='${{ secrets.CENTRYOS_ACCESS_TOKEN }}'
-            NEXT_PUBLIC_API_URL='${{ secrets.NEXT_PUBLIC_API_URL }}'
-            NEXT_PUBLIC_IMAGE_URL='${{ secrets.NEXT_PUBLIC_IMAGE_URL }}'
-            NEXT_PUBLIC_VERIFF_API_KEY='${{ secrets.NEXT_PUBLIC_VERIFF_API_KEY }}'
-            NEXT_PUBLIC_PRODUCT_ID='${{ secrets.NEXT_PUBLIC_PRODUCT_ID }}'
-            VITE_APP_API_URL='${{ secrets.VITE_APP_API_URL }}'
-            VITE_SERVER_URI='${{ secrets.VITE_SERVER_URI }}'
+            echo "Generating docker-compose.prod.yml for tag: $GITHUB_SHA"
+            cat <<EOF > docker-compose.prod.yml
+            services:
+              backend:
+                image: ghcr.io/\$REPO_LOWER/backend:\$GITHUB_SHA
+                restart: always
+                environment:
+                  - NODE_ENV=production
+                  - PORT=3000
+                  - MONGODB_URI=\${MONGODB_URI}
+                  - ORIGINS=\${ORIGINS}
+                  - DOMAIN=\${DOMAIN}
+                  - EXPRESS_SESSION_SECRET=\${EXPRESS_SESSION_SECRET}
+                  - REFRESH_TOKEN_SECRET=\${REFRESH_TOKEN_SECRET}
+                  - ACCESS_TOKEN_SECRET=\${ACCESS_TOKEN_SECRET}
+                  - EZTEXTING_API_KEY=\${EZTEXTING_API_KEY}
+                  - EZTEXTING_API_SECRET=\${EZTEXTING_API_SECRET}
+                  - SMTP_USER=\${SMTP_USER}
+                  - SMTP_PASS=\${SMTP_PASS}
+                  - SMTP_PORT=\${SMTP_PORT}
+                  - SMTP_HOST=\${SMTP_HOST}
+                  - ACCESS_TOKEN_EXPIRY=\${ACCESS_TOKEN_EXPIRY}
+                  - REFRESH_TOKEN_EXPIRY=\${REFRESH_TOKEN_EXPIRY}
+                  - GOOGLE_CLIENT_ID=\${GOOGLE_CLIENT_ID}
+                  - GOOGLE_CLIENT_SECRET=\${GOOGLE_CLIENT_SECRET}
+                  - GOOGLE_CLIENT_CALLBACK_URI=\${GOOGLE_CLIENT_CALLBACK_URI}
+                  - CLIENT_SSO_REDIRECT_URL=\${CLIENT_SSO_REDIRECT_URL}
+                  - FORGOT_PASSWORD_REDIRECT_URL=\${FORGOT_PASSWORD_REDIRECT_URL}
+                  - CLIENT_URL=\${CLIENT_URL}
+                  - WEBHOOK_CALLBACK_URL=\${WEBHOOK_CALLBACK_URL}
+                  - PLISIO_API_KEY=\${PLISIO_API_KEY}
+                  - SOAP_API_KEY=\${SOAP_API_KEY}
+                  - SOAP_WEBHOOK_SECRET=\${SOAP_WEBHOOK_SECRET}
+                  - SOAP_RETURN_URL=\${SOAP_RETURN_URL}
+                  - ADMIN_EMAIL=\${ADMIN_EMAIL}
+                  - NOWPAYMENTS_API_KEY=\${NOWPAYMENTS_API_KEY}
+                  - TWILIO_MESSAGING_SERVICE_SID=\${TWILIO_MESSAGING_SERVICE_SID}
+                  - TWILIO_PHONE_NUMBER=\${TWILIO_PHONE_NUMBER}
+                  - TWILIO_AUTH_TOKEN=\${TWILIO_AUTH_TOKEN}
+                  - TWILIO_ACCOUNT_SID=\${TWILIO_ACCOUNT_SID}
+                  - GOAT_PAYMENTS_USERNAME=\${GOAT_PAYMENTS_USERNAME}
+                  - GOAT_PAYMENTS_PASSWORD=\${GOAT_PAYMENTS_PASSWORD}
+                  - CENTRYOS_API_KEY=\${CENTRYOS_API_KEY}
+                  - CENTRYOS_WEBHOOK_SECRET=\${CENTRYOS_WEBHOOK_SECRET}
+                  - CENTRYOS_RETURN_URL=\${CENTRYOS_RETURN_URL}
+                  - CENTRYOS_ACCESS_TOKEN=\${CENTRYOS_ACCESS_TOKEN}
+                ports:
+                  - "3000:3000"
+                volumes:
+                  - ./uploads:/app/uploads
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '0.50'
+                      memory: 512M
+
+              client:
+                image: ghcr.io/\$REPO_LOWER/client:\$GITHUB_SHA
+                restart: always
+                environment:
+                  - NODE_ENV=production
+                ports:
+                  - "5173:3001"
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '0.50'
+                      memory: 1024M
+
+              admin:
+                image: ghcr.io/\$REPO_LOWER/admin:\$GITHUB_SHA
+                restart: always
+                ports:
+                  - "80:80"
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '0.25'
+                      memory: 256M
             EOF
 
-            # 3. Container Orchestration
-            echo "Starting containers..."
-            # Try docker-compose (older/hyphenated) first, then docker compose (v2)
-            if command -v docker-compose &> /dev/null; then
-              docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
-            else
-              docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build --remove-orphans
-            fi
+            echo "Injecting environment variables..."
+            cat <<EOF | sed 's/^[[:space:]]*//' > .env.prod
+                PORT=3000
+                MONGODB_URI='${{ secrets.MONGODB_URI }}'
+                ORIGINS='${{ secrets.ORIGINS }}'
+                DOMAIN='${{ secrets.DOMAIN }}'
+                EXPRESS_SESSION_SECRET='${{ secrets.EXPRESS_SESSION_SECRET }}'
+                REFRESH_TOKEN_SECRET='${{ secrets.REFRESH_TOKEN_SECRET }}'
+                ACCESS_TOKEN_SECRET='${{ secrets.ACCESS_TOKEN_SECRET }}'
+                EZTEXTING_API_KEY='${{ secrets.EZTEXTING_API_KEY }}'
+                EZTEXTING_API_SECRET='${{ secrets.EZTEXTING_API_SECRET }}'
+                SMTP_USER='${{ secrets.SMTP_USER }}'
+                SMTP_PASS='${{ secrets.SMTP_PASS }}'
+                SMTP_PORT='${{ secrets.SMTP_PORT }}'
+                SMTP_HOST='${{ secrets.SMTP_HOST }}'
+                ACCESS_TOKEN_EXPIRY='${{ secrets.ACCESS_TOKEN_EXPIRY }}'
+                REFRESH_TOKEN_EXPIRY='${{ secrets.REFRESH_TOKEN_EXPIRY }}'
+                GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
+                GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}'
+                GOOGLE_CLIENT_CALLBACK_URI='${{ secrets.GOOGLE_CLIENT_CALLBACK_URI }}'
+                CLIENT_SSO_REDIRECT_URL='${{ secrets.CLIENT_SSO_REDIRECT_URL }}'
+                FORGOT_PASSWORD_REDIRECT_URL='${{ secrets.FORGOT_PASSWORD_REDIRECT_URL }}'
+                CLIENT_URL='${{ secrets.CLIENT_URL }}'
+                WEBHOOK_CALLBACK_URL='${{ secrets.WEBHOOK_CALLBACK_URL }}'
+                PLISIO_API_KEY='${{ secrets.PLISIO_API_KEY }}'
+                SOAP_API_KEY='${{ secrets.SOAP_API_KEY }}'
+                SOAP_WEBHOOK_SECRET='${{ secrets.SOAP_WEBHOOK_SECRET }}'
+                SOAP_RETURN_URL='${{ secrets.SOAP_RETURN_URL }}'
+                ADMIN_EMAIL='${{ secrets.ADMIN_EMAIL }}'
+                NOWPAYMENTS_API_KEY='${{ secrets.NOWPAYMENTS_API_KEY }}'
+                TWILIO_MESSAGING_SERVICE_SID='${{ secrets.TWILIO_MESSAGING_SERVICE_SID }}'
+                TWILIO_PHONE_NUMBER='${{ secrets.TWILIO_PHONE_NUMBER }}'
+                TWILIO_AUTH_TOKEN='${{ secrets.TWILIO_AUTH_TOKEN }}'
+                TWILIO_ACCOUNT_SID='${{ secrets.TWILIO_ACCOUNT_SID }}'
+                GOAT_PAYMENTS_USERNAME='${{ secrets.GOAT_PAYMENTS_USERNAME }}'
+                GOAT_PAYMENTS_PASSWORD='${{ secrets.GOAT_PAYMENTS_PASSWORD }}'
+                CENTRYOS_API_KEY='${{ secrets.CENTRYOS_API_KEY }}'
+                CENTRYOS_WEBHOOK_SECRET='${{ secrets.CENTRYOS_WEBHOOK_SECRET }}'
+                CENTRYOS_RETURN_URL='${{ secrets.CENTRYOS_RETURN_URL }}'
+                CENTRYOS_ACCESS_TOKEN='${{ secrets.CENTRYOS_ACCESS_TOKEN }}'
+            EOF
 
-            # 4. Cleanup
-            echo "Cleaning up dangling images..."
+            echo "Pulling images for: $GITHUB_SHA"
+            docker-compose -f docker-compose.prod.yml pull || docker compose -f docker-compose.prod.yml pull
+
+            echo "Handling port conflicts and restarting..."
+            (sudo fuser -k 80/tcp || true) 2>/dev/null
+
+            docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans || \
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
+
+            echo "Cleaning up..."
             docker system prune -f
-
             echo "Deployment successful!"
