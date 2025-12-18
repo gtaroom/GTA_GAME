@@ -99,13 +99,12 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          # Passing vars DIRECTLY in the script to avoid 'non TTY' and mapping issues
           script: |
             set -e
             mkdir -p /app
             cd /app
 
-            # Use variables passed from GitHub directly in the shell
+            # Variables
             LOGIN_TOKEN="${{ secrets.GITHUB_TOKEN }}"
             LOGIN_USER="${{ github.actor }}"
             IMG_TAG="${{ github.sha }}"
@@ -113,6 +112,11 @@ jobs:
 
             echo "Logging into GHCR..."
             echo "$LOGIN_TOKEN" | docker login ghcr.io -u "$LOGIN_USER" --password-stdin
+
+            echo "Installing Standalone Docker Compose V2..."
+            # Download specific version of Docker Compose V2 to verify stability
+            curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
+            chmod +x docker-compose
 
             echo "Generating clean docker-compose.prod.yml for: $IMG_TAG"
             cat <<EOF > docker-compose.prod.yml
@@ -237,20 +241,19 @@ jobs:
                 CENTRYOS_ACCESS_TOKEN='${{ secrets.CENTRYOS_ACCESS_TOKEN }}'
             EOF
 
-            echo "Force using Docker V2 (docker compose) to avoid ContainerConfig errors..."
-            # Pull images with Docker V2
-            docker compose -f docker-compose.prod.yml pull
+            echo "Pulling images using local Docker Compose V2..."
+            ./docker-compose -f docker-compose.prod.yml pull
 
             echo "Clearing port conflicts (Port 80/3000/5173)..."
             (sudo fuser -k 80/tcp || true) 2>/dev/null
             (sudo fuser -k 3000/tcp || true) 2>/dev/null
             (sudo fuser -k 5173/tcp || true) 2>/dev/null
 
-            echo "Deploying fresh containers with Docker V2..."
-            # Use V2 exclusively as it is the standard and handles V1 errors
-            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate --remove-orphans
+            echo "Deploying with Standalone V2..."
+            ./docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate --remove-orphans
 
-            echo "Pruning old images to save disk space..."
+            echo "Cleaning up..."
+            rm docker-compose
             docker image prune -af
 
             echo "Deployment successful!"
