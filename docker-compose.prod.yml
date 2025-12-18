@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3500
       - MONGODB_URI=${MONGODB_URI}
       - ORIGINS=${ORIGINS}
       - DOMAIN=${DOMAIN}
@@ -44,7 +44,7 @@ services:
       - CENTRYOS_RETURN_URL=${CENTRYOS_RETURN_URL}
       - CENTRYOS_ACCESS_TOKEN=${CENTRYOS_ACCESS_TOKEN}
     ports:
-      - "3000:3000"
+      - "3500:3500"
     volumes:
       - ./uploads:/app/uploads
     deploy:
