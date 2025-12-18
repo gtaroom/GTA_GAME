@@ -5,7 +5,7 @@ services:
     container_name: mongodb
     restart: always
     ports:
-      - "27017:27017" # Expose to host so host.docker.internal works
+      - "127.0.0.1:27017:27017" # Restrict to localhost only (secure)
     volumes:
       - mongodb_data:/data/db
     deploy:
@@ -43,7 +43,7 @@ services:
     environment:
       - NODE_ENV=production
     ports:
-      - "5173:3001"
+      - "3000:3000"
     deploy:
       resources:
         limits:
@@ -58,7 +58,7 @@ services:
     image: ghcr.io/gtaroom/gta_game/admin:latest
     restart: always
     ports:
-      - "80:80"
+      - "5173:80"
     deploy:
       resources:
         limits:
