@@ -1,9 +1,7 @@
 services:
   # Backend API Server
   backend:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
+    image: ghcr.io/gtaroom/gta_game/backend:latest
     restart: always
     environment:
       - NODE_ENV=production
@@ -60,14 +58,7 @@ services:
 
   # Next.js Client
   client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-        - NEXT_PUBLIC_IMAGE_URL=${NEXT_PUBLIC_IMAGE_URL}
-        - NEXT_PUBLIC_VERIFF_API_KEY=${NEXT_PUBLIC_VERIFF_API_KEY}
-        - NEXT_PUBLIC_PRODUCT_ID=${NEXT_PUBLIC_PRODUCT_ID}
+    image: ghcr.io/gtaroom/gta_game/client:latest
     restart: always
     environment:
       - NODE_ENV=production
@@ -84,12 +75,7 @@ services:
 
   # Admin Dashboard
   admin:
-    build:
-      context: ./admin
-      dockerfile: Dockerfile
-      args:
-        - VITE_APP_API_URL=${VITE_APP_API_URL}
-        - VITE_SERVER_URI=${VITE_SERVER_URI}
+    image: ghcr.io/gtaroom/gta_game/admin:latest
     restart: always
     ports:
       - "80:80"
