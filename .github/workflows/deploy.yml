@@ -33,6 +33,30 @@ jobs:
         with:
           authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
 
+      - name: Pre-Deployment Credential Validation
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          echo "=== SSH Credential Metadata ==="
+          echo "SSH_USER length: ${#SSH_USER} characters"
+          echo "SSH_HOST length: ${#SSH_HOST} characters"
+
+          echo "=== SSH Key Fingerprint (Public Part) ==="
+          # Generate fingerprint from the private key to verify what's being offered
+          echo "$SSH_KEY" > temp_key
+          chmod 600 temp_key
+          ssh-keygen -lf temp_key || echo "::error::Failed to parse SSH_KEY. Check format!"
+          rm temp_key
+
+          echo "=== Local Known Hosts Check ==="
+          ls -l ~/.ssh/known_hosts || echo "No known_hosts file yet"
+
+          echo "=== Testing Permission to /app on VPS ==="
+          # This will fail if auth fails, but gives us a secondary data point
+          ssh -v -o ConnectTimeout=10 -o BatchMode=yes production "ls -ld /app" || true
+
       - name: Pre-flight SSH Connectivity Check
         env:
           HOST: ${{ secrets.SSH_HOST }}
