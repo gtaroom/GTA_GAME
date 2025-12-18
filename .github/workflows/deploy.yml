@@ -189,7 +189,8 @@ jobs:
             # Using cat <<'EOF' with sed to strip ALL leading AND trailing whitespace
             # This ensures the .env file is clean and works with Docker
             cat <<'EOF_ENV_FILE' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' > .env
-            MONGODB_URI=${{ secrets.MONGODB_URI }}
+            # Force internal networking for MongoDB (fixes ECONNREFUSED on host-gateway)
+            MONGODB_URI=mongodb://mongodb:27017/gto_arcade?authSource=admin
             ORIGINS=${{ secrets.ORIGINS }}
             DOMAIN=${{ secrets.DOMAIN }}
             EXPRESS_SESSION_SECRET=${{ secrets.EXPRESS_SESSION_SECRET }}
