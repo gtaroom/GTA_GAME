@@ -30,6 +30,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Lowercase Repository Name
+        run: echo "REPO_LOWER=$(echo ${{ github.repository }} | lower)" >> $GITHUB_ENV
+        shell: bash
+        # Note: 'lower' might not be available, using tr is safer
+        continue-on-error: true
+
+      - name: Lowercase Repository Name (Fallback)
         run: echo "REPO_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build and Push Backend
@@ -102,6 +108,11 @@ jobs:
 
       - name: Execute Remote Deployment
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_SHA: ${{ github.sha }}
+          REPO_LOWER: ${{ env.REPO_LOWER }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
@@ -114,6 +125,7 @@ jobs:
             cd /app
 
             echo "Logging into GHCR..."
+            # Using --password-stdin with a pipe is the non-interactive way
             echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
             echo "Generating docker-compose.prod.yml for tag: $GITHUB_SHA"
@@ -239,15 +251,22 @@ jobs:
                 CENTRYOS_ACCESS_TOKEN='${{ secrets.CENTRYOS_ACCESS_TOKEN }}'
             EOF
 
-            echo "Pulling images for: $GITHUB_SHA"
+            echo "Pulling images for version: $GITHUB_SHA"
             docker-compose -f docker-compose.prod.yml pull || docker compose -f docker-compose.prod.yml pull
 
-            echo "Handling port conflicts and restarting..."
+            echo "Clearing port conflicts (Port 80/3000/5173)..."
             (sudo fuser -k 80/tcp || true) 2>/dev/null
+            (sudo fuser -k 3000/tcp || true) 2>/dev/null
+            (sudo fuser -k 5173/tcp || true) 2>/dev/null
 
+            echo "Starting containers..."
             docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans || \
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
 
-            echo "Cleaning up..."
-            docker system prune -f
+            echo "Cleaning up old images and system cache..."
+            docker system prune -af
+
+            echo "Logging out of GHCR..."
+            docker logout ghcr.io
+
             echo "Deployment successful!"
