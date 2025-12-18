@@ -162,7 +162,7 @@ jobs:
                     limits:
                       memory: 128M
 
-              # Backend: Served on Port 3000 + api.gtoarcade.com
+              # Backend: Served on Port 3500 + api.gtoarcade.com
               backend:
                 image: ghcr.io/$REPO/backend:$IMG_TAG
                 restart: always
