@@ -186,6 +186,7 @@ jobs:
             echo "Injecting environment variables..."
             # Using cat <<'EOF' with sed to strip ALL leading AND trailing whitespace
             # This ensures the .env file is clean and works with Docker
+            # Standardize and secure environment variables
             cat <<'EOF_ENV_FILE' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' > .env
             MONGODB_URI=${{ secrets.MONGODB_URI }}
             ORIGINS=${{ secrets.ORIGINS }}
