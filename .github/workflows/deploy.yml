@@ -310,6 +310,7 @@ jobs:
             (sudo fuser -k 80/tcp || true) 2>/dev/null
             (sudo fuser -k 443/tcp || true) 2>/dev/null
             (sudo fuser -k 3000/tcp || true) 2>/dev/null
+            (sudo fuser -k 3500/tcp || true) 2>/dev/null
             (sudo fuser -k 5173/tcp || true) 2>/dev/null
 
             echo "Deploying with Correct Port Mapping & Secrets..."
