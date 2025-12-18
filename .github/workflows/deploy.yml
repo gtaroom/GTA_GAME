@@ -101,26 +101,18 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
             set -e
-            mkdir -p /app
-            cd /app
-
-            # Variables
-            LOGIN_TOKEN="${{ secrets.GITHUB_TOKEN }}"
-            LOGIN_USER="${{ github.actor }}"
-            IMG_TAG="${{ github.sha }}"
-            REPO="${{ env.REPO_LOWER }}"
-
-            echo "Logging into GHCR..."
-            echo "$LOGIN_TOKEN" | docker login ghcr.io -u "$LOGIN_USER" --password-stdin
+            # Use home-based app directory to avoid permission issues
+            mkdir -p ~/app
+            cd ~/app
 
             echo "Installing Standalone Docker Compose V2..."
             curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
             chmod +x docker-compose
 
-            echo "Generating Final Port-Optimized docker-compose.prod.yml..."
-            cat <<EOF > docker-compose.prod.yml
+            echo "Generating Clean docker-compose.prod.yml..."
+            # Using direct interpolation for Repo/Tag to avoid shell expansion bugs
+            cat <<EOF_COMPOSE | sed 's/^            //' > docker-compose.prod.yml
             services:
-              # Nginx Proxy: Handles Port 80/443 Traffic
               nginx-proxy:
                 image: nginxproxy/nginx-proxy
                 container_name: nginx-proxy
@@ -129,7 +121,6 @@ jobs:
                   - "80:80"
                   - "443:443"
                 environment:
-                  # DEFAULT_HOST: Traffic to IP/Port 80 goes to Client
                   - DEFAULT_HOST=gtoarcade.com
                 volumes:
                   - certs:/etc/nginx/certs
@@ -141,7 +132,6 @@ jobs:
                     limits:
                       memory: 128M
 
-              # SSL Companion: Links to nginx-proxy to prevent restart loop
               acme-companion:
                 image: nginxproxy/acme-companion
                 container_name: nginx-proxy-acme
@@ -153,7 +143,7 @@ jobs:
                   - vhost:/etc/nginx/vhost.d
                   - html:/usr/share/nginx/html
                 environment:
-                  - DEFAULT_EMAIL=\${ADMIN_EMAIL}
+                  - DEFAULT_EMAIL=${{ secrets.ADMIN_EMAIL }}
                   - NGINX_PROXY_CONTAINER=nginx-proxy
                 depends_on:
                   - nginx-proxy
@@ -162,10 +152,10 @@ jobs:
                     limits:
                       memory: 128M
 
-              # Backend: Served on Port 3500 + api.gtoarcade.com
               backend:
-                image: ghcr.io/$REPO/backend:$IMG_TAG
+                image: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}
                 restart: always
+                env_file: .env
                 environment:
                   - NODE_ENV=production
                   - VIRTUAL_HOST=api.gtoarcade.com
@@ -182,10 +172,8 @@ jobs:
                       cpus: '0.40'
                       memory: 512M
 
-              # Client: Served on Port 80 (via Proxy) + gtoarcade.com
-              # Internal Port is now strictly 3000.
               client:
-                image: ghcr.io/$REPO/client:$IMG_TAG
+                image: ghcr.io/${{ env.REPO_LOWER }}/client:${{ github.sha }}
                 restart: always
                 environment:
                   - NODE_ENV=production
@@ -193,16 +181,14 @@ jobs:
                   - LETSENCRYPT_HOST=gtoarcade.com
                   - VIRTUAL_PORT=3000
                   - PORT=3000
-                # No external port mapping needed, Proxy handles Port 80
                 deploy:
                   resources:
                     limits:
                       cpus: '0.40'
                       memory: 1024M
 
-              # Admin: Served on Port 5173 + admin.gtoarcade.com
               admin:
-                image: ghcr.io/$REPO/admin:$IMG_TAG
+                image: ghcr.io/${{ env.REPO_LOWER }}/admin:${{ github.sha }}
                 restart: always
                 environment:
                   - VIRTUAL_HOST=admin.gtoarcade.com
@@ -221,67 +207,74 @@ jobs:
               vhost:
               html:
               acme:
-            EOF
+            EOF_COMPOSE
 
             echo "Injecting environment variables..."
-            # Using standard .env file so docker-compose automatically picks it up for interpolation
-            cat <<EOF | sed 's/^[[:space:]]*//' > .env
-                PORT=3000
-                MONGODB_URI='${{ secrets.MONGODB_URI }}'
-                ORIGINS='${{ secrets.ORIGINS }}'
-                DOMAIN='${{ secrets.DOMAIN }}'
-                EXPRESS_SESSION_SECRET='${{ secrets.EXPRESS_SESSION_SECRET }}'
-                REFRESH_TOKEN_SECRET='${{ secrets.REFRESH_TOKEN_SECRET }}'
-                ACCESS_TOKEN_SECRET='${{ secrets.ACCESS_TOKEN_SECRET }}'
-                EZTEXTING_API_KEY='${{ secrets.EZTEXTING_API_KEY }}'
-                EZTEXTING_API_SECRET='${{ secrets.EZTEXTING_API_SECRET }}'
-                SMTP_USER='${{ secrets.SMTP_USER }}'
-                SMTP_PASS='${{ secrets.SMTP_PASS }}'
-                SMTP_PORT='${{ secrets.SMTP_PORT }}'
-                SMTP_HOST='${{ secrets.SMTP_HOST }}'
-                ACCESS_TOKEN_EXPIRY='${{ secrets.ACCESS_TOKEN_EXPIRY }}'
-                REFRESH_TOKEN_EXPIRY='${{ secrets.REFRESH_TOKEN_EXPIRY }}'
-                GOOGLE_CLIENT_ID='${{ secrets.GOOGLE_CLIENT_ID }}'
-                GOOGLE_CLIENT_SECRET='${{ secrets.GOOGLE_CLIENT_SECRET }}'
-                GOOGLE_CLIENT_CALLBACK_URI='${{ secrets.GOOGLE_CLIENT_CALLBACK_URI }}'
-                CLIENT_SSO_REDIRECT_URL='${{ secrets.CLIENT_SSO_REDIRECT_URL }}'
-                FORGOT_PASSWORD_REDIRECT_URL='${{ secrets.FORGOT_PASSWORD_REDIRECT_URL }}'
-                CLIENT_URL='${{ secrets.CLIENT_URL }}'
-                WEBHOOK_CALLBACK_URL='${{ secrets.WEBHOOK_CALLBACK_URL }}'
-                PLISIO_API_KEY='${{ secrets.PLISIO_API_KEY }}'
-                SOAP_API_KEY='${{ secrets.SOAP_API_KEY }}'
-                SOAP_WEBHOOK_SECRET='${{ secrets.SOAP_WEBHOOK_SECRET }}'
-                SOAP_RETURN_URL='${{ secrets.SOAP_RETURN_URL }}'
-                ADMIN_EMAIL='${{ secrets.ADMIN_EMAIL }}'
-                NOWPAYMENTS_API_KEY='${{ secrets.NOWPAYMENTS_API_KEY }}'
-                TWILIO_MESSAGING_SERVICE_SID='${{ secrets.TWILIO_MESSAGING_SERVICE_SID }}'
-                TWILIO_PHONE_NUMBER='${{ secrets.TWILIO_PHONE_NUMBER }}'
-                TWILIO_AUTH_TOKEN='${{ secrets.TWILIO_AUTH_TOKEN }}'
-                TWILIO_ACCOUNT_SID='${{ secrets.TWILIO_ACCOUNT_SID }}'
-                GOAT_PAYMENTS_USERNAME='${{ secrets.GOAT_PAYMENTS_USERNAME }}'
-                GOAT_PAYMENTS_PASSWORD='${{ secrets.GOAT_PAYMENTS_PASSWORD }}'
-                CENTRYOS_API_KEY='${{ secrets.CENTRYOS_API_KEY }}'
-                CENTRYOS_WEBHOOK_SECRET='${{ secrets.CENTRYOS_WEBHOOK_SECRET }}'
-                CENTRYOS_RETURN_URL='${{ secrets.CENTRYOS_RETURN_URL }}'
-                CENTRYOS_ACCESS_TOKEN='${{ secrets.CENTRYOS_ACCESS_TOKEN }}'
-            EOF
+            # Using cat <<'EOF' with sed to strip ALL leading AND trailing whitespace
+            # This ensures the .env file is clean and works with Docker
+            cat <<'EOF_ENV_FILE' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' > .env
+            MONGODB_URI=${{ secrets.MONGODB_URI }}
+            ORIGINS=${{ secrets.ORIGINS }}
+            DOMAIN=${{ secrets.DOMAIN }}
+            EXPRESS_SESSION_SECRET=${{ secrets.EXPRESS_SESSION_SECRET }}
+            REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
+            ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
+            EZTEXTING_API_KEY=${{ secrets.EZTEXTING_API_KEY }}
+            EZTEXTING_API_SECRET=${{ secrets.EZTEXTING_API_SECRET }}
+            SMTP_USER=${{ secrets.SMTP_USER }}
+            SMTP_PASS=${{ secrets.SMTP_PASS }}
+            SMTP_PORT=${{ secrets.SMTP_PORT }}
+            SMTP_HOST=${{ secrets.SMTP_HOST }}
+            ACCESS_TOKEN_EXPIRY=${{ secrets.ACCESS_TOKEN_EXPIRY }}
+            REFRESH_TOKEN_EXPIRY=${{ secrets.REFRESH_TOKEN_EXPIRY }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            GOOGLE_CLIENT_CALLBACK_URI=${{ secrets.GOOGLE_CLIENT_CALLBACK_URI }}
+            CLIENT_SSO_REDIRECT_URL=${{ secrets.CLIENT_SSO_REDIRECT_URL }}
+            FORGOT_PASSWORD_REDIRECT_URL=${{ secrets.FORGOT_PASSWORD_REDIRECT_URL }}
+            CLIENT_URL=${{ secrets.CLIENT_URL }}
+            WEBHOOK_CALLBACK_URL=${{ secrets.WEBHOOK_CALLBACK_URL }}
+            PLISIO_API_KEY=${{ secrets.PLISIO_API_KEY }}
+            SOAP_API_KEY=${{ secrets.SOAP_API_KEY }}
+            SOAP_WEBHOOK_SECRET=${{ secrets.SOAP_WEBHOOK_SECRET }}
+            SOAP_RETURN_URL=${{ secrets.SOAP_RETURN_URL }}
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            NOWPAYMENTS_API_KEY=${{ secrets.NOWPAYMENTS_API_KEY }}
+            TWILIO_MESSAGING_SERVICE_SID=${{ secrets.TWILIO_MESSAGING_SERVICE_SID }}
+            TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}
+            TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
+            TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
+            GOAT_PAYMENTS_USERNAME=${{ secrets.GOAT_PAYMENTS_USERNAME }}
+            GOAT_PAYMENTS_PASSWORD=${{ secrets.GOAT_PAYMENTS_PASSWORD }}
+            CENTRYOS_API_KEY=${{ secrets.CENTRYOS_API_KEY }}
+            CENTRYOS_WEBHOOK_SECRET=${{ secrets.CENTRYOS_WEBHOOK_SECRET }}
+            CENTRYOS_RETURN_URL=${{ secrets.CENTRYOS_RETURN_URL }}
+            CENTRYOS_ACCESS_TOKEN=${{ secrets.CENTRYOS_ACCESS_TOKEN }}
+            PORT=3500
+            EOF_ENV_FILE
+
+            echo "Environment file generated. Line count: $(wc -l < .env)"
+            echo "--- DEBUG: .env Keys and Value Lengths ---"
+            while IFS='=' read -r key value; do
+              echo "$key length: ${#value}"
+            done < .env
+            echo "---------------------------------------"
 
             echo "Pulling images..."
+            # Explicit login just in case
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             ./docker-compose -f docker-compose.prod.yml pull
 
             echo "Clearing port conflicts..."
-            (sudo fuser -k 80/tcp || true) 2>/dev/null
-            (sudo fuser -k 443/tcp || true) 2>/dev/null
-            (sudo fuser -k 3000/tcp || true) 2>/dev/null
-            (sudo fuser -k 3500/tcp || true) 2>/dev/null
-            (sudo fuser -k 5173/tcp || true) 2>/dev/null
+            for port in 80 443 3000 3500 5173; do
+              (sudo fuser -k $port/tcp || true) 2>/dev/null
+            done
 
-            echo "Deploying with Correct Port Mapping & Secrets..."
-            # Removed --env-file .env.prod because we are now using .env which is auto-loaded
+            echo "Deploying..."
             ./docker-compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
 
             echo "Cleaning up..."
             rm docker-compose
             docker image prune -af
 
-            echo "Deployment successful!"
+            echo "Deployment successful! Files are in ~/app"
