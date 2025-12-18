@@ -28,6 +28,11 @@ jobs:
               Port ${{ secrets.SSH_PORT || 22 }}
               StrictHostKeyChecking no
 
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+
       - name: Pre-flight SSH Connectivity Check
         env:
           HOST: ${{ secrets.SSH_HOST }}
