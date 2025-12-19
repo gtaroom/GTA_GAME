@@ -26,8 +26,50 @@ RUN npm run build
 FROM nginx:stable-alpine
 
 # Copy built files from builder
-# Copy custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
+# Create custom Nginx configuration directly
+RUN printf 'server {\n\
+    listen 80;\n\
+    server_name localhost;\n\
+    root /usr/share/nginx/html;\n\
+    index index.html;\n\
+    \n\
+    # Gzip Compression\n\
+    gzip on;\n\
+    gzip_vary on;\n\
+    gzip_min_length 10240;\n\
+    gzip_proxied expired no-cache no-store private auth;\n\
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript;\n\
+    gzip_disable "MSIE [1-6].";\n\
+    \n\
+    # Security Headers\n\
+    add_header X-Frame-Options "SAMEORIGIN";\n\
+    add_header X-XSS-Protection "1; mode=block";\n\
+    add_header X-Content-Type-Options "nosniff";\n\
+    add_header Referrer-Policy "no-referrer-when-downgrade";\n\
+    add_header Content-Security-Policy "default-src '\''self'\'' http: https: data: blob: '\''unsafe-inline'\''";\n\
+    \n\
+    # Buffering Optimizations\n\
+    client_body_buffer_size 10K;\n\
+    client_header_buffer_size 1k;\n\
+    client_max_body_size 8m;\n\
+    large_client_header_buffers 4 8k;\n\
+    \n\
+    location / {\n\
+    try_files $uri $uri/ /index.html;\n\
+    }\n\
+    \n\
+    # Cache static assets\n\
+    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg)$ {\n\
+    expires 30d;\n\
+    add_header Cache-Control "public, no-transform";\n\
+    }\n\
+    \n\
+    error_page 500 502 503 504 /50x.html;\n\
+    location = /50x.html {\n\
+    root /usr/share/nginx/html;\n\
+    }\n\
+    }' > /etc/nginx/conf.d/default.conf
 
 # Expose port 80
 EXPOSE 80
