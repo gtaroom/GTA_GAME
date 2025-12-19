@@ -118,7 +118,7 @@ jobs:
               mongodb:
                 image: mongo:latest
                 container_name: mongodb
-                command: mongod --auth --wiredTigerCacheSizeGB 0.5
+                command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
                 restart: always
                 ports:
                   - "127.0.0.1:27017:27017"
@@ -127,6 +127,7 @@ jobs:
                 deploy:
                   resources:
                     limits:
+                      cpus: '0.50'
                       memory: 1024M
 
               backend:
