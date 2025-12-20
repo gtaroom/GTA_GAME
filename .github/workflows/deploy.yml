@@ -140,9 +140,10 @@ jobs:
                 ports:
                   - "3500:3500"
                 volumes:  
-                  - ./uploads:/app/public/uploads
-                  - ./public/games:/app/public/games
-                  - ./public/game:/app/public/game
+                volumes:  
+                  - /app/uploads:/app/public/uploads
+                  - /app/public/games:/app/public/games
+                  - /app/public/game:/app/public/game
                 deploy:
                   resources:
                     limits:
@@ -245,6 +246,14 @@ jobs:
             # Explicit login just in case
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             ./docker-compose -f docker-compose.prod.yml pull
+
+            echo "Fixing permissions for static assets..."
+            echo "Fixing permissions for static assets..."
+            # Ensure host directories exist and are readable (using absolute paths)
+            mkdir -p /app/uploads /app/public/games /app/public/game
+            sudo chmod 755 /app
+            sudo chmod -R 755 /app/uploads /app/public
+            sudo chown -R 1001:1001 /app/uploads /app/public
 
             echo "Clearing port conflicts..."
             for port in 3000 3500 5173; do
