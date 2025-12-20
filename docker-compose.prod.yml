@@ -3,7 +3,7 @@ services:
   mongodb:
     image: mongo:latest
     container_name: mongodb
-    command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
+    command: mongod --auth --wiredTigerCacheSizeGB 4.0 --quiet
     restart: always
     ports:
       - "127.0.0.1:27017:27017" # Restrict to localhost only (secure)
@@ -12,8 +12,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'
-          memory: 1024M
+          cpus: '2.0'
+          memory: 6144M
 
   # Backend API Server
   backend:
@@ -24,9 +24,11 @@ services:
       - NODE_ENV=production
       - PORT=3500
     ports:
-      - "3500:3500"
+      - "127.0.0.1:3500:3500"
     volumes:
-      - ./uploads:/app/uploads
+      - ./uploads:/app/public/uploads
+      - ./public/games:/app/public/games
+      - ./public/game:/app/public/game
     deploy:
       resources:
         limits:
@@ -44,7 +46,7 @@ services:
       - NODE_ENV=production
       - PORT=3000
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     deploy:
       resources:
         limits:
@@ -59,7 +61,7 @@ services:
     image: ghcr.io/gtaroom/gta_game/admin:latest
     restart: always
     ports:
-      - "5173:80"
+      - "127.0.0.1:5173:80"
     deploy:
       resources:
         limits:
