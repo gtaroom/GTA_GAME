@@ -118,7 +118,7 @@ jobs:
               mongodb:
                 image: mongo:latest
                 container_name: mongodb
-                command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
+                command: mongod --auth --wiredTigerCacheSizeGB 4.0 --quiet
                 restart: always
                 ports:
                   - "127.0.0.1:27017:27017"
@@ -127,8 +127,8 @@ jobs:
                 deploy:
                   resources:
                     limits:
-                      cpus: '0.50'
-                      memory: 1024M
+                      cpus: '2.0'
+                      memory: 6144M
 
               backend:
                 image: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}
@@ -140,7 +140,10 @@ jobs:
                 ports:
                   - "3500:3500"
                 volumes:  
-                  - ./uploads:/app/uploads
+                  - /app/uploads:/app/public/uploads
+                  - /app/public/games:/app/public/games
+                  - /app/public/game:/app/public/game
+                  - /app/public/GeoLite2-City.mmdb:/app/public/GeoLite2-City.mmdb
                 deploy:
                   resources:
                     limits:
@@ -244,8 +247,21 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             ./docker-compose -f docker-compose.prod.yml pull
 
+            echo "Fixing permissions for static assets..."
+            # Ensure host directories exist and are readable (using absolute paths)
+            mkdir -p /app/uploads /app/public/games /app/public/game
+
+            # Create placeholder for GeoLite2 DB to prevent Docker from creating a directory
+            if [ ! -f /app/public/GeoLite2-City.mmdb ]; then
+              touch /app/public/GeoLite2-City.mmdb
+            fi
+
+            sudo chmod 755 /app
+            sudo chmod -R 755 /app/uploads /app/public
+            sudo chown -R 1001:1001 /app/uploads /app/public
+
             echo "Clearing port conflicts..."
-            for port in 80 443 3000 3500 5173; do
+            for port in 3000 3500 5173; do
               (sudo fuser -k $port/tcp || true) 2>/dev/null
             done
 
