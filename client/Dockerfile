@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM oven/bun:alpine AS builder
+FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
@@ -27,7 +27,7 @@ ENV NEXT_PUBLIC_PRODUCT_ID=$NEXT_PUBLIC_PRODUCT_ID
 RUN bun run build
 
 # Stage 2: Production (Optimized Standalone)
-FROM oven/bun:alpine
+FROM oven/bun:latest
 
 WORKDIR /app
 
