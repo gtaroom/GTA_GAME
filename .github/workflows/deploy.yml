@@ -140,10 +140,10 @@ jobs:
                 ports:
                   - "3500:3500"
                 volumes:  
-                volumes:  
                   - /app/uploads:/app/public/uploads
                   - /app/public/games:/app/public/games
                   - /app/public/game:/app/public/game
+                  - /app/public/GeoLite2-City.mmdb:/app/public/GeoLite2-City.mmdb
                 deploy:
                   resources:
                     limits:
@@ -248,9 +248,14 @@ jobs:
             ./docker-compose -f docker-compose.prod.yml pull
 
             echo "Fixing permissions for static assets..."
-            echo "Fixing permissions for static assets..."
             # Ensure host directories exist and are readable (using absolute paths)
             mkdir -p /app/uploads /app/public/games /app/public/game
+
+            # Create placeholder for GeoLite2 DB to prevent Docker from creating a directory
+            if [ ! -f /app/public/GeoLite2-City.mmdb ]; then
+              touch /app/public/GeoLite2-City.mmdb
+            fi
+
             sudo chmod 755 /app
             sudo chmod -R 755 /app/uploads /app/public
             sudo chown -R 1001:1001 /app/uploads /app/public
