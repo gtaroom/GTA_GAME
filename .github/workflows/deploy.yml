@@ -111,6 +111,18 @@ jobs:
             curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
             chmod +x docker-compose
 
+            # 0. Backup CURRENT Stable Config (Critical: Must happen BEFORE generation)
+            echo "Backing up current stable configuration..."
+            if [ -f docker-compose.prod.yml ]; then
+              cp docker-compose.prod.yml docker-compose.prod.yml.bak
+              cp .env .env.bak
+              BACKUP_EXISTS=true
+            else
+              BACKUP_EXISTS=false
+            fi
+            curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
+            chmod +x docker-compose
+
             echo "Generating Clean docker-compose.prod.yml..."
             # Using direct interpolation for Repo/Tag to avoid shell expansion bugs
             cat <<EOF_COMPOSE | sed 's/^            //' > docker-compose.prod.yml
@@ -256,6 +268,150 @@ jobs:
               touch /app/public/GeoLite2-City.mmdb
             fi
 
+            # Create custom error page if it doesn't exist (it should be copied via SCP later, but for now strict copy)
+            cat <<EOF_HTML > /app/public/custom_50x.html
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>GTO Arcade - Maintenance</title>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                        background-color: #0f172a;
+                        color: #e2e8f0;
+                        height: 100vh;
+                        margin: 0;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        text-align: center;
+                    }
+                    .container {
+                        max-width: 600px;
+                        padding: 2rem;
+                    }
+                    h1 {
+                        font-size: 2.5rem;
+                        margin-bottom: 1rem;
+                        background: linear-gradient(to right, #60a5fa, #a78bfa);
+                        -webkit-background-clip: text;
+                        background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                    }
+                    p {
+                        font-size: 1.1rem;
+                        line-height: 1.6;
+                        color: #94a3b8;
+                        margin-bottom: 2rem;
+                    }
+                    .spinner {
+                        width: 40px;
+                        height: 40px;
+                        margin: 0 auto 2rem;
+                        border: 3px solid #1e293b;
+                        border-top: 3px solid #60a5fa;
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="spinner"></div>
+                    <h1>System Update in Progress</h1>
+                    <p>We are currently deploying improvements to GTO Arcade. <br>The servers will be back online shortly.</p>
+                    <p style="font-size: 0.9rem; opacity: 0.7;">Error Code: 502 Bad Gateway</p>
+                </div>
+                <script>
+                    // Auto-reload every 30 seconds to check if the site is back
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 30000);
+                </script>
+            </body>
+            </html>
+            EOF_HTML
+
+            # Create custom 404 page
+            cat <<EOF_HTML_404 > /app/public/custom_404.html
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>GTO Arcade - Page Not Found</title>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                        background-color: #0f172a;
+                        color: #e2e8f0;
+                        height: 100vh;
+                        margin: 0;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        text-align: center;
+                    }
+                    .container {
+                        max-width: 600px;
+                        padding: 2rem;
+                    }
+                    h1 {
+                        font-size: 6rem;
+                        margin: 0;
+                        line-height: 1;
+                        background: linear-gradient(to right, #60a5fa, #a78bfa);
+                        -webkit-background-clip: text;
+                        background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        font-weight: 800;
+                    }
+                    h2 {
+                        font-size: 2rem;
+                        margin-bottom: 1rem;
+                        color: #f8fafc;
+                    }
+                    p {
+                        font-size: 1.1rem;
+                        line-height: 1.6;
+                        color: #94a3b8;
+                        margin-bottom: 2rem;
+                    }
+                    a {
+                        display: inline-block;
+                        padding: 0.75rem 1.5rem;
+                        background: linear-gradient(to right, #60a5fa, #a78bfa);
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 9999px;
+                        font-weight: 600;
+                        transition: transform 0.2s;
+                    }
+                    a:hover {
+                        transform: translateY(-2px);
+                        opacity: 0.9;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>404</h1>
+                    <h2>Page Not Found</h2>
+                    <p>The page you are looking for doesn't exist or has been moved.</p>
+                    <a href="/">Return Home</a>
+                </div>
+            </body>
+            </html>
+            EOF_HTML_404
+
             sudo chmod 755 /app
             sudo chmod -R 755 /app/uploads /app/public
             sudo chown -R 1001:1001 /app/uploads /app/public
@@ -270,7 +426,54 @@ jobs:
             docker rm nginx-proxy nginx-proxy-acme || true
 
             echo "Deploying..."
-            ./docker-compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
+
+            # 2. Deploy new version
+            if ! ./docker-compose -f docker-compose.prod.yml up -d --remove-orphans; then
+              echo "Docker Compose Up Failed!"
+              ROLLBACK_NEEDED=true
+            fi
+
+            # 3. Health Check / Verification Loop
+            echo "Verifying deployment health..."
+            HEALTHY=false
+            if [ "$ROLLBACK_NEEDED" != true ]; then
+                for i in {1..12}; do # Wait up to 60 seconds (12 * 5s)
+                  # Check if Client (3000) and Backend (3500) serve content (ignoring 404s/500s for a moment, just check connectivity)
+                  if curl -s -f http://127.0.0.1:3000 > /dev/null && curl -s -f http://127.0.0.1:3500 > /dev/null; then
+                    HEALTHY=true
+                    echo "Health check passed!"
+                    break
+                  fi
+                  echo "Waiting for services to be healthy... ($i/12)"
+                  sleep 5
+                done
+            fi
+
+            if [ "$HEALTHY" = false ]; then
+              echo "Health check failed after 60 seconds!"
+              ROLLBACK_NEEDED=true
+            fi
+
+            # 4. Rollback Logic
+            if [ "$ROLLBACK_NEEDED" = true ]; then
+              echo "CRITICAL: Deployment failed. Initiating Rollback..."
+              if [ "$BACKUP_EXISTS" = true ]; then
+                mv docker-compose.prod.yml.bak docker-compose.prod.yml
+                mv .env.bak .env
+                echo "Restoring last stable configuration..."
+                ./docker-compose -f docker-compose.prod.yml up -d
+                echo "Rollback complete. Previous version restored."
+                exit 1 # Fail the pipeline
+              else
+                echo "No backup found! Cannot rollback."
+                exit 1
+              fi
+            else
+                 # 5. Cleanup Backups (Success Path)
+                 if [ -f docker-compose.prod.yml.bak ]; then
+                     rm -f docker-compose.prod.yml.bak .env.bak
+                 fi
+            fi
 
             echo "Cleaning up..."
             rm docker-compose
