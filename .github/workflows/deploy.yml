@@ -118,7 +118,7 @@ jobs:
               mongodb:
                 image: mongo:latest
                 container_name: mongodb
-                command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
+                command: mongod --auth --wiredTigerCacheSizeGB 4.0 --quiet
                 restart: always
                 ports:
                   - "127.0.0.1:27017:27017"
@@ -127,8 +127,8 @@ jobs:
                 deploy:
                   resources:
                     limits:
-                      cpus: '0.50'
-                      memory: 1024M
+                      cpus: '2.0'
+                      memory: 6144M
 
               backend:
                 image: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}

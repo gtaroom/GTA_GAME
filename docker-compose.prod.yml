@@ -3,7 +3,7 @@ services:
   mongodb:
     image: mongo:latest
     container_name: mongodb
-    command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
+    command: mongod --auth --wiredTigerCacheSizeGB 4.0 --quiet
     restart: always
     ports:
       - "127.0.0.1:27017:27017" # Restrict to localhost only (secure)
@@ -12,8 +12,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'
-          memory: 1024M
+          cpus: '2.0'
+          memory: 6144M
 
   # Backend API Server
   backend:
