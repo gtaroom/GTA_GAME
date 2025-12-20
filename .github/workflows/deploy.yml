@@ -140,7 +140,9 @@ jobs:
                 ports:
                   - "3500:3500"
                 volumes:  
-                  - ./uploads:/app/uploads
+                  - ./uploads:/app/public/uploads
+                  - ./public/games:/app/public/games
+                  - ./public/game:/app/public/game
                 deploy:
                   resources:
                     limits:
@@ -245,7 +247,7 @@ jobs:
             ./docker-compose -f docker-compose.prod.yml pull
 
             echo "Clearing port conflicts..."
-            for port in 80 443 3000 3500 5173; do
+            for port in 3000 3500 5173; do
               (sudo fuser -k $port/tcp || true) 2>/dev/null
             done
 
