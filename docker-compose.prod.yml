@@ -3,7 +3,7 @@ services:
   mongodb:
     image: mongo:latest
     container_name: mongodb
-    command: mongod --auth --wiredTigerCacheSizeGB 4.0 --quiet
+    command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
     restart: always
     ports:
       - "127.0.0.1:27017:27017" # Restrict to localhost only (secure)
@@ -12,8 +12,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.75'
-          memory: 6144M
+          cpus: '0.60'
+          memory: 1024M
+        reservations:
+          cpus: '0.20'
+          memory: 512M
 
   # Backend API Server
   backend:
@@ -23,6 +26,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3500
+      - UV_THREADPOOL_SIZE=4
     ports:
       - "127.0.0.1:3500:3500"
     volumes:
@@ -33,10 +37,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 1024M
+          cpus: '0.80'
+          memory: 1536M
         reservations:
-          cpus: '0.50'
+          cpus: '0.30'
           memory: 512M
 
   # Next.js Client
@@ -54,8 +58,8 @@ services:
           cpus: '0.50'
           memory: 1024M
         reservations:
-          cpus: '0.25'
-          memory: 512M
+          cpus: '0.15'
+          memory: 256M
 
   # Admin Dashboard
   admin:
@@ -69,7 +73,7 @@ services:
           cpus: '0.25'
           memory: 256M
         reservations:
-          cpus: '0.10'
+          cpus: '0.05'
           memory: 128M
 
 volumes:
