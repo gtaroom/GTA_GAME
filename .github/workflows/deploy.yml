@@ -130,7 +130,7 @@ jobs:
               mongodb:
                 image: mongo:latest
                 container_name: mongodb
-                command: mongod --auth --wiredTigerCacheSizeGB 4.0 --quiet
+                command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
                 restart: always
                 ports:
                   - "127.0.0.1:27017:27017"
@@ -139,8 +139,11 @@ jobs:
                 deploy:
                   resources:
                     limits:
-                      cpus: '0.75'
-                      memory: 6144M
+                      cpus: '0.60'
+                      memory: 1024M
+                    reservations:
+                      cpus: '0.20'
+                      memory: 512M
 
               backend:
                 image: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}
@@ -149,6 +152,7 @@ jobs:
                 environment:
                   - NODE_ENV=production
                   - PORT=3500
+                  - UV_THREADPOOL_SIZE=4
                 ports:
                   - "3500:3500"
                 volumes:  
@@ -159,10 +163,10 @@ jobs:
                 deploy:
                   resources:
                     limits:
-                      cpus: '1.0'
-                      memory: 1024M
+                      cpus: '0.80'
+                      memory: 1536M
                     reservations:
-                      cpus: '0.50'
+                      cpus: '0.30'
                       memory: 512M
 
               client:
@@ -179,8 +183,8 @@ jobs:
                       cpus: '0.50'
                       memory: 1024M
                     reservations:
-                      cpus: '0.25'
-                      memory: 512M
+                      cpus: '0.15'
+                      memory: 256M
 
               admin:
                 image: ghcr.io/${{ env.REPO_LOWER }}/admin:${{ github.sha }}
@@ -193,7 +197,7 @@ jobs:
                       cpus: '0.25'
                       memory: 256M
                     reservations:
-                      cpus: '0.10'
+                      cpus: '0.05'
                       memory: 128M
 
             volumes:
@@ -262,6 +266,16 @@ jobs:
             echo "Fixing permissions for static assets..."
             # Ensure host directories exist and are readable (using absolute paths)
             mkdir -p /app/uploads /app/public/games /app/public/game
+
+            # [AUTO-FIX] Detect and fix nested "games/games" folder from manual user copy errors
+            if [ -d /app/public/games/games ]; then
+              echo "Fixing nested /app/public/games/games directory..."
+              # Copy contents up one level, ignoring errors if files exist
+              cp -rf /app/public/games/games/* /app/public/games/ || true
+              # Remove the now-redundant nested directory
+              rm -rf /app/public/games/games
+              echo "Fixed: Images moved to /app/public/games/"
+            fi
 
             # Create placeholder for GeoLite2 DB to prevent Docker from creating a directory
             if [ ! -f /app/public/GeoLite2-City.mmdb ]; then
