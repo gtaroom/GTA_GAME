@@ -1,277 +1,84 @@
-name: Deploy to VPS
+services:
+  # Database (Exposed to Host Port 27017)
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
+    restart: always
+    ports:
+      - "127.0.0.1:27017:27017" # Restrict to localhost only (secure)
+    volumes:
+      - mongodb_data:/data/db
+    deploy:
+      resources:
+        limits:
+          cpus: '0.60'
+          memory: 1024M
+        reservations:
+          cpus: '0.20'
+          memory: 512M
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  # Backend API Server
+  backend:
+    image: ghcr.io/gtaroom/gta_game/backend:latest
+    restart: always
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3500
+      - UV_THREADPOOL_SIZE=4
+    ports:
+      - "127.0.0.1:3500:3500"
+    volumes:
+      - ./uploads:/app/public/uploads
+      - ./public/games:/app/public/games
+      - ./public/game:/app/public/game
+      - ./public/GeoLite2-City.mmdb:/app/public/GeoLite2-City.mmdb
+    deploy:
+      resources:
+        limits:
+          cpus: '0.80'
+          memory: 1536M
+        reservations:
+          cpus: '0.30'
+          memory: 512M
 
-jobs:
-  deploy:
-    name: Production Deployment
-    runs-on: ubuntu-latest
+  # Next.js Client
+  client:
+    image: ghcr.io/gtaroom/gta_game/client:latest
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    ports:
+      - "127.0.0.1:3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1024M
+        reservations:
+          cpus: '0.15'
+          memory: 256M
 
-    permissions:
-      contents: read
-      packages: write
+  # Admin Dashboard
+  admin:
+    image: ghcr.io/gtaroom/gta_game/admin:latest
+    restart: always
+    ports:
+      - "127.0.0.1:5173:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.05'
+          memory: 128M
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+volumes:
+  mongodb_data:
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Prepare Repository Name
-        run: |
-          echo "REPO_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-      - name: Build and Push Images
-        uses: docker/build-push-action@v5
-        with:
-          context: ./server
-          push: true
-          tags: |
-            ghcr.io/${{ env.REPO_LOWER }}/backend:latest
-            ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and Push Client
-        uses: docker/build-push-action@v5
-        with:
-          context: ./client
-          push: true
-          tags: |
-            ghcr.io/${{ env.REPO_LOWER }}/client:latest
-            ghcr.io/${{ env.REPO_LOWER }}/client:${{ github.sha }}
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
-            NEXT_PUBLIC_IMAGE_URL=${{ secrets.NEXT_PUBLIC_IMAGE_URL }}
-            NEXT_PUBLIC_VERIFF_API_KEY=${{ secrets.NEXT_PUBLIC_VERIFF_API_KEY }}
-            NEXT_PUBLIC_PRODUCT_ID=${{ secrets.NEXT_PUBLIC_PRODUCT_ID }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and Push Admin
-        uses: docker/build-push-action@v5
-        with:
-          context: ./admin
-          push: true
-          tags: |
-            ghcr.io/${{ env.REPO_LOWER }}/admin:latest
-            ghcr.io/${{ env.REPO_LOWER }}/admin:${{ github.sha }}
-          build-args: |
-            VITE_APP_API_URL=${{ secrets.VITE_APP_API_URL }}
-            VITE_SERVER_URI=${{ secrets.VITE_SERVER_URI }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Setup SSH
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_KEY }}
-          known_hosts: "placeholder"
-          if_key_exists: replace
-          config: |
-            Host production
-              HostName ${{ secrets.SSH_HOST }}
-              User ${{ secrets.SSH_USER }}
-              Port ${{ secrets.SSH_PORT || 22 }}
-              StrictHostKeyChecking no
-
-      - name: Tailscale
-        uses: tailscale/github-action@v2
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
-
-      - name: Execute Remote Deployment
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          script: |
-            set -e
-            # Use home-based app directory to avoid permission issues
-            mkdir -p ~/app
-            cd ~/app
-
-            echo "Installing Standalone Docker Compose V2..."
-            curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
-            chmod +x docker-compose
-
-            echo "Generating Clean docker-compose.prod.yml..."
-            # Using direct interpolation for Repo/Tag to avoid shell expansion bugs
-            cat <<EOF_COMPOSE | sed 's/^            //' > docker-compose.prod.yml
-            services:
-              nginx-proxy:
-                image: nginxproxy/nginx-proxy
-                container_name: nginx-proxy
-                restart: always
-                ports:
-                  - "80:80"
-                  - "443:443"
-                environment:
-                  - DEFAULT_HOST=gtoarcade.com
-                volumes:
-                  - certs:/etc/nginx/certs
-                  - vhost:/etc/nginx/vhost.d
-                  - html:/usr/share/nginx/html
-                  - /var/run/docker.sock:/tmp/docker.sock:ro
-                deploy:
-                  resources:
-                    limits:
-                      memory: 128M
-
-              acme-companion:
-                image: nginxproxy/acme-companion
-                container_name: nginx-proxy-acme
-                restart: always
-                volumes:
-                  - /var/run/docker.sock:/var/run/docker.sock:ro
-                  - acme:/etc/acme.sh
-                  - certs:/etc/nginx/certs:rw
-                  - vhost:/etc/nginx/vhost.d
-                  - html:/usr/share/nginx/html
-                environment:
-                  - DEFAULT_EMAIL=${{ secrets.ADMIN_EMAIL }}
-                  - NGINX_PROXY_CONTAINER=nginx-proxy
-                depends_on:
-                  - nginx-proxy
-                deploy:
-                  resources:
-                    limits:
-                      memory: 128M
-
-              backend:
-                image: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}
-                restart: always
-                env_file: .env
-                environment:
-                  - NODE_ENV=production
-                  - VIRTUAL_HOST=api.gtoarcade.com
-                  - LETSENCRYPT_HOST=api.gtoarcade.com
-                  - VIRTUAL_PORT=3500
-                  - PORT=3500
-                ports:
-                  - "3500:3500"
-                volumes:
-                  - ./uploads:/app/uploads
-                deploy:
-                  resources:
-                    limits:
-                      cpus: '0.40'
-                      memory: 512M
-
-              client:
-                image: ghcr.io/${{ env.REPO_LOWER }}/client:${{ github.sha }}
-                restart: always
-                environment:
-                  - NODE_ENV=production
-                  - VIRTUAL_HOST=gtoarcade.com
-                  - LETSENCRYPT_HOST=gtoarcade.com
-                  - VIRTUAL_PORT=3000
-                  - PORT=3000
-                deploy:
-                  resources:
-                    limits:
-                      cpus: '0.40'
-                      memory: 1024M
-
-              admin:
-                image: ghcr.io/${{ env.REPO_LOWER }}/admin:${{ github.sha }}
-                restart: always
-                environment:
-                  - VIRTUAL_HOST=admin.gtoarcade.com
-                  - LETSENCRYPT_HOST=admin.gtoarcade.com
-                  - VIRTUAL_PORT=80
-                ports:
-                  - "5173:80"
-                deploy:
-                  resources:
-                    limits:
-                      cpus: '0.20'
-                      memory: 256M
-
-            volumes:
-              certs:
-              vhost:
-              html:
-              acme:
-            EOF_COMPOSE
-
-            echo "Injecting environment variables..."
-            # Using cat <<'EOF' to treat everything literally except secrets
-            cat <<'EOF_ENV_FILE' | sed 's/^            //' > .env
-            MONGODB_URI=${{ secrets.MONGODB_URI }}
-            ORIGINS=${{ secrets.ORIGINS }}
-            DOMAIN=${{ secrets.DOMAIN }}
-            EXPRESS_SESSION_SECRET=${{ secrets.EXPRESS_SESSION_SECRET }}
-            REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET }}
-            ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }}
-            EZTEXTING_API_KEY=${{ secrets.EZTEXTING_API_KEY }}
-            EZTEXTING_API_SECRET=${{ secrets.EZTEXTING_API_SECRET }}
-            SMTP_USER=${{ secrets.SMTP_USER }}
-            SMTP_PASS=${{ secrets.SMTP_PASS }}
-            SMTP_PORT=${{ secrets.SMTP_PORT }}
-            SMTP_HOST=${{ secrets.SMTP_HOST }}
-            ACCESS_TOKEN_EXPIRY=${{ secrets.ACCESS_TOKEN_EXPIRY }}
-            REFRESH_TOKEN_EXPIRY=${{ secrets.REFRESH_TOKEN_EXPIRY }}
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            GOOGLE_CLIENT_CALLBACK_URI=${{ secrets.GOOGLE_CLIENT_CALLBACK_URI }}
-            CLIENT_SSO_REDIRECT_URL=${{ secrets.CLIENT_SSO_REDIRECT_URL }}
-            FORGOT_PASSWORD_REDIRECT_URL=${{ secrets.FORGOT_PASSWORD_REDIRECT_URL }}
-            CLIENT_URL=${{ secrets.CLIENT_URL }}
-            WEBHOOK_CALLBACK_URL=${{ secrets.WEBHOOK_CALLBACK_URL }}
-            PLISIO_API_KEY=${{ secrets.PLISIO_API_KEY }}
-            SOAP_API_KEY=${{ secrets.SOAP_API_KEY }}
-            SOAP_WEBHOOK_SECRET=${{ secrets.SOAP_WEBHOOK_SECRET }}
-            SOAP_RETURN_URL=${{ secrets.SOAP_RETURN_URL }}
-            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
-            NOWPAYMENTS_API_KEY=${{ secrets.NOWPAYMENTS_API_KEY }}
-            TWILIO_MESSAGING_SERVICE_SID=${{ secrets.TWILIO_MESSAGING_SERVICE_SID }}
-            TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}
-            TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}
-            TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
-            GOAT_PAYMENTS_USERNAME=${{ secrets.GOAT_PAYMENTS_USERNAME }}
-            GOAT_PAYMENTS_PASSWORD=${{ secrets.GOAT_PAYMENTS_PASSWORD }}
-            CENTRYOS_API_KEY=${{ secrets.CENTRYOS_API_KEY }}
-            CENTRYOS_WEBHOOK_SECRET=${{ secrets.CENTRYOS_WEBHOOK_SECRET }}
-            CENTRYOS_RETURN_URL=${{ secrets.CENTRYOS_RETURN_URL }}
-            CENTRYOS_ACCESS_TOKEN=${{ secrets.CENTRYOS_ACCESS_TOKEN }}
-            PORT=3500
-            EOF_ENV_FILE
-
-            echo "Environment file generated. Line count: $(wc -l < .env)"
-            echo "--- DEBUG: .env Keys Found ---"
-            grep -oP '^[^=]+' .env || cut -d'=' -f1 .env
-            echo "---------------------------------------"
-
-            echo "Pulling images..."
-            # Explicit login just in case
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            ./docker-compose -f docker-compose.prod.yml pull
-
-            echo "Clearing port conflicts..."
-            for port in 80 443 3000 3500 5173; do
-              (sudo fuser -k $port/tcp || true) 2>/dev/null
-            done
-
-            echo "Deploying..."
-            ./docker-compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
-
-            echo "Cleaning up..."
-            rm docker-compose
-            docker image prune -af
-
-            echo "Deployment successful! Files are in ~/app"
+# Uptime: Automatic restarts and resource limits prevent one service from crashing the host.
+# Optimization: Explicit CPU and RAM limits ensure efficient resource usage.
+# Volumes: persistent storage for backend uploads managed with UID 1001 permissions.

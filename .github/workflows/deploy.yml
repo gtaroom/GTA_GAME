@@ -41,6 +41,8 @@ jobs:
           tags: |
             ghcr.io/${{ env.REPO_LOWER }}/backend:latest
             ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}
+          build-args: |
+            MAXMIND_LICENSE_KEY=${{ secrets.MAXMIND_LICENSE_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -109,48 +111,39 @@ jobs:
             curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
             chmod +x docker-compose
 
+            # 0. Backup CURRENT Stable Config (Critical: Must happen BEFORE generation)
+            echo "Backing up current stable configuration..."
+            if [ -f docker-compose.prod.yml ]; then
+              cp docker-compose.prod.yml docker-compose.prod.yml.bak
+              cp .env .env.bak
+              BACKUP_EXISTS=true
+            else
+              BACKUP_EXISTS=false
+            fi
+            curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
+            chmod +x docker-compose
+
             echo "Generating Clean docker-compose.prod.yml..."
             # Using direct interpolation for Repo/Tag to avoid shell expansion bugs
             cat <<EOF_COMPOSE | sed 's/^            //' > docker-compose.prod.yml
             services:
-              nginx-proxy:
-                image: nginxproxy/nginx-proxy
-                container_name: nginx-proxy
+              mongodb:
+                image: mongo:latest
+                container_name: mongodb
+                command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
                 restart: always
                 ports:
-                  - "80:80"
-                  - "443:443"
-                environment:
-                  - DEFAULT_HOST=gtoarcade.com
+                  - "127.0.0.1:27017:27017"
                 volumes:
-                  - certs:/etc/nginx/certs
-                  - vhost:/etc/nginx/vhost.d
-                  - html:/usr/share/nginx/html
-                  - /var/run/docker.sock:/tmp/docker.sock:ro
+                  - mongodb_data:/data/db
                 deploy:
                   resources:
                     limits:
-                      memory: 128M
-
-              acme-companion:
-                image: nginxproxy/acme-companion
-                container_name: nginx-proxy-acme
-                restart: always
-                volumes:
-                  - /var/run/docker.sock:/var/run/docker.sock:ro
-                  - acme:/etc/acme.sh
-                  - certs:/etc/nginx/certs:rw
-                  - vhost:/etc/nginx/vhost.d
-                  - html:/usr/share/nginx/html
-                environment:
-                  - DEFAULT_EMAIL=${{ secrets.ADMIN_EMAIL }}
-                  - NGINX_PROXY_CONTAINER=nginx-proxy
-                depends_on:
-                  - nginx-proxy
-                deploy:
-                  resources:
-                    limits:
-                      memory: 128M
+                      cpus: '0.60'
+                      memory: 1024M
+                    reservations:
+                      cpus: '0.20'
+                      memory: 512M
 
               backend:
                 image: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}
@@ -158,18 +151,22 @@ jobs:
                 env_file: .env
                 environment:
                   - NODE_ENV=production
-                  - VIRTUAL_HOST=api.gtoarcade.com
-                  - LETSENCRYPT_HOST=api.gtoarcade.com
-                  - VIRTUAL_PORT=3500
                   - PORT=3500
+                  - UV_THREADPOOL_SIZE=4
                 ports:
                   - "3500:3500"
-                volumes:
-                  - ./uploads:/app/uploads
+                volumes:  
+                  - /app/uploads:/app/public/uploads
+                  - /app/public/games:/app/public/games
+                  - /app/public/game:/app/public/game
+                  - /app/public/GeoLite2-City.mmdb:/app/public/GeoLite2-City.mmdb
                 deploy:
                   resources:
                     limits:
-                      cpus: '0.40'
+                      cpus: '0.80'
+                      memory: 1536M
+                    reservations:
+                      cpus: '0.30'
                       memory: 512M
 
               client:
@@ -177,41 +174,40 @@ jobs:
                 restart: always
                 environment:
                   - NODE_ENV=production
-                  - VIRTUAL_HOST=gtoarcade.com
-                  - LETSENCRYPT_HOST=gtoarcade.com
-                  - VIRTUAL_PORT=3000
                   - PORT=3000
+                ports:
+                  - "3000:3000"
                 deploy:
                   resources:
                     limits:
-                      cpus: '0.40'
+                      cpus: '0.50'
                       memory: 1024M
+                    reservations:
+                      cpus: '0.15'
+                      memory: 256M
 
               admin:
                 image: ghcr.io/${{ env.REPO_LOWER }}/admin:${{ github.sha }}
                 restart: always
-                environment:
-                  - VIRTUAL_HOST=admin.gtoarcade.com
-                  - LETSENCRYPT_HOST=admin.gtoarcade.com
-                  - VIRTUAL_PORT=80
                 ports:
                   - "5173:80"
                 deploy:
                   resources:
                     limits:
-                      cpus: '0.20'
+                      cpus: '0.25'
                       memory: 256M
+                    reservations:
+                      cpus: '0.05'
+                      memory: 128M
 
             volumes:
-              certs:
-              vhost:
-              html:
-              acme:
+              mongodb_data:
             EOF_COMPOSE
 
             echo "Injecting environment variables..."
             # Using cat <<'EOF' with sed to strip ALL leading AND trailing whitespace
             # This ensures the .env file is clean and works with Docker
+            # Standardize and secure environment variables
             cat <<'EOF_ENV_FILE' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' > .env
             MONGODB_URI=${{ secrets.MONGODB_URI }}
             ORIGINS=${{ secrets.ORIGINS }}
@@ -250,6 +246,8 @@ jobs:
             CENTRYOS_WEBHOOK_SECRET=${{ secrets.CENTRYOS_WEBHOOK_SECRET }}
             CENTRYOS_RETURN_URL=${{ secrets.CENTRYOS_RETURN_URL }}
             CENTRYOS_ACCESS_TOKEN=${{ secrets.CENTRYOS_ACCESS_TOKEN }}
+            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
+            SENDGRID_FROM_EMAIL=${{ secrets.SENDGRID_FROM_EMAIL }}
             PORT=3500
             EOF_ENV_FILE
 
@@ -265,13 +263,231 @@ jobs:
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             ./docker-compose -f docker-compose.prod.yml pull
 
+            echo "Fixing permissions for static assets..."
+            # Ensure host directories exist and are readable (using absolute paths)
+            mkdir -p /app/uploads /app/public/games /app/public/game
+
+            # [AUTO-FIX] Detect and fix nested "games/games" folder from manual user copy errors
+            if [ -d /app/public/games/games ]; then
+              echo "Fixing nested /app/public/games/games directory..."
+              # Copy contents up one level, ignoring errors if files exist
+              cp -rf /app/public/games/games/* /app/public/games/ || true
+              # Remove the now-redundant nested directory
+              rm -rf /app/public/games/games
+              echo "Fixed: Images moved to /app/public/games/"
+            fi
+
+            # Create placeholder for GeoLite2 DB to prevent Docker from creating a directory
+            if [ ! -f /app/public/GeoLite2-City.mmdb ]; then
+              touch /app/public/GeoLite2-City.mmdb
+            fi
+
+            # Create custom error page if it doesn't exist (it should be copied via SCP later, but for now strict copy)
+            cat <<EOF_HTML > /app/public/custom_50x.html
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>GTO Arcade - Maintenance</title>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                        background-color: #0f172a;
+                        color: #e2e8f0;
+                        height: 100vh;
+                        margin: 0;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        text-align: center;
+                    }
+                    .container {
+                        max-width: 600px;
+                        padding: 2rem;
+                    }
+                    h1 {
+                        font-size: 2.5rem;
+                        margin-bottom: 1rem;
+                        background: linear-gradient(to right, #60a5fa, #a78bfa);
+                        -webkit-background-clip: text;
+                        background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                    }
+                    p {
+                        font-size: 1.1rem;
+                        line-height: 1.6;
+                        color: #94a3b8;
+                        margin-bottom: 2rem;
+                    }
+                    .spinner {
+                        width: 40px;
+                        height: 40px;
+                        margin: 0 auto 2rem;
+                        border: 3px solid #1e293b;
+                        border-top: 3px solid #60a5fa;
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="spinner"></div>
+                    <h1>System Update in Progress</h1>
+                    <p>We are currently deploying improvements to GTO Arcade. <br>The servers will be back online shortly.</p>
+                    <p style="font-size: 0.9rem; opacity: 0.7;">Error Code: 502 Bad Gateway</p>
+                </div>
+                <script>
+                    // Auto-reload every 30 seconds to check if the site is back
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 30000);
+                </script>
+            </body>
+            </html>
+            EOF_HTML
+
+            # Create custom 404 page
+            cat <<EOF_HTML_404 > /app/public/custom_404.html
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>GTO Arcade - Page Not Found</title>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                        background-color: #0f172a;
+                        color: #e2e8f0;
+                        height: 100vh;
+                        margin: 0;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        text-align: center;
+                    }
+                    .container {
+                        max-width: 600px;
+                        padding: 2rem;
+                    }
+                    h1 {
+                        font-size: 6rem;
+                        margin: 0;
+                        line-height: 1;
+                        background: linear-gradient(to right, #60a5fa, #a78bfa);
+                        -webkit-background-clip: text;
+                        background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        font-weight: 800;
+                    }
+                    h2 {
+                        font-size: 2rem;
+                        margin-bottom: 1rem;
+                        color: #f8fafc;
+                    }
+                    p {
+                        font-size: 1.1rem;
+                        line-height: 1.6;
+                        color: #94a3b8;
+                        margin-bottom: 2rem;
+                    }
+                    a {
+                        display: inline-block;
+                        padding: 0.75rem 1.5rem;
+                        background: linear-gradient(to right, #60a5fa, #a78bfa);
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 9999px;
+                        font-weight: 600;
+                        transition: transform 0.2s;
+                    }
+                    a:hover {
+                        transform: translateY(-2px);
+                        opacity: 0.9;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>404</h1>
+                    <h2>Page Not Found</h2>
+                    <p>The page you are looking for doesn't exist or has been moved.</p>
+                    <a href="/">Return Home</a>
+                </div>
+            </body>
+            </html>
+            EOF_HTML_404
+
+            sudo chmod 755 /app
+            sudo chmod -R 755 /app/uploads /app/public
+            sudo chown -R 1001:1001 /app/uploads /app/public
+
             echo "Clearing port conflicts..."
-            for port in 80 443 3000 3500 5173; do
+            for port in 3000 3500 5173; do
               (sudo fuser -k $port/tcp || true) 2>/dev/null
             done
 
+            echo "Cleaning up old proxy containers..."
+            docker stop nginx-proxy nginx-proxy-acme || true
+            docker rm nginx-proxy nginx-proxy-acme || true
+
             echo "Deploying..."
-            ./docker-compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
+
+            # 2. Deploy new version
+            if ! ./docker-compose -f docker-compose.prod.yml up -d --remove-orphans; then
+              echo "Docker Compose Up Failed!"
+              ROLLBACK_NEEDED=true
+            fi
+
+            # 3. Health Check / Verification Loop
+            echo "Verifying deployment health..."
+            HEALTHY=false
+            if [ "$ROLLBACK_NEEDED" != true ]; then
+                for i in {1..12}; do # Wait up to 60 seconds (12 * 5s)
+                  # Check if Client (3000) and Backend (3500) serve content (ignoring 404s/500s for a moment, just check connectivity)
+                  if curl -s -f http://127.0.0.1:3000 > /dev/null && curl -s -f http://127.0.0.1:3500 > /dev/null; then
+                    HEALTHY=true
+                    echo "Health check passed!"
+                    break
+                  fi
+                  echo "Waiting for services to be healthy... ($i/12)"
+                  sleep 5
+                done
+            fi
+
+            if [ "$HEALTHY" = false ]; then
+              echo "Health check failed after 60 seconds!"
+              ROLLBACK_NEEDED=true
+            fi
+
+            # 4. Rollback Logic
+            if [ "$ROLLBACK_NEEDED" = true ]; then
+              echo "CRITICAL: Deployment failed. Initiating Rollback..."
+              if [ "$BACKUP_EXISTS" = true ]; then
+                mv docker-compose.prod.yml.bak docker-compose.prod.yml
+                mv .env.bak .env
+                echo "Restoring last stable configuration..."
+                ./docker-compose -f docker-compose.prod.yml up -d
+                echo "Rollback complete. Previous version restored."
+                exit 1 # Fail the pipeline
+              else
+                echo "No backup found! Cannot rollback."
+                exit 1
+              fi
+            else
+                 # 5. Cleanup Backups (Success Path)
+                 if [ -f docker-compose.prod.yml.bak ]; then
+                     rm -f docker-compose.prod.yml.bak .env.bak
+                 fi
+            fi
 
             echo "Cleaning up..."
             rm docker-compose
