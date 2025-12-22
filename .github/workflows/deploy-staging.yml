@@ -80,25 +80,31 @@ jobs:
       - name: Setup SSH
         uses: shimataro/ssh-key-action@v2
         with:
-          key: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.STAGING_SSH_KEY || secrets.SSH_KEY }}
           known_hosts: "placeholder"
           if_key_exists: replace
           config: |
             Host staging
-              HostName ${{ secrets.SSH_HOST }}
-              User ${{ secrets.SSH_USER }}
-              Port ${{ secrets.SSH_PORT || 22 }}
+              HostName ${{ secrets.STAGING_SSH_HOST || secrets.SSH_HOST }}
+              User ${{ secrets.STAGING_SSH_USER || secrets.SSH_USER }}
+              Port ${{ secrets.STAGING_SSH_PORT || secrets.SSH_PORT || 22 }}
               StrictHostKeyChecking no
 
       - name: Execute Remote Deployment (Staging)
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
+          host: ${{ secrets.STAGING_SSH_HOST || secrets.SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER || secrets.SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY || secrets.SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT || secrets.SSH_PORT || 22 }}
+          command_timeout: 30m
           script: |
             set -e
+            set -x # Debug Mode: Print commands
+
+            # Prune to free space BEFORE pulling
+            docker system prune -af --volumes || true
+
             # Staging Directory
             mkdir -p ~/app-staging
             cd ~/app-staging
