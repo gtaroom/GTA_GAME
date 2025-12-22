@@ -392,7 +392,9 @@ export default function CreateAccountStep({
                                             </span>
                                             {/* Buy Coins Badge */}
                                             <button
-                                                onClick={handleBuyCoinsClick}
+                                                onClick={() =>
+                                                    router.push('/buy-coins')
+                                                }
                                                 type='button'
                                                 className='inline-flex items-center gap-1 bg-yellow-400 text-black px-2 py-1 rounded-md text-xs font-extrabold shadow hover:bg-yellow-300 transition-colors'
                                             >
@@ -401,12 +403,12 @@ export default function CreateAccountStep({
                                                     size={14}
                                                     glowColor='--color-yellow-500'
                                                 />
-                                                Buy Coins
+                                                Buy More Coins
                                             </button>
                                         </label>
                                         <Input
                                             type='number'
-                                            placeholder={`Enter amount (min $${MIN_ADD_LOOT}) - Optional`}
+                                            placeholder={`Enter up to available balance (min $${MIN_ADD_LOOT})`}
                                             value={rechargeAmount}
                                             onChange={e => {
                                                 setRechargeAmount(
