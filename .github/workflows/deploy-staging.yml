@@ -57,9 +57,9 @@ jobs:
             ghcr.io/${{ env.REPO_LOWER }}/client:${{ github.sha }}-staging
           build-args: |
             NEXT_PUBLIC_API_URL=https://staging.gtoarcade.com/api/v1
-            NEXT_PUBLIC_IMAGE_URL=${{ secrets.STAGING_NEXT_PUBLIC_IMAGE_URL }}
-            NEXT_PUBLIC_VERIFF_API_KEY=${{ secrets.STAGING_NEXT_PUBLIC_VERIFF_API_KEY }}
-            NEXT_PUBLIC_PRODUCT_ID=${{ secrets.STAGING_NEXT_PUBLIC_PRODUCT_ID }}
+            NEXT_PUBLIC_IMAGE_URL=${{ secrets.STAGING_NEXT_PUBLIC_IMAGE_URL || secrets.NEXT_PUBLIC_IMAGE_URL }}
+            NEXT_PUBLIC_VERIFF_API_KEY=${{ secrets.STAGING_NEXT_PUBLIC_VERIFF_API_KEY || secrets.NEXT_PUBLIC_VERIFF_API_KEY }}
+            NEXT_PUBLIC_PRODUCT_ID=${{ secrets.STAGING_NEXT_PUBLIC_PRODUCT_ID || secrets.NEXT_PUBLIC_PRODUCT_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -211,12 +211,12 @@ jobs:
             # OR localhost:27018 depending on how it's connected.
             # Docker DNS 'mongodb-staging' is safest.
             cat <<'EOF_ENV_FILE' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' > .env.staging
-            MONGODB_URI=${{ secrets.STAGING_MONGODB_URI }}
-            ORIGINS=${{ secrets.STAGING_ORIGINS }}
+            MONGODB_URI=${{ secrets.STAGING_MONGODB_URI || secrets.MONGODB_URI }}
+            ORIGINS=${{ secrets.STAGING_ORIGINS || secrets.ORIGINS }}
             DOMAIN=staging.gtoarcade.com
-            EXPRESS_SESSION_SECRET=${{ secrets.STAGING_EXPRESS_SESSION_SECRET }}
-            REFRESH_TOKEN_SECRET=${{ secrets.STAGING_REFRESH_TOKEN_SECRET }}
-            ACCESS_TOKEN_SECRET=${{ secrets.STAGING_ACCESS_TOKEN_SECRET }}
+            EXPRESS_SESSION_SECRET=${{ secrets.STAGING_EXPRESS_SESSION_SECRET || secrets.EXPRESS_SESSION_SECRET }}
+            REFRESH_TOKEN_SECRET=${{ secrets.STAGING_REFRESH_TOKEN_SECRET || secrets.REFRESH_TOKEN_SECRET }}
+            ACCESS_TOKEN_SECRET=${{ secrets.STAGING_ACCESS_TOKEN_SECRET || secrets.ACCESS_TOKEN_SECRET }}
             EZTEXTING_API_KEY=${{ secrets.EZTEXTING_API_KEY }}
             EZTEXTING_API_SECRET=${{ secrets.EZTEXTING_API_SECRET }}
             SMTP_USER=${{ secrets.SMTP_USER }}
@@ -227,13 +227,30 @@ jobs:
             REFRESH_TOKEN_EXPIRY=${{ secrets.REFRESH_TOKEN_EXPIRY }}
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            GOOGLE_CLIENT_CALLBACK_URI=${{ secrets.STAGING_GOOGLE_CLIENT_CALLBACK_URI }}
-            CLIENT_SSO_REDIRECT_URL=${{ secrets.STAGING_CLIENT_SSO_REDIRECT_URL }}
-            FORGOT_PASSWORD_REDIRECT_URL=${{ secrets.STAGING_FORGOT_PASSWORD_REDIRECT_URL }}
+            GOOGLE_CLIENT_CALLBACK_URI=${{ secrets.STAGING_GOOGLE_CLIENT_CALLBACK_URI || secrets.GOOGLE_CLIENT_CALLBACK_URI }}
+            CLIENT_SSO_REDIRECT_URL=${{ secrets.STAGING_CLIENT_SSO_REDIRECT_URL || secrets.CLIENT_SSO_REDIRECT_URL }}
+            FORGOT_PASSWORD_REDIRECT_URL=${{ secrets.STAGING_FORGOT_PASSWORD_REDIRECT_URL || secrets.FORGOT_PASSWORD_REDIRECT_URL }}
             CLIENT_URL=https://staging.gtoarcade.com
-            WEBHOOK_CALLBACK_URL=${{ secrets.STAGING_WEBHOOK_CALLBACK_URL }}
+            WEBHOOK_CALLBACK_URL=${{ secrets.STAGING_WEBHOOK_CALLBACK_URL || secrets.WEBHOOK_CALLBACK_URL }}
             PLISIO_API_KEY=${{ secrets.PLISIO_API_KEY }}
             ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            SOAP_API_KEY=${{ secrets.STAGING_SOAP_API_KEY || secrets.SOAP_API_KEY }}
+            SOAP_WEBHOOK_SECRET=${{ secrets.STAGING_SOAP_WEBHOOK_SECRET || secrets.SOAP_WEBHOOK_SECRET }}
+            SOAP_RETURN_URL=${{ secrets.STAGING_SOAP_RETURN_URL || secrets.SOAP_RETURN_URL }}
+            NOWPAYMENTS_API_KEY=${{ secrets.STAGING_NOWPAYMENTS_API_KEY || secrets.NOWPAYMENTS_API_KEY }}
+            TWILIO_MESSAGING_SERVICE_SID=${{ secrets.STAGING_TWILIO_MESSAGING_SERVICE_SID || secrets.TWILIO_MESSAGING_SERVICE_SID }}
+            TWILIO_PHONE_NUMBER=${{ secrets.STAGING_TWILIO_PHONE_NUMBER || secrets.TWILIO_PHONE_NUMBER }}
+            TWILIO_AUTH_TOKEN=${{ secrets.STAGING_TWILIO_AUTH_TOKEN || secrets.TWILIO_AUTH_TOKEN }}
+            TWILIO_ACCOUNT_SID=${{ secrets.STAGING_TWILIO_ACCOUNT_SID || secrets.TWILIO_ACCOUNT_SID }}
+            GOAT_PAYMENTS_USERNAME=${{ secrets.STAGING_GOAT_PAYMENTS_USERNAME || secrets.GOAT_PAYMENTS_USERNAME }}
+            GOAT_PAYMENTS_PASSWORD=${{ secrets.STAGING_GOAT_PAYMENTS_PASSWORD || secrets.GOAT_PAYMENTS_PASSWORD }}
+            CENTRYOS_API_KEY=${{ secrets.STAGING_CENTRYOS_API_KEY || secrets.CENTRYOS_API_KEY }}
+            CENTRYOS_WEBHOOK_SECRET=${{ secrets.STAGING_CENTRYOS_WEBHOOK_SECRET || secrets.CENTRYOS_WEBHOOK_SECRET }}
+            CENTRYOS_RETURN_URL=${{ secrets.STAGING_CENTRYOS_RETURN_URL || secrets.CENTRYOS_RETURN_URL }}
+            CENTRYOS_ACCESS_TOKEN=${{ secrets.STAGING_CENTRYOS_ACCESS_TOKEN || secrets.CENTRYOS_ACCESS_TOKEN }}
+            SENDGRID_API_KEY=${{ secrets.STAGING_SENDGRID_API_KEY || secrets.SENDGRID_API_KEY }}
+            SENDGRID_FROM_EMAIL=${{ secrets.STAGING_SENDGRID_FROM_EMAIL || secrets.SENDGRID_FROM_EMAIL }}
+            PORT=3501
             PORT=3501
             EOF_ENV_FILE
 
