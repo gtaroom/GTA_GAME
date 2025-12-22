@@ -77,6 +77,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.STAGING_TAILSCALE_AUTH_KEY || secrets.TAILSCALE_AUTH_KEY }}
+
       - name: Setup SSH
         uses: shimataro/ssh-key-action@v2
         with:
