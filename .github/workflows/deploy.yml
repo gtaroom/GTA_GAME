@@ -130,7 +130,7 @@ jobs:
               mongodb:
                 image: mongo:latest
                 container_name: mongodb
-                command: mongod --auth --wiredTigerCacheSizeGB 0.128 --quiet
+                command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
                 restart: always
                 ports:
                   - "127.0.0.1:27017:27017"
@@ -140,10 +140,10 @@ jobs:
                   resources:
                     limits:
                       cpus: '0.60'
-                      memory: 512M
+                      memory: 1024M
                     reservations:
                       cpus: '0.20'
-                      memory: 256M
+                      memory: 512M
 
               backend:
                 image: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}
@@ -152,8 +152,7 @@ jobs:
                 environment:
                   - NODE_ENV=production
                   - PORT=3500
-                  - UV_THREADPOOL_SIZE=8
-                  - NODE_OPTIONS=--max-old-space-size=256
+                  - UV_THREADPOOL_SIZE=4
                 ports:
                   - "3500:3500"
                 volumes:  
@@ -165,10 +164,10 @@ jobs:
                   resources:
                     limits:
                       cpus: '0.80'
-                      memory: 512M
+                      memory: 1536M
                     reservations:
-                      cpus: '0.40'
-                      memory: 256M
+                      cpus: '0.30'
+                      memory: 512M
 
               client:
                 image: ghcr.io/${{ env.REPO_LOWER }}/client:${{ github.sha }}
@@ -176,14 +175,13 @@ jobs:
                 environment:
                   - NODE_ENV=production
                   - PORT=3000
-                  - NODE_OPTIONS=--max-old-space-size=384
                 ports:
                   - "3000:3000"
                 deploy:
                   resources:
                     limits:
                       cpus: '0.50'
-                      memory: 512M
+                      memory: 1024M
                     reservations:
                       cpus: '0.15'
                       memory: 256M
@@ -197,10 +195,10 @@ jobs:
                   resources:
                     limits:
                       cpus: '0.25'
-                      memory: 128M
+                      memory: 256M
                     reservations:
                       cpus: '0.05'
-                      memory: 64M
+                      memory: 128M
 
             volumes:
               mongodb_data:
