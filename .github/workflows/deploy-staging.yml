@@ -132,7 +132,7 @@ jobs:
               mongodb-staging:
                 image: mongo:latest
                 container_name: mongodb-staging
-                command: mongod --auth --wiredTigerCacheSizeGB 0.064 --quiet
+                command: mongod --auth --wiredTigerCacheSizeGB 0.128 --quiet
                 restart: always
                 ports:
                   - "127.0.0.1:27018:27017"
@@ -142,10 +142,10 @@ jobs:
                   resources:
                     limits:
                       cpus: '0.40'
-                      memory: 256M
+                      memory: 384M
                     reservations:
                       cpus: '0.10'
-                      memory: 128M
+                      memory: 192M
 
               backend-staging:
                 image: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}-staging
