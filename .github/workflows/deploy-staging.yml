@@ -132,7 +132,7 @@ jobs:
               mongodb-staging:
                 image: mongo:latest
                 container_name: mongodb-staging
-                command: mongod --auth --wiredTigerCacheSizeGB 0.128 --quiet
+                command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
                 restart: always
                 ports:
                   - "127.0.0.1:27018:27017"
@@ -141,11 +141,11 @@ jobs:
                 deploy:
                   resources:
                     limits:
-                      cpus: '0.40'
-                      memory: 384M
+                      cpus: '0.60'
+                      memory: 1024M
                     reservations:
-                      cpus: '0.10'
-                      memory: 192M
+                      cpus: '0.20'
+                      memory: 512M
 
               backend-staging:
                 image: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}-staging
@@ -159,7 +159,7 @@ jobs:
                 ports:
                   - "3501:3501"
                 volumes:  
-                  - /app/uploads-staging:/app/public/uploads
+                  - /app/uploads:/app/public/uploads
                   - /app/public/games:/app/public/games
                   - /app/public/game:/app/public/game
                   - /app/public/GeoLite2-City.mmdb:/app/public/GeoLite2-City.mmdb
