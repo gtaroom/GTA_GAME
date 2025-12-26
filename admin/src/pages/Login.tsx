@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { userData } from '../redux/slices/AuthSlice';
-import { useToast } from '../context/ToastContext';
-import { RootState } from '../redux/store';
-import { baseUserApi } from '../services/api/baseUserApi';
-import LoadingSpinner from '../components/UI/LoadingSpinner';
-import AccessDenied from '../components/UI/AccessDenied';
-import { useGetUserDetailsQuery } from '../services/api/authApi';
+import React, { useState, useEffect } from "react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { userData } from "../redux/slices/AuthSlice";
+import { useToast } from "../context/ToastContext";
+import { RootState } from "../redux/store";
+import { baseUserApi } from "../services/api/baseUserApi";
+import LoadingSpinner from "../components/UI/LoadingSpinner";
+import AccessDenied from "../components/UI/AccessDenied";
+import { useGetUserDetailsQuery } from "../services/api/authApi";
 
 interface LoginFormData {
   email: string;
@@ -39,18 +39,18 @@ const Login: React.FC = () => {
   const dispatch = useDispatch();
   const { showToast } = useToast();
   const { data: user, isLoading: userLoading } = useGetUserDetailsQuery();
-  
+
   // Redirect if already logged in with valid user
   useEffect(() => {
     // Only redirect if we have a user and they're not a regular USER
     if (user && user.role !== "USER" && !userLoading) {
       // Don't redirect if we're already on login (prevents loop)
-      if (location.pathname === '/login') {
-        navigate('/', { replace: true });
+      if (location.pathname === "/login") {
+        navigate("/", { replace: true });
       }
     }
   }, [user, userLoading, navigate, location.pathname]);
-  
+
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
@@ -112,7 +112,7 @@ const Login: React.FC = () => {
     try {
       // Invalidate any existing cache before login
       dispatch(baseUserApi.util.resetApiState());
-      console.log("Logging in with:", formData);
+      // console.log("Logging in with:", formData);
       const response = await fetch(
         `${import.meta.env.VITE_APP_API_URL}/api/v1/user/login`,
         {
@@ -131,21 +131,21 @@ const Login: React.FC = () => {
       if (response.ok && data.success) {
         // Check if user has valid role (not "USER")
         const userRole = data.data!.user.role;
-        
+
         if (userRole !== "USER") {
           // Store user data in Redux
           dispatch(userData(data.data!.user));
 
           // Show success toast
-          showToast('Login successful! Redirecting...', 'success');
-          
+          showToast("Login successful! Redirecting...", "success");
+
           // Navigate immediately - let the app handle permission-based routing
-          navigate('/');
+          navigate("/");
         } else {
           // User role is "USER" - not allowed in admin panel
           setAccessDenied(true);
           setUserRole(userRole);
-          showToast('Access denied. Admin privileges required.', 'error');
+          showToast("Access denied. Admin privileges required.", "error");
         }
       } else {
         // Show error message
