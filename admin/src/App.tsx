@@ -14,6 +14,7 @@ import UserBalance from "./pages/UserBalance";
 // import UserManagement from './pages/UserManagement';
 import EnhancedUserManagement from "./pages/EnhancedUserManagement";
 import RoleManagement from "./pages/RoleManagement";
+import { HomeRedirect } from "./components/HomeRedirect";
 // import SupportManagement from './pages/SupportManagement';
 import Withdrawals from "./pages/Withdrawals";
 import Transactions from "./pages/Transactions";
@@ -22,6 +23,7 @@ import PrivateRoute from "./PrivateRoute";
 import MailchimpManagement from "./pages/MailchimpManagement";
 import TwilioManagement from "./pages/TwilioManagement";
 import LegalDocumentsManagement from "./pages/LegalDocumentsManagement";
+import AdminBannerManagement from "./pages/AdminBannerManagement";
 
 function App() {
   return (
@@ -38,12 +40,13 @@ function App() {
                 path="/"
                 element={
                   <RoleBasedRoute
-                    allowedRoles={["ADMIN"]}
+                    allowedRoles={["ADMIN", "DESIGNER"]}
                     autoRedirectToFirstAllowed
                   >
                     <MainLayout>
                       <Dashboard />
                     </MainLayout>
+                    <HomeRedirect />
                   </RoleBasedRoute>
                 }
               />
@@ -200,6 +203,17 @@ function App() {
                   <RoleBasedRoute requiredPermissions={["canManageSystem"]}>
                     <MainLayout>
                       <LegalDocumentsManagement />
+                    </MainLayout>
+                  </RoleBasedRoute>
+                }
+              />
+
+              <Route
+                path="/banner-management"
+                element={
+                  <RoleBasedRoute requiredPermissions={["canManageBanners"]}>
+                    <MainLayout>
+                      <AdminBannerManagement />
                     </MainLayout>
                   </RoleBasedRoute>
                 }

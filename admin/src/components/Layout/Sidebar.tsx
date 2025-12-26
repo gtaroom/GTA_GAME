@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Megaphone,
   FileText,
+  Image as ImageIcon,
 } from "lucide-react";
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
@@ -34,21 +35,22 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
-  const { isLoading, getUserPermissions, user } = usePermissions();
+  // Destructure isAdmin from your hook
+  const { isLoading, getUserPermissions, user, isAdmin } = usePermissions();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { showToast } = useToast();
+
   const [openMenus, setOpenMenus] = useState<{ [key: string]: boolean }>({
     marketing: false,
+    cms: false,
   });
 
-  // Get user's permissions and accessible routes
   const userPermissions = getUserPermissions();
   const accessibleRoutes = getAccessibleRoutes(userPermissions, user?.role);
 
   const handleLogout = async () => {
     try {
-      // Call logout API
       const response = await fetch(
         `${import.meta.env.VITE_APP_API_URL}/api/v1/user/logout`,
         {
@@ -58,16 +60,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       );
 
       if (response.ok) {
-        // Clear Redux state
         dispatch(logOut());
-
-        // Invalidate all cached data
         dispatch(baseUserApi.util.resetApiState());
-
-        // Show success message
         showToast("Logged out successfully", "success");
-
-        // Navigate to login
         navigate("/login");
       } else {
         showToast("Logout failed. Please try again.", "error");
@@ -75,8 +70,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     } catch (error) {
       console.error("Logout error:", error);
       showToast("Network error during logout", "error");
-
-      // Still clear local state and redirect
       dispatch(logOut());
       dispatch(baseUserApi.util.resetApiState());
       navigate("/login");
@@ -90,7 +83,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     }));
   };
 
-  // Show loading spinner while user data is being fetched
   if (isLoading) {
     return (
       <div className="fixed top-0 left-0 h-full bg-gray-800 text-white w-64 flex items-center justify-center">
@@ -99,7 +91,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     );
   }
 
-  // Icon mapping for routes
   const getIcon = (iconName: string) => {
     const iconMap: Record<string, React.ReactNode> = {
       BarChart3: <LayoutDashboard className="mr-3" size={20} />,
@@ -115,11 +106,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       MessageSquare: <MessageSquare className="mr-3" size={20} />,
       Megaphone: <Megaphone className="mr-3" size={20} />,
       FileText: <FileText className="mr-3" size={20} />,
+      Image: <ImageIcon className="mr-3" size={20} />,
     };
     return iconMap[iconName] || <Settings className="mr-3" size={20} />;
   };
 
-  // Marketing submenu items
   const marketingItems = [
     { path: "/email-marketing", title: "Email Marketing", icon: "Mail" },
     { path: "/sms-marketing", title: "SMS Marketing", icon: "MessageSquare" },
@@ -127,7 +118,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
   return (
     <>
-      {/* Sidebar Overlay (for mobile) */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
@@ -135,7 +125,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         />
       )}
 
-      {/* Sidebar */}
       <div
         className={`fixed top-0 left-0 h-full bg-gray-800 text-white w-64 transition-transform duration-300 z-50 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
@@ -146,14 +135,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             <LayoutDashboard className="mr-2" size={24} />
             Admin Panel
           </h1>
-          {/* Close button for mobile */}
           <button className="md:hidden" onClick={toggleSidebar}>
             <X size={24} className="text-white" />
           </button>
         </div>
+
         <nav className="flex-1 p-4 overflow-y-auto custom-scrollbar">
           <ul className="space-y-2">
-            {/* Dynamically generate navigation items based on user permissions */}
+            {/* 1. Dynamic Routes (This shows Banner Management for Designer) */}
             {accessibleRoutes.map((route) => (
               <li key={route.path}>
                 <NavLink
@@ -173,65 +162,69 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
               </li>
             ))}
 
-            {/* Marketing Menu with Submenu */}
-            <li>
-              <button
-                onClick={() => toggleMenu("marketing")}
-                className="flex items-center justify-between w-full p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors"
-              >
-                <div className="flex items-center">
-                  <Megaphone className="mr-3" size={20} />
-                  Marketing
-                </div>
-                {openMenus.marketing ? (
-                  <ChevronDown size={18} />
-                ) : (
-                  <ChevronRight size={18} />
+            {/* 2. Marketing Section - Only visible to ADMIN */}
+            {isAdmin && (
+              <li>
+                <button
+                  onClick={() => toggleMenu("marketing")}
+                  className="flex items-center justify-between w-full p-3 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <Megaphone className="mr-3" size={20} />
+                    Marketing
+                  </div>
+                  {openMenus.marketing ? (
+                    <ChevronDown size={18} />
+                  ) : (
+                    <ChevronRight size={18} />
+                  )}
+                </button>
+
+                {openMenus.marketing && (
+                  <ul className="ml-6 mt-2 space-y-1">
+                    {marketingItems.map((item) => (
+                      <li key={item.path}>
+                        <NavLink
+                          to={item.path}
+                          className={({ isActive }) =>
+                            `flex items-center p-2 rounded-lg transition-colors text-sm ${
+                              isActive
+                                ? "bg-blue-600 text-white"
+                                : "text-gray-300 hover:bg-gray-700"
+                            }`
+                          }
+                        >
+                          {getIcon(item.icon)}
+                          {item.title}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </button>
+              </li>
+            )}
 
-              {/* Submenu */}
-              {openMenus.marketing && (
-                <ul className="ml-6 mt-2 space-y-1">
-                  {marketingItems.map((item) => (
-                    <li key={item.path}>
-                      <NavLink
-                        to={item.path}
-                        className={({ isActive }) =>
-                          `flex items-center p-2 rounded-lg transition-colors text-sm ${
-                            isActive
-                              ? "bg-blue-600 text-white"
-                              : "text-gray-300 hover:bg-gray-700"
-                          }`
-                        }
-                      >
-                        {getIcon(item.icon)}
-                        {item.title}
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-
-            {/* Legal Documents - Standalone */}
-            <li>
-              <NavLink
-                to="/legal-documents"
-                className={({ isActive }) =>
-                  `flex items-center p-3 rounded-lg transition-colors ${
-                    isActive
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-300 hover:bg-gray-700"
-                  }`
-                }
-              >
-                <FileText className="mr-3" size={20} />
-                Legal Documents
-              </NavLink>
-            </li>
+            {/* 3. Legal Documents - Only visible to ADMIN */}
+            {isAdmin && (
+              <li>
+                <NavLink
+                  to="/legal-documents"
+                  className={({ isActive }) =>
+                    `flex items-center p-3 rounded-lg transition-colors ${
+                      isActive
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-300 hover:bg-gray-700"
+                    }`
+                  }
+                >
+                  <FileText className="mr-3" size={20} />
+                  Legal Documents
+                </NavLink>
+              </li>
+            )}
           </ul>
         </nav>
+
         <div className="p-4 border-t border-gray-700 space-y-2">
           <button
             onClick={handleLogout}
@@ -247,4 +240,3 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 };
 
 export default Sidebar;
-    

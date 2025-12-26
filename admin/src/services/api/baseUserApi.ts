@@ -62,6 +62,7 @@ export const baseUserApi = createApi({
     "TwilioSegments",
     "TwilioHistory",
     "LegalDocuments",
+    "Banners",
   ],
   endpoints: () => ({}),
 });

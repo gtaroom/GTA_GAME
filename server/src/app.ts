@@ -96,8 +96,7 @@ const allowedOrigins = process.env.ORIGINS?.split(",") || [];
 //   })
 // );
 app.use(
-  cors(
-    {
+  cors({
     origin: (origin, callback) => {
       console.log("Request Origin:", origin);
       console.log("Allowed Origins:", allowedOrigins);
@@ -110,11 +109,15 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    methods: ['GET', 'POST','PATCH', 'PUT', 'DELETE'],
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     credentials: true,
-  }
-)
+  })
 );
+/**
+ * Maps the URL prefix "/uploads" to the physical "public" folder.
+ * This way, /uploads/banners/... will correctly point to public/banners/...
+ */
+app.use("/uploads", express.static(path.join(process.cwd(), "public")));
 
 // Authentication and Session Middleware
 app.use(session(sessionConfig)); // Initialize session handling
