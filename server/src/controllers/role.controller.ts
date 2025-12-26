@@ -26,14 +26,17 @@ const createRole = asyncHandler(async (req: Request, res: Response) => {
 
   // Validate permissions structure - Allow any custom permission
   const providedPermissions = Object.keys(permissions || {});
-  
+
   console.log("Creating role with permissions:", providedPermissions);
 
   // Validate that all permissions are boolean values
   if (permissions) {
     for (const [permission, value] of Object.entries(permissions)) {
-      if (typeof value !== 'boolean') {
-        throw new ApiError(400, `Permission ${permission} must be a boolean value`);
+      if (typeof value !== "boolean") {
+        throw new ApiError(
+          400,
+          `Permission ${permission} must be a boolean value`
+        );
       }
     }
   }
@@ -46,20 +49,22 @@ const createRole = asyncHandler(async (req: Request, res: Response) => {
     updatedBy: _id,
   });
 
-  return res.status(201).json(
-    new ApiResponse(201, role, "Role created successfully")
-  );
+  return res
+    .status(201)
+    .json(new ApiResponse(201, role, "Role created successfully"));
 });
 
 /**
  * Get all roles
  */
 const getAllRoles = asyncHandler(async (req: Request, res: Response) => {
-  const roles = await RoleModel.find({ isActive: true }).sort({ createdAt: -1 });
+  const roles = await RoleModel.find({ isActive: true }).sort({
+    createdAt: -1,
+  });
 
-  return res.status(200).json(
-    new ApiResponse(200, roles, "Roles retrieved successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, roles, "Roles retrieved successfully"));
 });
 
 /**
@@ -73,9 +78,9 @@ const getRoleById = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(404, "Role not found");
   }
 
-  return res.status(200).json(
-    new ApiResponse(200, role, "Role retrieved successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, role, "Role retrieved successfully"));
 });
 
 /**
@@ -93,9 +98,9 @@ const updateRole = asyncHandler(async (req: Request, res: Response) => {
 
   // Check if new name conflicts with existing role
   if (name && name !== role.name) {
-    const existingRole = await RoleModel.findOne({ 
+    const existingRole = await RoleModel.findOne({
       name: name.toUpperCase(),
-      _id: { $ne: roleId }
+      _id: { $ne: roleId },
     });
     if (existingRole) {
       throw new ApiError(409, "Role with this name already exists");
@@ -105,11 +110,14 @@ const updateRole = asyncHandler(async (req: Request, res: Response) => {
   // Validate permissions if provided
   if (permissions) {
     const providedPermissions = Object.keys(permissions);
-    
+
     // Validate that all permissions are boolean values
     for (const [permission, value] of Object.entries(permissions)) {
-      if (typeof value !== 'boolean') {
-        throw new ApiError(400, `Permission ${permission} must be a boolean value`);
+      if (typeof value !== "boolean") {
+        throw new ApiError(
+          400,
+          `Permission ${permission} must be a boolean value`
+        );
       }
     }
   }
@@ -120,20 +128,48 @@ const updateRole = asyncHandler(async (req: Request, res: Response) => {
       ...(name && { name: name.toUpperCase() }),
       ...(description && { description }),
       ...(permissions && { permissions }),
-      ...(typeof isActive === 'boolean' && { isActive }),
+      ...(typeof isActive === "boolean" && { isActive }),
       updatedBy: _id,
     },
     { new: true }
   );
 
-  return res.status(200).json(
-    new ApiResponse(200, updatedRole, "Role updated successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedRole, "Role updated successfully"));
 });
 
 /**
  * Delete role (soft delete)
  */
+// const deleteRole = asyncHandler(async (req: Request, res: Response) => {
+//   const { roleId } = req.params;
+//   const { _id } = getUserFromRequest(req);
+
+//   const role = await RoleModel.findById(roleId);
+//   if (!role) {
+//     throw new ApiError(404, "Role not found");
+//   }
+
+//   // Check if any users are using this role
+//   const usersWithRole = await UserModel.countDocuments({ role: role.name });
+//   if (usersWithRole > 0) {
+//     throw new ApiError(
+//       400,
+//       `Cannot delete role. ${usersWithRole} users are currently using this role.`
+//     );
+//   }
+
+//   await RoleModel.findByIdAndUpdate(roleId, {
+//     isActive: false,
+//     updatedBy: _id,
+//   });
+
+//   return res
+//     .status(200)
+//     .json(new ApiResponse(200, {}, "Role deleted successfully"));
+// });
+
 const deleteRole = asyncHandler(async (req: Request, res: Response) => {
   const { roleId } = req.params;
   const { _id } = getUserFromRequest(req);
@@ -143,20 +179,19 @@ const deleteRole = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(404, "Role not found");
   }
 
-  // Check if any users are using this role
   const usersWithRole = await UserModel.countDocuments({ role: role.name });
   if (usersWithRole > 0) {
-    throw new ApiError(400, `Cannot delete role. ${usersWithRole} users are currently using this role.`);
+    throw new ApiError(
+      400,
+      `Cannot delete role. ${usersWithRole} users are currently using this role.`
+    );
   }
 
-  await RoleModel.findByIdAndUpdate(roleId, {
-    isActive: false,
-    updatedBy: _id,
-  });
+  await RoleModel.findByIdAndDelete(roleId);
 
-  return res.status(200).json(
-    new ApiResponse(200, {}, "Role deleted successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Role permanently deleted successfully"));
 });
 
 /**
@@ -174,7 +209,7 @@ const assignRoleToUser = asyncHandler(async (req: Request, res: Response) => {
   // Check if role exists (either built-in or custom)
   const isBuiltInRole = AvailableRoles.includes(role as any);
   const customRole = await RoleModel.findOne({ name: role, isActive: true });
-  
+
   if (!isBuiltInRole && !customRole) {
     throw new ApiError(404, "Role not found");
   }
@@ -187,9 +222,9 @@ const assignRoleToUser = asyncHandler(async (req: Request, res: Response) => {
   user.role = role;
   await user.save();
 
-  return res.status(200).json(
-    new ApiResponse(200, { user }, "Role assigned successfully")
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { user }, "Role assigned successfully"));
 });
 
 /**
@@ -210,15 +245,19 @@ const getUsersByRole = asyncHandler(async (req: Request, res: Response) => {
   const total = await UserModel.countDocuments({ role });
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      users,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        pages: Math.ceil(total / Number(limit)),
+    new ApiResponse(
+      200,
+      {
+        users,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit)),
+        },
       },
-    }, "Users retrieved successfully")
+      "Users retrieved successfully"
+    )
   );
 });
 
@@ -231,9 +270,15 @@ const getRolePermissions = asyncHandler(async (req: Request, res: Response) => {
   // Check if it's a built-in role
   if (AvailableRoles.includes(role as any)) {
     const permissions = rolePermissions[role as keyof typeof rolePermissions];
-    return res.status(200).json(
-      new ApiResponse(200, { role, permissions }, "Role permissions retrieved successfully")
-    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { role, permissions },
+          "Role permissions retrieved successfully"
+        )
+      );
   }
 
   // Check custom role
@@ -243,10 +288,14 @@ const getRolePermissions = asyncHandler(async (req: Request, res: Response) => {
   }
 
   return res.status(200).json(
-    new ApiResponse(200, { 
-      role: customRole.name, 
-      permissions: customRole.permissions 
-    }, "Role permissions retrieved successfully")
+    new ApiResponse(
+      200,
+      {
+        role: customRole.name,
+        permissions: customRole.permissions,
+      },
+      "Role permissions retrieved successfully"
+    )
   );
 });
 
@@ -259,4 +308,4 @@ export {
   assignRoleToUser,
   getUsersByRole,
   getRolePermissions,
-}; 
+};

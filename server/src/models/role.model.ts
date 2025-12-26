@@ -17,6 +17,7 @@ export interface RoleSchemaIn extends Document {
     canManageSupportTeam: boolean;
     canViewAnalytics: boolean;
     canManageSystem: boolean;
+    canManageBanners: boolean;
     canAccessEverything: boolean;
     canViewUserProfiles: boolean;
     canViewTransactions: boolean;
@@ -35,16 +36,16 @@ export interface RoleSchemaIn extends Document {
 
 const RoleSchema = new Schema<RoleSchemaIn>(
   {
-    name: { 
-      type: String, 
-      required: true, 
-      unique: true,
-      trim: true 
-    },
-    description: { 
-      type: String, 
+    name: {
+      type: String,
       required: true,
-      trim: true 
+      unique: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true,
     },
     permissions: {
       canViewAllUsers: { type: Boolean, default: false },
@@ -68,6 +69,7 @@ const RoleSchema = new Schema<RoleSchemaIn>(
       canViewAllData: { type: Boolean, default: false },
       canManageCoupons: { type: Boolean, default: false },
       canGenerateReports: { type: Boolean, default: false },
+      canManageBanners: { type: Boolean, default: false },
     },
     isActive: { type: Boolean, default: true },
     createdBy: { type: String, required: true },
@@ -77,4 +79,4 @@ const RoleSchema = new Schema<RoleSchemaIn>(
 );
 
 const RoleModel = models.Role || model<RoleSchemaIn>("Role", RoleSchema);
-export default RoleModel; 
+export default RoleModel;

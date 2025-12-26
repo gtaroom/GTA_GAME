@@ -4,7 +4,8 @@ export const rolesEnum = {
   MANAGER: "MANAGER",
   SUPPORT_TEAM: "SUPPORT_TEAM",
   MODERATOR: "MODERATOR",
-  ANALYST: "ANALYST"
+  ANALYST: "ANALYST",
+  DESIGNER: "DESIGNER",
 } as const;
 
 export type RoleType = (typeof rolesEnum)[keyof typeof rolesEnum];
@@ -19,6 +20,12 @@ export const rolePermissions = {
     canPlayGames: true,
     canViewWallet: true,
     canMakeTransactions: true,
+    canManageBanners: false,
+  },
+  DESIGNER: {
+    canViewOwnProfile: true,
+    canManageBanners: true,
+    canViewAnalytics: false,
   },
   ADMIN: {
     canViewAllUsers: true,
@@ -33,7 +40,8 @@ export const rolePermissions = {
     canViewAnalytics: true,
     canManageSystem: true,
     canAccessEverything: true,
-  }
+    canManageBanners: true,
+  },
 } as const;
 
 export const authProvider = {

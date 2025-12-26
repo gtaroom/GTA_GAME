@@ -32,6 +32,8 @@ import migrationRouter from "./migration.routes";
 import mailchimpRouter from "./mailchimp.routes"; // Email marketing routes
 import twilioRouter from "./twilio.routes"; // SMS marketing routes
 import legalRouter from "./legal.routes"; // Legal document management routes
+import bannerRouter from "./banner.routes"; // Legal document management routes
+
 // Create Express Router instance
 const router = express.Router();
 
@@ -56,8 +58,8 @@ router.use("/spin-wheel", spinWheelRouter); // Spin wheel endpoints
 router.use("/email-marketing", mailchimpRouter); // Email marketing endpoints
 router.use("/sms-marketing", twilioRouter); // SMS marketing endpoints
 router.use("/legal", legalRouter); // Legal document management endpoints
-
+router.use("/banners", bannerRouter);
 // Add this line (temporarily)
-router.use("/api/v1/migration", migrationRouter);
+// router.use("/api/v1/migration", migrationRouter);
 // Export the configured router
 export default router;
