@@ -70,11 +70,23 @@ jobs:
 
             # Run migration using docker-compose exec
             echo "Running migration..."
-            ./docker-compose -f docker-compose.prod.yml exec -T backend \
-              npx ts-node src/scripts/${{ github.event.inputs.migration_script }}
+            ./docker-compose -f docker-compose.prod.yml exec -T backend npx ts-node src/scripts/${{ github.event.inputs.migration_script }}
 
             MIGRATION_STATUS=$?
 
             if [ $MIGRATION_STATUS -eq 0 ]; then
               echo "✅ Migration completed successfully at $(date)"
-              echo "Migration script: ${{ github.event.inp
+              echo "Migration script: ${{ github.event.inputs.migration_script }}"
+            else
+              echo "❌ Migration failed with exit code: $MIGRATION_STATUS"
+              exit 1
+            fi
+
+      - name: Report Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "::notice::Migration completed successfully"
+          else
+            echo "::error::Migration failed - check logs above"
+          fi
