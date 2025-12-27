@@ -1,0 +1,82 @@
+name: Run Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration_script:
+        description: "Migration script name"
+        required: true
+        default: "migrate-role-permissions.ts"
+        type: choice
+        options:
+          - migrate-role-permissions.ts
+
+jobs:
+  migrate:
+    name: Database Migration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_KEY }}
+          known_hosts: "placeholder"
+          if_key_exists: replace
+          config: |
+            Host production
+              HostName ${{ secrets.SSH_HOST }}
+              User ${{ secrets.SSH_USER }}
+              Port ${{ secrets.SSH_PORT || 22 }}
+              StrictHostKeyChecking no
+
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+
+      - name: Run Migration
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd ~/app
+
+            echo "🚀 Starting migration: ${{ github.event.inputs.migration_script }}"
+            echo "📅 Timestamp: $(date)"
+
+            # Check if backend container is running
+            if ! docker ps | grep -q backend; then
+              echo "❌ Backend container is not running!"
+              exit 1
+            fi
+
+            # Create backup timestamp
+            BACKUP_TIME=$(date +%Y%m%d_%H%M%S)
+            echo "📦 Backup timestamp: $BACKUP_TIME"
+
+            # Run migration inside backend container
+            docker exec backend npx ts-node src/scripts/${{ github.event.inputs.migration_script }}
+
+            MIGRATION_STATUS=$?
+
+            if [ $MIGRATION_STATUS -eq 0 ]; then
+              echo "✅ Migration completed successfully at $(date)"
+              echo "Migration script: ${{ github.event.inputs.migration_script }}"
+            else
+              echo "❌ Migration failed with exit code: $MIGRATION_STATUS"
+              exit 1
+            fi
+
+      - name: Report Status
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "::notice::Migration completed successfully"
+          else
+            echo "::error::Migration failed - check logs above"
+          fi
