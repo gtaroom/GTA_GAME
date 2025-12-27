@@ -1,14 +1,21 @@
 import { Request, Response } from "express";
 import BannerModel from "../models/banner.model";
-import fs from "fs";
+import fs from "fs/promises"; // Use promises for professional async handling
 import path from "path";
 
-// Helper to handle file deletion
-const deletePhysicalFile = (filePath: string | undefined | null): void => {
+/**
+ * Professional Helper to handle file deletion asynchronously
+ */
+const deletePhysicalFile = async (
+  filePath: string | undefined | null
+): Promise<void> => {
   if (filePath) {
-    const fullPath = path.join(__dirname, "../..", filePath); // Adjust relative path to your uploads folder
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
+    const fullPath = path.join(__dirname, "../..", filePath);
+    try {
+      await fs.access(fullPath); // Check if file exists
+      await fs.unlink(fullPath);
+    } catch (error) {
+      console.error(`File deletion failed or file not found: ${fullPath}`);
     }
   }
 };
@@ -36,7 +43,7 @@ export const createBanner = async (
   res: Response
 ): Promise<any> => {
   try {
-    const { title, description, buttonText, buttonHref, order } = req.body;
+    const { uid, title, description, buttonText, buttonHref, order } = req.body;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     if (!files?.background || !files?.main) {
@@ -45,11 +52,15 @@ export const createBanner = async (
         .json({ message: "Background and Main images are required" });
     }
 
+    // FIX: Map flat body strings into the nested 'button' object required by the Frontend
     const banner = await BannerModel.create({
+      uid,
       title,
       description,
-      buttonText,
-      buttonHref,
+      button: {
+        text: buttonText || "Play Now",
+        href: buttonHref || "/",
+      },
       order: Number(order) || 0,
       images: {
         background: `/uploads/banners/${files.background[0].filename}`,
@@ -67,7 +78,7 @@ export const createBanner = async (
 };
 
 /**
- * @desc    Update banner (The Legal Flow Style)
+ * @desc    Update banner
  */
 export const updateBanner = async (
   req: Request,
@@ -77,33 +88,37 @@ export const updateBanner = async (
     const banner = await BannerModel.findById(req.params.id);
     if (!banner) return res.status(404).json({ message: "Banner not found" });
 
-    const { title, description, buttonText, buttonHref, order } = req.body;
+    const { uid, title, description, buttonText, buttonHref, order } = req.body;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     const updatedImages = { ...banner.images };
 
-    // Replace images if new ones are uploaded
+    // Async Image Replacements
     if (files?.background) {
-      deletePhysicalFile(banner.images.background);
+      await deletePhysicalFile(banner.images.background);
       updatedImages.background = `/uploads/banners/${files.background[0].filename}`;
     }
     if (files?.main) {
-      deletePhysicalFile(banner.images.main);
+      await deletePhysicalFile(banner.images.main);
       updatedImages.main = `/uploads/banners/${files.main[0].filename}`;
     }
     if (files?.cover) {
-      deletePhysicalFile(banner.images.cover);
+      await deletePhysicalFile(banner.images.cover);
       updatedImages.cover = `/uploads/banners/${files.cover[0].filename}`;
     }
 
     const updatedBanner = await BannerModel.findByIdAndUpdate(
       req.params.id,
       {
+        uid,
         title,
         description,
-        buttonText,
-        buttonHref,
-        order,
+
+        button: {
+          text: buttonText || banner.button?.text,
+          href: buttonHref || banner.button?.href,
+        },
+        order: Number(order) || 0,
         images: updatedImages,
       },
       { new: true }
@@ -124,33 +139,22 @@ export const deleteBanner = async (
 ): Promise<any> => {
   try {
     const banner = await BannerModel.findById(req.params.id);
+    if (!banner) return res.status(404).json({ message: "Banner not found" });
 
-    if (!banner) {
-      return res.status(404).json({ message: "Banner not found" });
-    }
-
-    // Clean up physical files
-    const imagePaths = [
-      banner.images.background,
-      banner.images.main,
-      banner.images.cover,
-    ];
-
-    imagePaths.forEach((filePath: string | undefined) => {
-      deletePhysicalFile(filePath);
-    });
+    // Concurrent File Deletion
+    await Promise.all([
+      deletePhysicalFile(banner.images.background),
+      deletePhysicalFile(banner.images.main),
+      deletePhysicalFile(banner.images.cover),
+    ]);
 
     await banner.deleteOne();
 
     res.status(200).json({
       success: true,
-      message: "Banner and associated files deleted successfully",
+      message: "Banner and files deleted successfully",
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: "Server Error during deletion",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
