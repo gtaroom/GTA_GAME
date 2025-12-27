@@ -115,9 +115,8 @@ app.use(
 );
 /**
  * Maps the URL prefix "/uploads" to the physical "public" folder.
- * This way, /uploads/banners/... will correctly point to public/banners/...
  */
-app.use("/uploads", express.static(path.join(process.cwd(), "public")));
+app.use(express.static(path.join(process.cwd(), "public")));
 
 // Authentication and Session Middleware
 app.use(session(sessionConfig)); // Initialize session handling
