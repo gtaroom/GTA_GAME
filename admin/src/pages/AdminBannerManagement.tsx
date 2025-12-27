@@ -31,7 +31,6 @@ const AdminBannerManagement: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // 1. Updated State with UID and flat fields for the form
   const [formData, setFormData] = useState({
     uid: "",
     title: "",
@@ -52,23 +51,41 @@ const AdminBannerManagement: React.FC = () => {
   const [updateBanner, { isLoading: isUpdating }] = useUpdateBannerMutation();
   const [deleteBanner] = useDeleteBannerMutation();
 
-  // 2. Helper to handle our custom port 3000 and /uploads path
+  /**
+   * FIX: Robust Image URL Helper
+   * Handles environment base URL and ensures /uploads path is preserved.
+   */
   const getImageUrl = (path: string) => {
     if (!path) return "";
-    const baseUrl = import.meta.env.VITE_APP_API_URL?.replace(/\/$/, "");
-    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    if (path.startsWith("http")) return path;
+
+    const baseUrl = import.meta.env.VITE_APP_API_URL?.replace(
+      /\/$/,
+      ""
+    ).replace("/v1", "");
+
+    // Ensure the path includes /uploads if it's missing
+    let cleanPath = path.startsWith("/") ? path : `/${path}`;
+    if (!cleanPath.includes("/uploads/")) {
+      cleanPath = `/uploads${cleanPath}`;
+    }
+
     return `${baseUrl}${cleanPath}`;
   };
 
+  /**
+   * FIX: Mapping Nested Data to Flat Form State
+   * This ensures that when you click 'Edit', the Button Text and URL actually show up.
+   */
   const handleEdit = (banner: Banner) => {
     setEditingId(banner._id);
     setFormData({
-      uid: banner.uid,
-      title: banner.title,
-      description: banner.description,
-      buttonText: banner.button.text, // Access from nested object
-      buttonHref: banner.button.href, // Access from nested object
-      order: banner.order.toString(),
+      uid: banner.uid || "",
+      title: banner.title || "",
+      description: banner.description || "",
+      buttonText: banner.button?.text || "Play Now",
+      buttonHref: banner.button?.href || "/",
+      order: (banner.order || 0).toString(),
     });
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -138,13 +155,11 @@ const AdminBannerManagement: React.FC = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
-      {/* Header Section */}
+      {/* Header */}
       <header className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2 uppercase">
-            <ImageIcon className="text-purple-600" /> Banner CMS
-          </h1>
-        </div>
+        <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2 uppercase">
+          <ImageIcon className="text-purple-600" /> Banner CMS
+        </h1>
         <button
           onClick={() => (isFormOpen ? resetForm() : setIsFormOpen(true))}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all ${
@@ -158,9 +173,9 @@ const AdminBannerManagement: React.FC = () => {
         </button>
       </header>
 
-      {/* Create/Edit Form */}
+      {/* Form Section */}
       {isFormOpen && (
-        <Card className="border-2 border-purple-100 shadow-xl overflow-hidden">
+        <Card className="border-2 border-purple-100 shadow-xl">
           <form
             onSubmit={handleSubmit}
             className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8"
@@ -170,7 +185,6 @@ const AdminBannerManagement: React.FC = () => {
                 General Info
               </h3>
 
-              {/* UID INPUT */}
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold text-gray-400 ml-1">
                   UID (e.g. rewards-unlock)
@@ -214,22 +228,30 @@ const AdminBannerManagement: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <input
-                  className="p-3 border-2 border-gray-100 rounded-xl"
-                  placeholder="Button Text"
-                  value={formData.buttonText}
-                  onChange={(e) =>
-                    setFormData({ ...formData, buttonText: e.target.value })
-                  }
-                />
-                <input
-                  className="p-3 border-2 border-gray-100 rounded-xl"
-                  placeholder="Button Link"
-                  value={formData.buttonHref}
-                  onChange={(e) =>
-                    setFormData({ ...formData, buttonHref: e.target.value })
-                  }
-                />
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 ml-1">
+                    Button Text
+                  </label>
+                  <input
+                    className="p-3 border-2 border-gray-100 rounded-xl"
+                    value={formData.buttonText}
+                    onChange={(e) =>
+                      setFormData({ ...formData, buttonText: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 ml-1">
+                    Button Link (URL)
+                  </label>
+                  <input
+                    className="p-3 border-2 border-gray-100 rounded-xl"
+                    value={formData.buttonHref}
+                    onChange={(e) =>
+                      setFormData({ ...formData, buttonHref: e.target.value })
+                    }
+                  />
+                </div>
               </div>
             </div>
 
@@ -243,19 +265,19 @@ const AdminBannerManagement: React.FC = () => {
                 isSelected={!!imageFiles.background}
               />
               <FileUploadField
-                label="Main Layer"
+                label="Main Image"
                 onChange={(e) => handleFileChange(e, "main")}
                 isSelected={!!imageFiles.main}
               />
               <FileUploadField
-                label="Overlay (Optional)"
+                label="Overlay (Cover)"
                 onChange={(e) => handleFileChange(e, "cover")}
                 isSelected={!!imageFiles.cover}
               />
 
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold text-gray-400 ml-1">
-                  Display Order
+                  Order
                 </label>
                 <input
                   type="number"
@@ -285,24 +307,21 @@ const AdminBannerManagement: React.FC = () => {
 
       {/* Banner List */}
       <div className="space-y-4">
-        <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest px-2">
-          Published Banners ({banners.length})
-        </h2>
         {banners.map((banner) => (
           <div
             key={banner._id}
             className="bg-white p-4 rounded-2xl border border-gray-100 flex items-center gap-6 group hover:border-purple-200 shadow-sm transition-all"
           >
-            <div className="w-20 h-20 bg-gray-900 rounded-xl relative overflow-hidden shrink-0 shadow-inner">
+            <div className="w-20 h-20 bg-gray-900 rounded-xl relative overflow-hidden shrink-0">
               <img
                 src={getImageUrl(banner.images.background)}
                 className="absolute inset-0 object-cover w-full h-full opacity-40"
-                alt="bg"
+                alt=""
               />
               <img
                 src={getImageUrl(banner.images.main)}
                 className="absolute inset-0 object-contain w-full h-full z-10 p-1"
-                alt="main"
+                alt=""
               />
             </div>
 
@@ -311,28 +330,27 @@ const AdminBannerManagement: React.FC = () => {
                 <h4 className="font-bold text-gray-900 truncate uppercase">
                   {banner.title}
                 </h4>
-                <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono">
+                <span className="text-[9px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-mono font-bold">
                   #{banner.uid}
                 </span>
               </div>
               <p className="text-xs text-gray-500 line-clamp-1">
                 {banner.description}
               </p>
-
-              <div className="flex gap-3 mt-2">
+              <div className="flex gap-2 mt-2">
                 <span className="text-[10px] font-bold text-purple-500 bg-purple-50 px-2 py-0.5 rounded uppercase">
-                  {banner.button.text}
+                  {banner.button?.text}
                 </span>
-                <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded uppercase">
-                  ORDER: {banner.order}
+                <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
+                  URL: {banner.button?.href}
                 </span>
               </div>
             </div>
 
-            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={() => handleEdit(banner)}
-                className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white"
               >
                 <Edit3 size={18} />
               </button>
@@ -340,7 +358,7 @@ const AdminBannerManagement: React.FC = () => {
                 onClick={() =>
                   confirm("Delete banner?") && deleteBanner(banner._id)
                 }
-                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"
+                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white"
               >
                 <Trash2 size={18} />
               </button>
@@ -352,6 +370,7 @@ const AdminBannerManagement: React.FC = () => {
   );
 };
 
+// Reusable File Input
 const FileUploadField = ({
   label,
   onChange,
@@ -367,14 +386,11 @@ const FileUploadField = ({
     }`}
   >
     <p className="text-[10px] font-black text-gray-700 uppercase">{label}</p>
-    <div className="flex items-center gap-2">
-      {isSelected && <CheckCircle2 className="text-green-500" size={16} />}
-      <input
-        type="file"
-        onChange={onChange}
-        className="text-[10px] w-32 cursor-pointer"
-      />
-    </div>
+    <input
+      type="file"
+      onChange={onChange}
+      className="text-[10px] w-32 cursor-pointer"
+    />
   </div>
 );
 
