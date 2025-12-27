@@ -156,7 +156,7 @@ jobs:
                 ports:
                   - "3500:3500"
                 volumes:  
-                  - /app/uploads:/app/public/uploads
+                  - /app/public:/app/public 
                   - /app/public/games:/app/public/games
                   - /app/public/game:/app/public/game
                   - /app/public/GeoLite2-City.mmdb:/app/public/GeoLite2-City.mmdb
