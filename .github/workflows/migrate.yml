@@ -49,34 +49,32 @@ jobs:
             echo "🚀 Starting migration: ${{ github.event.inputs.migration_script }}"
             echo "📅 Timestamp: $(date)"
 
-            # Check if backend container is running
-            if ! docker ps | grep -q backend; then
-              echo "❌ Backend container is not running!"
+            # Download docker-compose if not present
+            if [ ! -f docker-compose ]; then
+              curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
+              chmod +x docker-compose
+            fi
+
+            # Check if backend service is running
+            if ! ./docker-compose -f docker-compose.prod.yml ps backend | grep -q "Up"; then
+              echo "❌ Backend service is not running!"
+              ./docker-compose -f docker-compose.prod.yml ps
               exit 1
             fi
+
+            echo "✅ Backend service is running"
 
             # Create backup timestamp
             BACKUP_TIME=$(date +%Y%m%d_%H%M%S)
             echo "📦 Backup timestamp: $BACKUP_TIME"
 
-            # Run migration inside backend container
-            docker exec backend npx ts-node src/scripts/${{ github.event.inputs.migration_script }}
+            # Run migration using docker-compose exec
+            echo "Running migration..."
+            ./docker-compose -f docker-compose.prod.yml exec -T backend \
+              npx ts-node src/scripts/${{ github.event.inputs.migration_script }}
 
             MIGRATION_STATUS=$?
 
             if [ $MIGRATION_STATUS -eq 0 ]; then
               echo "✅ Migration completed successfully at $(date)"
-              echo "Migration script: ${{ github.event.inputs.migration_script }}"
-            else
-              echo "❌ Migration failed with exit code: $MIGRATION_STATUS"
-              exit 1
-            fi
-
-      - name: Report Status
-        if: always()
-        run: |
-          if [ ${{ job.status }} == 'success' ]; then
-            echo "::notice::Migration completed successfully"
-          else
-            echo "::error::Migration failed - check logs above"
-          fi
+              echo "Migration script: ${{ github.event.inp
