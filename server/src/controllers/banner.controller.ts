@@ -52,9 +52,11 @@ export const createBanner = async (
       buttonHref,
       order: Number(order) || 0,
       images: {
-        background: `/banners/${files.background[0].filename}`,
-        main: `/banners/${files.main[0].filename}`,
-        cover: files.cover ? `/banners/${files.cover[0].filename}` : undefined,
+        background: `/uploads/banners/${files.background[0].filename}`,
+        main: `/uploads/banners/${files.main[0].filename}`,
+        cover: files.cover
+          ? `/uploads/banners/${files.cover[0].filename}`
+          : undefined,
       },
     });
 

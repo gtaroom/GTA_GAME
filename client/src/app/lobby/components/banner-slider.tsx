@@ -41,13 +41,17 @@ export default function BannerSlider() {
         if (dbPath.startsWith('http')) return dbPath;
 
         const baseUrl =
-            process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+            process.env.NEXT_PUBLIC_API_URL || 'https://gtoarcade.com';
         const cleanBase = baseUrl
             .replace('/v1', '')
             .replace('/api', '')
             .replace(/\/$/, '');
 
-        const cleanPath = dbPath.startsWith('/') ? dbPath : `/${dbPath}`;
+        let cleanPath = dbPath.startsWith('/') ? dbPath : `/${dbPath}`;
+        if (!cleanPath.startsWith('/uploads')) {
+            cleanPath = `/uploads${cleanPath}`;
+        }
+
         return `${cleanBase}${cleanPath}`;
     };
 
@@ -55,6 +59,7 @@ export default function BannerSlider() {
         return (
             <div className='h-[320px] bg-white/5 animate-pulse rounded-2xl mb-8' />
         );
+
     if (banners.length === 0) return null;
 
     return (
@@ -64,7 +69,6 @@ export default function BannerSlider() {
             <Swiper
                 modules={[Autoplay, Pagination]}
                 slidesPerView={1}
-                slidesPerGroup={1}
                 spaceBetween={16}
                 loop={banners.length > 1}
                 speed={2000}
@@ -75,69 +79,67 @@ export default function BannerSlider() {
                     1024: { spaceBetween: 24, slidesPerView: 'auto' },
                     1536: { spaceBetween: 40, slidesPerView: 'auto' },
                 }}
-                className='home-banner-slider max-sm:px-8! sm:overflow-visible! max-sm:max-w-full max-sm:[&>.swiper-pagination]:w-full!'
+                className='home-banner-slider'
             >
                 {banners.map(banner => (
                     <SwiperSlide
                         key={banner._id}
-                        className='py-10 w-full max-w-none sm:max-w-120 md:max-w-144 lg:max-w-150 2xl:max-w-175'
+                        className='py-10 w-full sm:max-w-150'
                     >
                         <NeonBox
-                            className='rounded-2xl bg-cover bg-center bg-no-repeat flex items-center justify-between max-md:h-[280px] md:h-[280px] lg:h-[320px] relative'
+                            className='rounded-2xl bg-cover bg-center flex items-center justify-between h-[320px] relative'
                             glowColor='--color-purple-500'
                             style={{
-                                backgroundImage: `linear-gradient(90deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('${getImageUrl(banner.images.background)}')`,
+                                backgroundImage: `linear-gradient(90deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.2)), url('${getImageUrl(banner.images.background)}')`,
                             }}
                         >
-                            <div className='flex flex-col flex-1 items-start py-3 max-w-[320px] max-sm:pl-5 max-lg:pl-6 lg:pl-8 xl:pl-10'>
+                            <div className='flex flex-col flex-1 items-start py-3 max-w-[320px] pl-10'>
+                                {/* 1. SHOW UID (Useful for editing) */}
+                                <span className='text-[10px] text-white/40 mb-1 font-mono'>
+                                    ID: {banner._id}
+                                </span>
+
                                 {banner.title && (
                                     <NeonText
                                         as='h3'
-                                        className='h4-title mb-2 line-clamp-3'
+                                        className='h4-title mb-2 line-clamp-2'
                                     >
                                         {banner.title}
                                     </NeonText>
                                 )}
+
                                 {banner.description && (
-                                    <p className='text-white font-extrabold max-sm:text-sm text-base mb-4.5 line-clamp-2'>
+                                    <p className='text-white/80 text-sm mb-4 line-clamp-2'>
                                         {banner.description}
                                     </p>
                                 )}
-                                {banner.button && (
-                                    <Button
-                                        size={sm ? 'md' : 'xs'}
-                                        onClick={() =>
-                                            router.push(banner.button.href)
-                                        }
-                                    >
-                                        {banner.button.text}
-                                    </Button>
-                                )}
+
+                                {/* 2. FIX BUTTON & URL DISPLAY */}
+                                <Button
+                                    size={sm ? 'md' : 'xs'}
+                                    onClick={() =>
+                                        router.push(banner.button?.href || '#')
+                                    }
+                                >
+                                    {/* Fallback to 'Learn More' if text is missing */}
+                                    {banner.button?.text || 'Learn More'}
+                                </Button>
+
+                                {/* 3. SHOW URL FOR DEBUGGING (Optional - remove for production) */}
+                                <span className='text-[9px] text-white/30 mt-2'>
+                                    Link: {banner.button?.href || 'No Link Set'}
+                                </span>
                             </div>
 
-                            <div className='aspect-square flex-0 shrink-0 basis-auto h-full max-sm:w-[47%] sm:-mt-[40px]'>
+                            <div className='h-full w-[45%] relative'>
                                 <Image
                                     src={getImageUrl(banner.images.main)}
                                     alt={banner.title}
-                                    height={510}
-                                    width={510}
+                                    fill
                                     unoptimized
-                                    className='w-full object-cover sm:float-y-xs transition-all duration-600'
+                                    className='object-contain'
                                 />
                             </div>
-
-                            {banner.images.cover && (
-                                <div className='absolute w-full z-[2] flex justify-end pointer-events-none transition-all duration-600 lg:right-0 lg:h-full xl:-right-2 max-sm:h-[60%]'>
-                                    <Image
-                                        src={getImageUrl(banner.images.cover)}
-                                        alt={banner.title}
-                                        height={800}
-                                        width={800}
-                                        unoptimized
-                                        className='h-full w-auto float-y-sm'
-                                    />
-                                </div>
-                            )}
                         </NeonBox>
                     </SwiperSlide>
                 ))}
