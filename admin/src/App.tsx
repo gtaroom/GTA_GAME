@@ -19,6 +19,7 @@ import { HomeRedirect } from "./components/HomeRedirect";
 import Withdrawals from "./pages/Withdrawals";
 import Transactions from "./pages/Transactions";
 import AffiliateManagement from './pages/AffiliateManagement';
+import SpinWheelManagement from './pages/SpinWheelManagement';
 import PrivateRoute from "./PrivateRoute";
 // import SmsBroadcast from "./pages/SmsSender";
 import MailchimpManagement from "./pages/MailchimpManagement";
@@ -180,6 +181,15 @@ function App() {
                 <RoleBasedRoute allowedRoles={["ADMIN"]}>
                   <MainLayout>
                     <AffiliateManagement />
+                  </MainLayout>
+                </RoleBasedRoute>
+              } />
+              
+              {/* Spin Wheel - accessible only by ADMIN */}
+              <Route path="/spin-wheel" element={
+                <RoleBasedRoute allowedRoles={["ADMIN"]}>
+                  <MainLayout>
+                    <SpinWheelManagement />
                   </MainLayout>
                 </RoleBasedRoute>
               } />

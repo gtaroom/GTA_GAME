@@ -106,6 +106,14 @@ export const routeConfigs: RouteConfig[] = [
     requiredPermissions: ['ADMIN'],
     isActive: true
   },
+  {
+    path: '/spin-wheel',
+    title: 'Spin Wheel Management',
+    description: 'Configure spin wheel rewards and triggers',
+    icon: 'Circle',
+    requiredPermissions: ['ADMIN'],
+    isActive: true
+  },
 //   {
 //     path: '/support',
 //     title: 'Support Management',
@@ -196,7 +204,7 @@ export const getRoutesByCategory = (
       categories['Game Management'].push(route);
     } else if (route.path === '/email' || route.path === '/coupons') {
       categories['System Management'].push(route);
-    } else if (route.path === '/affiliates') {
+    } else if (route.path === '/affiliates' || route.path === '/spin-wheel') {
       categories['System Management'].push(route);
     } else if (route.path === '/support') {
       categories['Support & Communication'].push(route);

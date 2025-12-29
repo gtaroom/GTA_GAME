@@ -73,6 +73,78 @@ interface UpdateAffiliatePayload {
   status?: "pending" | "approved" | "rejected";
 }
 
+// Withdrawal Types
+export interface AffiliateWithdrawalAffiliate {
+  _id: string;
+  name: {
+    first: string;
+    last: string;
+  };
+  email: string;
+  affiliateCode: string;
+  totalEarnings?: number;
+  totalPaid?: number;
+  commissionRate?: number;
+}
+
+export interface AffiliateWithdrawal {
+  _id: string;
+  affiliateId: AffiliateWithdrawalAffiliate;
+  amount: number;
+  paymentMethod: string;
+  paymentDetails: Record<string, any>;
+  status: "pending" | "approved" | "rejected" | "paid";
+  adminNotes?: string | null;
+  rejectionReason?: string | null;
+  requestedAt: string;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface WithdrawalsResponse {
+  withdrawals: AffiliateWithdrawal[];
+  pagination: Pagination;
+}
+
+interface WithdrawalQueryParams {
+  page?: number;
+  limit?: number;
+  status?: "pending" | "approved" | "rejected" | "paid";
+  search?: string;
+}
+
+interface WithdrawalStatistics {
+  counts: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    paid: number;
+  };
+  amounts: {
+    totalPending: number;
+    totalApproved: number;
+    totalPaid: number;
+    totalRejected: number;
+  };
+}
+
+interface ApproveWithdrawalPayload {
+  adminNotes?: string;
+}
+
+interface RejectWithdrawalPayload {
+  rejectionReason?: string;
+  adminNotes?: string;
+}
+
+interface MarkPaidPayload {
+  adminNotes?: string;
+}
+
 export const affiliatesApi = baseUserApi.injectEndpoints({
   endpoints: (builder) => ({
     // Get all affiliate applications
@@ -184,6 +256,110 @@ export const affiliatesApi = baseUserApi.injectEndpoints({
       }) => response.data,
       providesTags: ["AffiliateStatistics"],
     }),
+
+    // Get all withdrawal requests
+    getAllWithdrawals: builder.query<WithdrawalsResponse, WithdrawalQueryParams>({
+      query: ({ page = 1, limit = 10, status, search }) => {
+        const params = new URLSearchParams();
+        params.append('page', page.toString());
+        params.append('limit', limit.toString());
+        
+        if (status) {
+          params.append('status', status);
+        }
+        
+        if (search && search.trim() !== '') {
+          params.append('search', search.trim());
+        }
+        
+        return `/admin/affiliate/withdrawals?${params.toString()}`;
+      },
+      transformResponse: (response: { 
+        statusCode: number;
+        data: WithdrawalsResponse;
+        message: string;
+      }) => response.data,
+      providesTags: ["AffiliateWithdrawals"],
+    }),
+
+    // Get withdrawal statistics
+    getWithdrawalStatistics: builder.query<WithdrawalStatistics, void>({
+      query: () => `/admin/affiliate/withdrawals/stats`,
+      transformResponse: (response: { 
+        statusCode: number;
+        data: WithdrawalStatistics;
+        message: string;
+      }) => response.data,
+      providesTags: ["AffiliateWithdrawalStats"],
+    }),
+
+    // Get single withdrawal request
+    getWithdrawalById: builder.query<AffiliateWithdrawal, string>({
+      query: (id) => `/admin/affiliate/withdrawals/${id}`,
+      transformResponse: (response: { 
+        statusCode: number;
+        data: AffiliateWithdrawal;
+        message: string;
+      }) => response.data,
+      providesTags: (result, error, id) => [{ type: "AffiliateWithdrawals", id }],
+    }),
+
+    // Approve withdrawal request
+    approveWithdrawal: builder.mutation<AffiliateWithdrawal, { id: string; payload?: ApproveWithdrawalPayload }>({
+      query: ({ id, payload }) => ({
+        url: `/admin/affiliate/withdrawals/${id}/approve`,
+        method: "POST",
+        body: payload || {},
+      }),
+      transformResponse: (response: { 
+        statusCode: number;
+        data: { withdrawal: AffiliateWithdrawal };
+        message: string;
+      }) => response.data.withdrawal,
+      invalidatesTags: (result, error, { id }) => [
+        { type: "AffiliateWithdrawals", id },
+        "AffiliateWithdrawals",
+        "AffiliateWithdrawalStats",
+      ],
+    }),
+
+    // Reject withdrawal request
+    rejectWithdrawal: builder.mutation<AffiliateWithdrawal, { id: string; payload?: RejectWithdrawalPayload }>({
+      query: ({ id, payload }) => ({
+        url: `/admin/affiliate/withdrawals/${id}/reject`,
+        method: "POST",
+        body: payload || {},
+      }),
+      transformResponse: (response: { 
+        statusCode: number;
+        data: { withdrawal: AffiliateWithdrawal };
+        message: string;
+      }) => response.data.withdrawal,
+      invalidatesTags: (result, error, { id }) => [
+        { type: "AffiliateWithdrawals", id },
+        "AffiliateWithdrawals",
+        "AffiliateWithdrawalStats",
+      ],
+    }),
+
+    // Mark withdrawal as paid
+    markWithdrawalPaid: builder.mutation<AffiliateWithdrawal, { id: string; payload?: MarkPaidPayload }>({
+      query: ({ id, payload }) => ({
+        url: `/admin/affiliate/withdrawals/${id}/mark-paid`,
+        method: "POST",
+        body: payload || {},
+      }),
+      transformResponse: (response: { 
+        statusCode: number;
+        data: { withdrawal: AffiliateWithdrawal };
+        message: string;
+      }) => response.data.withdrawal,
+      invalidatesTags: (result, error, { id }) => [
+        { type: "AffiliateWithdrawals", id },
+        "AffiliateWithdrawals",
+        "AffiliateWithdrawalStats",
+      ],
+    }),
   }),
 });
 
@@ -194,5 +370,11 @@ export const {
   useRejectAffiliateMutation,
   useUpdateAffiliateMutation,
   useGetAffiliateStatisticsQuery,
+  useGetAllWithdrawalsQuery,
+  useGetWithdrawalStatisticsQuery,
+  useGetWithdrawalByIdQuery,
+  useApproveWithdrawalMutation,
+  useRejectWithdrawalMutation,
+  useMarkWithdrawalPaidMutation,
 } = affiliatesApi;
 
