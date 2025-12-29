@@ -53,7 +53,7 @@ const ManualregisterOption = () => {
     const { setLoggedIn, setUser } = useAuth();
 
     // Get referral code from URL
-    const referralCode = searchParams.get('ref') || searchParams.get('referral');
+    const referralCode = searchParams.get('ref') || searchParams.get('referral') || searchParams.get('aff') || searchParams.get('affiliateCode') ;
 
     // Store referral code in sessionStorage to persist across navigation
     useEffect(() => {

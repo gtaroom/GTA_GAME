@@ -320,13 +320,14 @@ export const getAffiliateStats = asyncHandler(
       AffiliateModel.countDocuments({ status: "rejected" }),
     ]);
 
-    // Calculate total earnings from all approved affiliates
+    // Calculate total earnings and payments from all approved affiliates
     const totalEarningsResult = await AffiliateModel.aggregate([
       { $match: { status: "approved" } },
       {
         $group: {
           _id: null,
           totalEarnings: { $sum: { $ifNull: ["$totalEarnings", 0] } },
+          totalPaid: { $sum: { $ifNull: ["$totalPaid", 0] } },
           totalReferrals: { $sum: { $ifNull: ["$totalReferrals", 0] } },
         },
       },
@@ -338,7 +339,9 @@ export const getAffiliateStats = asyncHandler(
       approved,
       rejected,
       totalEarnings: totalEarningsResult[0]?.totalEarnings || 0,
+      totalPaid: totalEarningsResult[0]?.totalPaid || 0,
       totalReferrals: totalEarningsResult[0]?.totalReferrals || 0,
+      availableBalance: (totalEarningsResult[0]?.totalEarnings || 0) - (totalEarningsResult[0]?.totalPaid || 0),
     };
 
     return res.status(200).json(

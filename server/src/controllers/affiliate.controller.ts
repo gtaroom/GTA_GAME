@@ -127,11 +127,13 @@ const { first: firstName, last: lastName } = name;
  */
 export const getApplicationStatus = asyncHandler(
   async (req: Request, res: Response) => {
-    const { _id: userId } = getUserFromRequest(req);
+    const user = getUserFromRequest(req);
+    const { _id: userId, email: userEmail } = user;
 
-    const affiliate = await AffiliateModel.findOne({ userId }).select(
-      "-notes"
-    );
+    // Check by userId first, then by email (in case application was created with email but different userId)
+    const affiliate = await AffiliateModel.findOne({
+      $or: [{ userId }, { email: userEmail?.toLowerCase() }],
+    }).select("-notes");
 
     if (!affiliate) {
       return res.status(200).json(
@@ -166,10 +168,12 @@ export const getApplicationStatus = asyncHandler(
  */
 export const getAffiliateDashboard = asyncHandler(
   async (req: Request, res: Response) => {
-    const { _id: userId } = getUserFromRequest(req);
+    const user = getUserFromRequest(req);
+    const { _id: userId, email: userEmail } = user;
 
+    // Check by userId first, then by email (for old data where userId might not be set)
     const affiliate = await AffiliateModel.findOne({
-      userId,
+      $or: [{ userId }, { email: userEmail?.toLowerCase() }],
       status: "approved",
     });
 
@@ -194,6 +198,27 @@ export const getAffiliateDashboard = asyncHandler(
       (r) => r.status === "qualified" || r.status === "rewarded"
     ).length;
     const totalEarnings = affiliate.totalEarnings || 0;
+    const totalPaid = affiliate.totalPaid || 0;
+
+    // Calculate pending withdrawal amount
+    const AffiliateWithdrawalRequestModel = (await import("../models/affiliate-withdrawal-request.model")).default;
+    const pendingWithdrawals = await AffiliateWithdrawalRequestModel.aggregate([
+      {
+        $match: {
+          affiliateId: affiliate._id,
+          status: { $in: ["pending", "approved"] },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalPending: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    const pendingAmount = pendingWithdrawals[0]?.totalPending || 0;
+    const availableBalance = totalEarnings - totalPaid - pendingAmount;
 
     // Get recent referrals
     const recentReferrals = referrals.slice(0, 10).map((ref) => ({
@@ -216,6 +241,9 @@ export const getAffiliateDashboard = asyncHandler(
           totalReferrals,
           qualifiedReferrals,
           totalEarnings,
+          totalPaid,
+          pendingWithdrawals: pendingAmount,
+          availableBalance: Math.max(0, availableBalance),
           recentReferrals,
         },
         "Affiliate dashboard data retrieved successfully"
@@ -230,10 +258,12 @@ export const getAffiliateDashboard = asyncHandler(
  */
 export const getAffiliateLink = asyncHandler(
   async (req: Request, res: Response) => {
-    const { _id: userId } = getUserFromRequest(req);
+    const user = getUserFromRequest(req);
+    const { _id: userId, email: userEmail } = user;
 
+    // Check by userId first, then by email (for old data where userId might not be set)
     const affiliate = await AffiliateModel.findOne({
-      userId,
+      $or: [{ userId }, { email: userEmail?.toLowerCase() }],
       status: "approved",
     });
 
@@ -310,6 +340,27 @@ export const getAffiliateDashboardPublic = asyncHandler(
       (r) => r.status === "qualified" || r.status === "rewarded"
     ).length;
     const totalEarnings = affiliate.totalEarnings || 0;
+    const totalPaid = affiliate.totalPaid || 0;
+
+    // Calculate pending withdrawal amount
+    const AffiliateWithdrawalRequestModel = (await import("../models/affiliate-withdrawal-request.model")).default;
+    const pendingWithdrawals = await AffiliateWithdrawalRequestModel.aggregate([
+      {
+        $match: {
+          affiliateId: affiliate._id,
+          status: { $in: ["pending", "approved"] },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalPending: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    const pendingAmount = pendingWithdrawals[0]?.totalPending || 0;
+    const availableBalance = totalEarnings - totalPaid - pendingAmount;
 
     // Get recent referrals
     const recentReferrals = referrals.slice(0, 10).map((ref) => ({
@@ -339,6 +390,9 @@ export const getAffiliateDashboardPublic = asyncHandler(
           totalReferrals,
           qualifiedReferrals,
           totalEarnings,
+          totalPaid,
+          pendingWithdrawals: pendingAmount,
+          availableBalance: Math.max(0, availableBalance),
           recentReferrals,
           hasAccount: !!affiliate.userId, // Whether affiliate has a user account
         },

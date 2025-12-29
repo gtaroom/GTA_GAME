@@ -24,6 +24,9 @@ import {
 } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { useTransitionRouter } from 'next-transition-router';
+import WithdrawalBalance from '../../components/withdrawal-balance';
+import WithdrawalRequest from '../../components/withdrawal-request';
+import WithdrawalHistory from '../../components/withdrawal-history';
 
 export default function PublicAffiliateDashboard() {
     const searchParams = useSearchParams();
@@ -519,6 +522,25 @@ export default function PublicAffiliateDashboard() {
                     </NeonBox>
                 )}
 
+                {/* Withdrawal Balance */}
+                <div>
+                    <NeonText
+                        as='h3'
+                        className='h3-title mb-6'
+                        glowColor='--color-purple-500'
+                        glowSpread={0.5}
+                    >
+                        Withdrawal Management
+                    </NeonText>
+                    <WithdrawalBalance publicToken={token || undefined} />
+                </div>
+
+                {/* Withdrawal Request */}
+                <WithdrawalRequest publicToken={token || undefined} />
+
+                {/* Withdrawal History */}
+                <WithdrawalHistory publicToken={token || undefined} />
+
                 {/* Info Note */}
                 <NeonBox
                     className='p-6 rounded-2xl backdrop-blur-2xl'
@@ -527,7 +549,7 @@ export default function PublicAffiliateDashboard() {
                 >
                     <div className='p-4 bg-neutral-800/50 rounded-lg border border-neutral-700'>
                         <p className='text-sm text-white/70 mb-2'>
-                            <strong>Note:</strong> Payouts are processed monthly once you reach the $100 minimum threshold. Earnings are tracked separately from user coins and paid in dollars.
+                            <strong>Note:</strong> Earnings are tracked separately from user coins and paid in dollars via withdrawal requests. You can request withdrawal once you reach the minimum threshold.
                         </p>
                         <p className='text-sm text-white/70 mb-2'>
                             <strong>Commission System:</strong> You earn a one-time commission when each referral first reaches $20 in total spending. Commission is calculated on their full total spent at qualification, not just the $20 minimum. Future purchases by the same user do not generate additional commissions.

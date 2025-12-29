@@ -950,6 +950,16 @@ export const handlePaymentWebhook = asyncHandler(
             transaction.amount
           );
 
+          // Check spin wheel thresholds after deposit
+          try {
+            const spinWheelService = (await import("../services/spin-wheel.service")).default;
+            await spinWheelService.updateEligibilitySpins(transaction.userId);
+            logger.debug(`Updated spin wheel eligibility for user ${transaction.userId} after deposit`);
+          } catch (error) {
+            logger.error(`Error updating spin wheel eligibility after deposit:`, error);
+            // Don't fail deposit if spin wheel update fails
+          }
+
           logger.info(
             `Deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
           );

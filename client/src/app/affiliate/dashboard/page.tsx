@@ -21,6 +21,9 @@ import {
 } from '@/components/ui/dialog';
 import { useState } from 'react';
 import Image from 'next/image';
+import WithdrawalBalance from '../components/withdrawal-balance';
+import WithdrawalRequest from '../components/withdrawal-request';
+import WithdrawalHistory from '../components/withdrawal-history';
 
 export default function AffiliateDashboard() {
     const {
@@ -424,10 +427,7 @@ export default function AffiliateDashboard() {
                                 </div>
                                 <div className='mt-6 p-4 bg-neutral-800/50 rounded-lg border border-neutral-700'>
                                     <p className='text-sm text-white/70 mb-2'>
-                                        <strong>Note:</strong> Payouts are processed monthly
-                                        once you reach the $100 minimum threshold. Earnings
-                                        are tracked separately from user coins and paid in
-                                        dollars.
+                                        <strong>Note:</strong> Earnings are tracked separately from user coins and paid in dollars via withdrawal requests. You can request withdrawal once you reach the minimum threshold.
                                     </p>
                                     <p className='text-sm text-white/70'>
                                         <strong>Commission System:</strong> You earn a one-time commission when each referral first reaches $20 in total spending. Commission is calculated on their full total spent at qualification, not just the $20 minimum. Future purchases by the same user do not generate additional commissions.
@@ -435,6 +435,25 @@ export default function AffiliateDashboard() {
                                 </div>
                             </NeonBox>
                         )}
+
+                        {/* Withdrawal Balance */}
+                        <div>
+                            <NeonText
+                                as='h3'
+                                className='h3-title mb-6'
+                                glowColor='--color-purple-500'
+                                glowSpread={0.5}
+                            >
+                                Withdrawal Management
+                            </NeonText>
+                            <WithdrawalBalance />
+                        </div>
+
+                        {/* Withdrawal Request */}
+                        <WithdrawalRequest />
+
+                        {/* Withdrawal History */}
+                        <WithdrawalHistory />
                     </div>
                 )}
             </div>

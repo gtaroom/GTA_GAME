@@ -195,6 +195,16 @@ const registerUser = asyncHandler(async (req, res) => {
   user.emailVerificationExpiry = tokenExpiry;
   await user.save();
   await UserBonusModel.create({ userId: user._id });
+  
+  // Initialize spin wheel eligibility for new user
+  try {
+    const spinWheelService = (await import("../services/spin-wheel.service")).default;
+    await spinWheelService.getOrCreateEligibility(user._id);
+    logger.info(`Spin wheel eligibility initialized for new user ${user._id}`);
+  } catch (error) {
+    logger.error(`Error initializing spin wheel eligibility for user ${user._id}:`, error);
+    // Don't fail registration if spin wheel initialization fails
+  }
 
   // Handle referral code (from query param or body)
   const referralCode = req.query.ref || req.body.referralCode || req.query.aff || req.body.affiliateCode;

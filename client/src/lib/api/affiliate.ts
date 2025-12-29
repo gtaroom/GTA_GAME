@@ -161,3 +161,134 @@ export async function getPublicAffiliateDashboard(token: string) {
   });
 }
 
+// ============= WITHDRAWAL APIs =============
+
+export interface AffiliateBalanceResponse {
+  success: boolean;
+  data: {
+    totalEarnings: number;
+    totalPaid: number;
+    pendingWithdrawals: number;
+    availableBalance: number;
+    minimumWithdrawal: number;
+  };
+  message?: string;
+}
+
+export interface WithdrawalRequestPayload {
+  amount: number;
+  paymentMethod?: string;
+  paymentDetails?: {
+    paypalEmail?: string;
+    accountNumber?: string;
+    accountName?: string;
+    bankName?: string;
+    walletAddress?: string;
+    notes?: string;
+  };
+  token?: string; // For public route
+}
+
+export interface WithdrawalRequestResponse {
+  success: boolean;
+  data: {
+    withdrawalRequest: {
+      _id: string;
+      amount: number;
+      status: string;
+      requestedAt: string;
+    };
+    availableBalance: number;
+  };
+  message?: string;
+}
+
+export interface WithdrawalHistoryItem {
+  _id: string;
+  amount: number;
+  paymentMethod?: string;
+  paymentDetails?: Record<string, any>;
+  status: 'pending' | 'approved' | 'rejected' | 'paid';
+  requestedAt: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  paidAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WithdrawalHistoryResponse {
+  success: boolean;
+  data: {
+    withdrawals: WithdrawalHistoryItem[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  };
+  message?: string;
+}
+
+/**
+ * Get affiliate balance (authenticated)
+ */
+export async function getAffiliateBalance() {
+  return http<AffiliateBalanceResponse>('/affiliate/withdrawal/balance', {
+    method: 'GET',
+    cache: 'no-store',
+  });
+}
+
+/**
+ * Get affiliate balance (public, token-based)
+ */
+export async function getAffiliateBalancePublic(token: string) {
+  return http<AffiliateBalanceResponse>(`/affiliate/withdrawal/balance-public?token=${encodeURIComponent(token)}`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+}
+
+/**
+ * Create withdrawal request (authenticated)
+ */
+export async function createWithdrawalRequest(payload: WithdrawalRequestPayload) {
+  return http<WithdrawalRequestResponse>('/affiliate/withdrawal/request', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+/**
+ * Create withdrawal request (public, token-based)
+ */
+export async function createWithdrawalRequestPublic(payload: WithdrawalRequestPayload) {
+  return http<WithdrawalRequestResponse>('/affiliate/withdrawal/request-public', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+/**
+ * Get withdrawal history (authenticated)
+ */
+export async function getWithdrawalHistory(page: number = 1, limit: number = 10) {
+  return http<WithdrawalHistoryResponse>(`/affiliate/withdrawal/history?page=${page}&limit=${limit}`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+}
+
+/**
+ * Get withdrawal history (public, token-based)
+ */
+export async function getWithdrawalHistoryPublic(token: string, page: number = 1, limit: number = 10) {
+  return http<WithdrawalHistoryResponse>(`/affiliate/withdrawal/history-public?token=${encodeURIComponent(token)}&page=${page}&limit=${limit}`, {
+    method: 'GET',
+    cache: 'no-store',
+  });
+}
+

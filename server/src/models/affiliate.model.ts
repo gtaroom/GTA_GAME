@@ -26,6 +26,7 @@ export interface IAffiliate extends Document {
   affiliateCode?: string; // Unique code for approved affiliates
   commissionRate?: number; // Commission percentage
   totalEarnings?: number;
+  totalPaid?: number; // Total amount paid out to affiliate
   totalReferrals?: number;
   notes?: string; // Admin notes
   dashboardToken?: string; // Secure token for public dashboard access (hashed)
@@ -100,6 +101,10 @@ const affiliateSchema = new Schema<IAffiliate>(
       default: 0,
     },
     totalEarnings: {
+      type: Number,
+      default: 0,
+    },
+    totalPaid: {
       type: Number,
       default: 0,
     },

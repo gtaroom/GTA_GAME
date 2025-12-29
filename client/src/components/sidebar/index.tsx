@@ -146,9 +146,9 @@ const Sidebar: React.FC = () => {
                                 <div className='px-5'>
                                     <SidebarSeprator className='my-5' />
                                 </div>
-                                {/* <div className='mb-5'>
+                                <div className='mb-5'>
                                     <FortuneWheelCard />
-                                </div> */}
+                                </div>
                                 <VipLevelCard />
                             </>
                         }

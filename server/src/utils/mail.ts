@@ -426,6 +426,43 @@ const generateAdminNotificationContent = (
       `;
       break;
 
+    case "affiliate_withdrawal_request":
+      icon = "💸";
+      content = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 48px; margin-bottom: 20px;">${icon}</div>
+          <h2 style="color: ${BRAND_COLORS.primary}; margin: 0; font-size: 24px;">${title}</h2>
+        </div>
+        
+        <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="color: ${BRAND_COLORS.primary}; margin-top: 0;">Withdrawal Request Details</h3>
+          <p><strong>Affiliate Name:</strong> ${data.affiliateName || "N/A"}</p>
+          <p><strong>Email:</strong> ${data.affiliateEmail || "N/A"}</p>
+          <p><strong>Affiliate Code:</strong> ${data.affiliateCode || "N/A"}</p>
+          <p><strong>Amount:</strong> <span style="color: ${BRAND_COLORS.primary}; font-size: 20px; font-weight: 700;">$${data.amount?.toFixed(2) || "0.00"}</span></p>
+          <p><strong>Payment Method:</strong> ${data.paymentMethod || "Not specified"}</p>
+          ${data.paymentDetails ? `
+          <p><strong>Payment Details:</strong></p>
+          <ul style="margin: 10px 0; padding-left: 20px;">
+            ${data.paymentDetails.accountNumber ? `<li>Account Number: ${data.paymentDetails.accountNumber}</li>` : ""}
+            ${data.paymentDetails.accountName ? `<li>Account Name: ${data.paymentDetails.accountName}</li>` : ""}
+            ${data.paymentDetails.bankName ? `<li>Bank Name: ${data.paymentDetails.bankName}</li>` : ""}
+            ${data.paymentDetails.paypalEmail ? `<li>PayPal Email: ${data.paymentDetails.paypalEmail}</li>` : ""}
+            ${data.paymentDetails.walletAddress ? `<li>Wallet Address: ${data.paymentDetails.walletAddress}</li>` : ""}
+            ${data.paymentDetails.notes ? `<li>Notes: ${data.paymentDetails.notes}</li>` : ""}
+          </ul>
+          ` : ""}
+          <p><strong>Request ID:</strong> ${data.requestId || "N/A"}</p>
+          <p><strong>Requested At:</strong> ${data.requestedAt || "N/A"}</p>
+          <p><strong>Status:</strong> <span class="highlight">Pending Review</span></p>
+        </div>
+        
+        <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
+          Please review this withdrawal request in the admin dashboard and process the payment accordingly.
+        </p>
+      `;
+      break;
+
     default:
       content = `
         <div style="text-align: center; margin-bottom: 30px;">
@@ -615,6 +652,117 @@ const generateUserNotificationContent = (
         
         <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
           If you have any questions or would like to reapply in the future, please contact our support team.
+        </p>
+      `;
+      break;
+
+    case "affiliate_withdrawal_submitted":
+      icon = "💸";
+      content = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 48px; margin-bottom: 20px;">${icon}</div>
+          <h2 style="color: ${BRAND_COLORS.primary}; margin: 0; font-size: 24px;">${title}</h2>
+        </div>
+        
+        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.firstName || "Partner"}</span>,</p>
+        
+        <p style="font-size: 16px; margin-bottom: 20px;">
+          Your withdrawal request has been submitted successfully and is now pending admin review.
+        </p>
+        
+        <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="color: ${BRAND_COLORS.primary}; margin-top: 0;">Withdrawal Details</h3>
+          <p><strong>Amount:</strong> $${data.amount?.toFixed(2) || "0.00"}</p>
+          <p><strong>Request ID:</strong> ${data.requestId || "N/A"}</p>
+          <p><strong>Status:</strong> <span class="highlight">Pending Review</span></p>
+        </div>
+        
+        <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
+          We'll review your request and notify you once it's processed. This usually takes 1-3 business days.
+        </p>
+      `;
+      break;
+
+    case "affiliate_withdrawal_approved":
+      icon = "✅";
+      content = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 48px; margin-bottom: 20px;">${icon}</div>
+          <h2 style="color: ${BRAND_COLORS.primary}; margin: 0; font-size: 24px;">${title}</h2>
+        </div>
+        
+        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.firstName || "Partner"}</span>,</p>
+        
+        <p style="font-size: 16px; margin-bottom: 20px;">
+          Great news! Your withdrawal request has been approved and is ready for payment processing.
+        </p>
+        
+        <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="color: ${BRAND_COLORS.primary}; margin-top: 0;">Withdrawal Details</h3>
+          <p><strong>Amount:</strong> $${data.amount?.toFixed(2) || "0.00"}</p>
+          <p><strong>Request ID:</strong> ${data.requestId || "N/A"}</p>
+          <p><strong>Status:</strong> <span class="highlight">Approved</span></p>
+          ${data.adminNotes ? `<p><strong>Admin Notes:</strong> ${data.adminNotes}</p>` : ""}
+        </div>
+        
+        <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
+          Payment will be processed within 1-3 business days. You'll receive another notification once payment is completed.
+        </p>
+      `;
+      break;
+
+    case "affiliate_withdrawal_rejected":
+      icon = "❌";
+      content = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 48px; margin-bottom: 20px;">${icon}</div>
+          <h2 style="color: ${BRAND_COLORS.accent}; margin: 0; font-size: 24px;">${title}</h2>
+        </div>
+        
+        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.firstName || "Partner"}</span>,</p>
+        
+        <p style="font-size: 16px; margin-bottom: 20px;">
+          Unfortunately, your withdrawal request has been rejected.
+        </p>
+        
+        <div style="background: rgba(255, 107, 107, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="color: ${BRAND_COLORS.accent}; margin-top: 0;">Withdrawal Details</h3>
+          <p><strong>Amount:</strong> $${data.amount?.toFixed(2) || "0.00"}</p>
+          <p><strong>Request ID:</strong> ${data.requestId || "N/A"}</p>
+          <p><strong>Status:</strong> <span style="color: ${BRAND_COLORS.accent};">Rejected</span></p>
+          ${data.rejectionReason ? `<p><strong>Reason:</strong> ${data.rejectionReason}</p>` : ""}
+        </div>
+        
+        <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
+          The amount has been returned to your available balance. If you have any questions, please contact our support team.
+        </p>
+      `;
+      break;
+
+    case "affiliate_withdrawal_paid":
+      icon = "💰";
+      content = `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 48px; margin-bottom: 20px;">${icon}</div>
+          <h2 style="color: ${BRAND_COLORS.primary}; margin: 0; font-size: 24px;">${title}</h2>
+        </div>
+        
+        <p style="font-size: 18px; margin-bottom: 25px;">Hi <span class="highlight">${data.firstName || "Partner"}</span>,</p>
+        
+        <p style="font-size: 16px; margin-bottom: 20px;">
+          Your withdrawal payment has been processed successfully!
+        </p>
+        
+        <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+          <h3 style="color: ${BRAND_COLORS.primary}; margin-top: 0;">Payment Details</h3>
+          <p><strong>Amount:</strong> $${data.amount?.toFixed(2) || "0.00"}</p>
+          <p><strong>Request ID:</strong> ${data.requestId || "N/A"}</p>
+          <p><strong>Status:</strong> <span class="highlight">Paid</span></p>
+          <p><strong>Paid At:</strong> ${data.paidAt || "N/A"}</p>
+        </div>
+        
+        <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
+          The payment should appear in your account within 1-3 business days, depending on your payment method. Thank you for being a valued partner!
         </p>
       `;
       break;

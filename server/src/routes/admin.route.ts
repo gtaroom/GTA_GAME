@@ -16,6 +16,22 @@ import {
   updateAffiliate,
   getAffiliateStats,
 } from '../controllers/affiliate-admin.controller';
+import {
+  getAllWithdrawalRequests,
+  getWithdrawalRequestById,
+  approveWithdrawalRequest,
+  rejectWithdrawalRequest,
+  markWithdrawalAsPaid,
+  getWithdrawalStats,
+} from '../controllers/affiliate-withdrawal-admin.controller';
+import {
+  simulateDeposit,
+  getTestUserInfo,
+  getReferralInfo,
+  triggerReferralCheck,
+  getAffiliateInfo,
+  createReferralRecord,
+} from '../controllers/test.controller';
 import { verifyJWT, verifyPermission } from '../middlewares/auth-middleware';
 import { adminLimiter } from '../middlewares/rate-limiters';
 
@@ -38,5 +54,21 @@ adminRouter.get("/affiliates/:id", asyncHandler(getAffiliateById));
 adminRouter.post("/affiliates/:id/approve", asyncHandler(approveAffiliate));
 adminRouter.post("/affiliates/:id/reject", asyncHandler(rejectAffiliate));
 adminRouter.put("/affiliates/:id", asyncHandler(updateAffiliate));
+
+// Affiliate withdrawal management routes
+adminRouter.get("/affiliate/withdrawals", asyncHandler(getAllWithdrawalRequests));
+adminRouter.get("/affiliate/withdrawals/stats", asyncHandler(getWithdrawalStats));
+adminRouter.get("/affiliate/withdrawals/:id", asyncHandler(getWithdrawalRequestById));
+adminRouter.post("/affiliate/withdrawals/:id/approve", asyncHandler(approveWithdrawalRequest));
+adminRouter.post("/affiliate/withdrawals/:id/reject", asyncHandler(rejectWithdrawalRequest));
+adminRouter.post("/affiliate/withdrawals/:id/mark-paid", asyncHandler(markWithdrawalAsPaid));
+
+// Test routes (for testing affiliate/referral flow)
+adminRouter.post("/test/simulate-deposit", asyncHandler(simulateDeposit));
+adminRouter.post("/test/create-referral", asyncHandler(createReferralRecord));
+adminRouter.post("/test/trigger-referral-check", asyncHandler(triggerReferralCheck));
+adminRouter.get("/test/user-info", asyncHandler(getTestUserInfo));
+adminRouter.get("/test/referral-info", asyncHandler(getReferralInfo));
+adminRouter.get("/test/affiliate-info", asyncHandler(getAffiliateInfo));
 
 export default adminRouter;
