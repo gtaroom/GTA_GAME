@@ -16,8 +16,8 @@ import { Input } from '../ui/input';
 import GameModalTitle from './game-modal-title';
 
 // Validation constants
-const MIN_BALANCE_REQUIRED = 500; // Minimum GC required for account creation
-const MIN_ADD_LOOT = 5; // Minimum recharge amount in dollars
+const MIN_BALANCE_REQUIRED = 1000; // Minimum GC required for account creation
+const MIN_ADD_LOOT = 10; // Minimum recharge amount in dollars
 const CONVERSION_RATE = 100; // 1 USD = 100 GC
 
 export default function CreateAccountStep({
@@ -75,7 +75,7 @@ export default function CreateAccountStep({
         let bonusCoins = 0;
 
         // Bonus calculation: Every $10 gets bonus, capped at 500
-        if (amount >= 5) {
+        if (amount >= 10) {
             const bonusTier = Math.floor(amount / 10);
             bonusCoins = Math.min((bonusTier + 1) * 100, 500);
         }

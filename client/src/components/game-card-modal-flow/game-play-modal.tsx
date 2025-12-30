@@ -20,11 +20,11 @@ import { Input } from '../ui/input';
 import GameModalTitle from './game-modal-title';
 
 // Validation constants
-const MIN_ADD_LOOT = 5;
+const MIN_ADD_LOOT = 10;
 const MIN_REDEEM = 40;
 const MAX_REDEEM = 500;
 const CONVERSION_RATE = 100; // 1 USD = 100 GC
-const MIN_BALANCE_REQUIRED = 500; // Minimum GC required to add game loot
+const MIN_BALANCE_REQUIRED = 1000; // Minimum GC required to add game loot
 
 interface GamePlayStepProps extends GamePlayModalProps {
     onTriggerSaveCredentials?: (username: string, password: string) => void;
@@ -654,16 +654,24 @@ export default function GamePlayStep({
                                 game for entertainment gameplay. Minimum: $
                                 {MIN_ADD_LOOT}
                             </p>
-                            <Input
-                                type='number'
-                                placeholder={`Enter amount (min $${MIN_ADD_LOOT})`}
-                                value={lootAmount}
-                                onChange={e => setLootAmount(e.target.value)}
-                                disabled={loading}
-                                min={MIN_ADD_LOOT}
-                                step='0.01'
-                                className='w-full'
-                            />
+                            <div className='relative w-full'>
+                                <div className='absolute left-3 top-1/2 -translate-y-1/2 text-white text-lg font-bold z-50'>
+                                    $
+                                </div>
+                                <Input
+                                    type='number'
+                                    placeholder='0.00'
+                                    value={lootAmount}
+                                    onChange={e =>
+                                        setLootAmount(e.target.value)
+                                    }
+                                    disabled={loading}
+                                    min={MIN_ADD_LOOT}
+                                    step='0.01'
+                                    className='w-full pl-8'
+                                    style={{ paddingLeft: '2rem' }}
+                                />
+                            </div>
                             {lootAmount &&
                                 !isNaN(parseFloat(lootAmount)) &&
                                 parseFloat(lootAmount) > 0 && (

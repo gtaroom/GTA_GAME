@@ -8,13 +8,15 @@ import { useBreakPoint } from '@/hooks/useBreakpoint';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { useState } from 'react';
+import type { CoinPackage } from '../types';
 import PaymentModal from './payment-modal';
-import type { CoinPackage, CoinPackagesProps } from '../types';
 
 export default function CoinPackages() {
     const { sm, md } = useBreakPoint();
     const { isLoggedIn } = useIsLoggedIn();
-    const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(null);
+    const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(
+        null
+    );
     const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
     const GRID_COMMON_CLASS =
@@ -62,8 +64,10 @@ export default function CoinPackages() {
                                 >
                                     {coinPackages.map((pkg, idx) => {
                                         // Extract amount from price string (remove $ and convert to number)
-                                        const amount = parseFloat(pkg.price.replace('$', ''));
-                                        
+                                        const amount = parseFloat(
+                                            pkg.price.replace('$', '')
+                                        );
+
                                         return (
                                             <NeonBox
                                                 key={idx}
@@ -77,14 +81,26 @@ export default function CoinPackages() {
                                                 backgroundOpacity={0.1}
                                                 onClick={() =>
                                                     handleNeonBoxClick({
-                                                        totalGC: Number(pkg.totalGC.replace(/[^\d]/g, '')),
+                                                        totalGC: Number(
+                                                            pkg.totalGC.replace(
+                                                                /[^\d]/g,
+                                                                ''
+                                                            )
+                                                        ),
                                                         bonusGC: pkg.bonusGC
-                                                            ? Number(pkg.bonusGC.replace(/[^\d]/g, ''))
+                                                            ? Number(
+                                                                  pkg.bonusGC.replace(
+                                                                      /[^\d]/g,
+                                                                      ''
+                                                                  )
+                                                              )
                                                             : undefined,
                                                         tag: pkg.tag,
                                                         price: pkg.price,
                                                         amount: amount,
-                                                        productId: process.env.NEXT_PUBLIC_PRODUCT_ID,
+                                                        productId:
+                                                            process.env
+                                                                .NEXT_PUBLIC_PRODUCT_ID,
                                                     })
                                                 }
                                             >
@@ -132,9 +148,9 @@ export default function CoinPackages() {
                     </div>
                     <div className='sm:px-4.5 px-2'>
                         <p className='text-base font-bold text-center capitalize mt-4'>
-                            Gold Coins are for play only, while Sweeps Coins (SC)
-                            can be earned for free and redeemed for rewards — no
-                            purchase necessary
+                            Gold Coins are for play only, while Sweeps Coins
+                            (SC) can be earned for free and redeemed for rewards
+                            — no purchase necessary
                         </p>
                     </div>
                 </div>

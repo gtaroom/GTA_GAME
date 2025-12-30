@@ -243,7 +243,7 @@ const emailVerificationMailgenContent = (
     <div style="font-size: 18px; margin: 20px 0;">
      Welcome to Golden Ticket Online Arcade! We’re very excited to have you as part of the GTOA Family.
       To verify your email address, click the button below. 
-      <span style="text-shadow: 0 0 10px ${BRAND_COLORS.accent}, 0 0 20px ${BRAND_COLORS.accent}, 0 0 30px ${BRAND_COLORS.accent};">This link will expire in 20 minutes.</span>
+      <span style="text-shadow: 0 0 10px ${BRAND_COLORS.accent}, 0 0 20px ${BRAND_COLORS.accent}, 0 0 30px ${BRAND_COLORS.accent};">This link will expire in 24 hours.</span>
     </div>
     
     <div style="font-size: 16px; color: ${BRAND_COLORS.secondary}; margin: 20px 0;">

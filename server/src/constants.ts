@@ -52,4 +52,4 @@ export const authProvider = {
 export type AuthType = (typeof authProvider)[keyof typeof authProvider];
 export const AvailableAuthProviders = Object.values(authProvider);
 
-export const USER_TEMPORARY_TOKEN_EXPIRY = 20 * 60 * 1000; // 20 minutes
+export const USER_TEMPORARY_TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours

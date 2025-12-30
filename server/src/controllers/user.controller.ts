@@ -158,7 +158,7 @@ const registerUser = asyncHandler(async (req, res) => {
       isEmailVerified: false,
       isSmsOpted: acceptSMSMarketing || false,
       isOpted,
-      role:  rolesEnum.USER,
+      role: rolesEnum.USER,
     });
   } catch (error: any) {
     // Handle database constraint violations
@@ -1395,10 +1395,7 @@ export const updateUserBalance = asyncHandler(async (req, res) => {
   const { _id } = getUserFromRequest(req);
   const { balance, type, sweepCoins } = req.body;
   if ((!balance && !type) || (!sweepCoins && !type)) {
-    throw new ApiError(
-      400,
-      "Please provide balance"
-    );
+    throw new ApiError(400, "Please provide balance");
   }
   const userBonus = await UserBonusModel.findOne({ userId: _id });
   if (!userBonus) {
