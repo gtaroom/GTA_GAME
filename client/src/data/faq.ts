@@ -50,10 +50,10 @@ export const vipProgramFaqData: FaqItem[] = [
         question: 'What does having a VIP Manager mean?',
         answer: "Having a VIP Manager means you'll have a dedicated account specialist to assist you with your account, provide personalized offers, and help you get the most out of your VIP experience.",
     },
-    {
-        question: 'What is the Weekly Reward?',
-        answer: 'The Weekly Reward is a recurring benefit for VIP members, which may include free Gold Coins, bonus spins, or other exclusive perks delivered each week.',
-    },
+    // {
+    //     question: 'What is the Weekly Reward?',
+    //     answer: 'The Weekly Reward is a recurring benefit for VIP members, which may include free Gold Coins, bonus spins, or other exclusive perks delivered each week.',
+    // },
     {
         question: 'What is the Level Up Reward?',
         answer: 'When you advance to a higher VIP tier, you receive a Level Up Reward, which can include bonus Gold Coins, spins, or other exclusive benefits as a reward for your progress.',

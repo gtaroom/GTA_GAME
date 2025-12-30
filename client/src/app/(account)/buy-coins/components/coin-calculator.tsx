@@ -7,8 +7,8 @@ import { useIsLoggedIn } from '@/contexts/auth-context';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
 import { useState } from 'react';
 import AccountPageTitle from '../../profile/components/account-page-title';
+import type { CoinPackage } from '../types';
 import PaymentModal from './payment-modal';
-import type { CoinPackage, CoinCalculatorProps } from '../types';
 
 export default function CoinCalculator() {
     const { sm, xl } = useBreakPoint();
@@ -22,11 +22,13 @@ export default function CoinCalculator() {
         totalCoins: number;
     } | null>(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(null);
+    const [selectedPackage, setSelectedPackage] = useState<CoinPackage | null>(
+        null
+    );
 
     const calculateCoins = () => {
         const numAmount = parseFloat(amount);
-        
+
         if (isNaN(numAmount) || numAmount < 5) {
             setCalculatedCoins(null);
             return;
@@ -113,8 +115,8 @@ export default function CoinCalculator() {
                                 min='5'
                                 step='0.01'
                             />
-                            <Button 
-                                variant='secondary' 
+                            <Button
+                                variant='secondary'
                                 size={ELEMENT_SIZE}
                                 onClick={calculateCoins}
                                 disabled={!amount || parseFloat(amount) < 5}
@@ -122,7 +124,6 @@ export default function CoinCalculator() {
                                 Calculate & Buy
                             </Button>
                         </div>
-                        
                         {/* Calculation Results */}
                         {calculatedCoins && (
                             <div className='w-full mb-5'>
@@ -139,29 +140,39 @@ export default function CoinCalculator() {
                                             ${amount}
                                         </div>
                                     </div>
-                                    
+
                                     <div className='space-y-3'>
                                         <div className='flex justify-between items-center'>
-                                            <span className='text-white/80'>Base Gold Coins:</span>
+                                            <span className='text-white/80'>
+                                                Base Gold Coins:
+                                            </span>
                                             <span className='text-yellow-300 font-bold'>
-                                                {calculatedCoins.baseCoins.toLocaleString()} GC
+                                                {calculatedCoins.baseCoins.toLocaleString()}{' '}
+                                                GC
                                             </span>
                                         </div>
-                                        
+
                                         {calculatedCoins.bonusCoins > 0 && (
                                             <div className='flex justify-between items-center'>
-                                                <span className='text-white/80'>Bonus Gold Coins:</span>
+                                                <span className='text-white/80'>
+                                                    Bonus Gold Coins:
+                                                </span>
                                                 <span className='text-green-400 font-bold'>
-                                                    +{calculatedCoins.bonusCoins.toLocaleString()} GC
+                                                    +
+                                                    {calculatedCoins.bonusCoins.toLocaleString()}{' '}
+                                                    GC
                                                 </span>
                                             </div>
                                         )}
-                                        
+
                                         <div className='border-t border-white/20 pt-3'>
                                             <div className='flex justify-between items-center'>
-                                                <span className='text-white font-bold'>Total Gold Coins:</span>
+                                                <span className='text-white font-bold'>
+                                                    Total Gold Coins:
+                                                </span>
                                                 <span className='text-yellow-300 font-bold text-lg'>
-                                                    {calculatedCoins.totalCoins.toLocaleString()} GC
+                                                    {calculatedCoins.totalCoins.toLocaleString()}{' '}
+                                                    GC
                                                 </span>
                                             </div>
                                         </div>
@@ -169,9 +180,10 @@ export default function CoinCalculator() {
                                 </div>
                             </div>
                         )}
-                        
+
                         <span className='capitalize font-bold'>
-                            Enter an amount (minimum $5) to customize your package.
+                            Enter an amount (minimum $5) to customize your
+                            package.
                         </span>
                     </div>
                 </div>

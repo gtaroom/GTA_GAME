@@ -101,23 +101,26 @@ export default function GoatPaymentsModal({ isOpen, onClose, selectedPackage }: 
 				icon: 'lucide:credit-card',
 				description: 'Pay with your credit or debit card',
 				color: '--color-blue-500',
+				iconSize: xl ? 28 : 24,
 			},
-			{
-				id: 'applepay' as const,
-				label: 'Apple Pay',
-				icon: 'lucide:smartphone',
-				description: isApplePayAvailable ? 'Pay securely with Apple Pay' : 'Available only on Apple devices',
-				color: '--color-gray-500',
-			},
-			{
-				id: 'googlepay' as const,
-				label: 'Google Pay',
-				icon: 'lucide:smartphone',
-				description: 'Pay securely with Google Pay',
-				color: '--color-green-500',
-			},
+		{
+			id: 'applepay' as const,
+			label: 'Apple Pay',
+			icon: 'simple-icons:applepay',
+			description: isApplePayAvailable ? 'Pay securely with Apple Pay' : 'Available only on Apple devices',
+			color: '--color-gray-500',
+			iconSize: xl ? 40 : 36,
+		},
+		{
+			id: 'googlepay' as const,
+			label: 'Google Pay',
+			icon: 'simple-icons:googlepay',
+			description: 'Pay securely with Google Pay',
+			color: '--color-green-500',
+			iconSize: xl ? 40 : 36,
+		},
 		];
-	}, [isApplePayAvailable]);
+	}, [isApplePayAvailable, xl]);
 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -130,7 +133,7 @@ export default function GoatPaymentsModal({ isOpen, onClose, selectedPackage }: 
                         as='h4'
                         className='max-sm:max-w-[236px] max-sm:mx-auto h4-title text-center pt-2 sm:pt-4 mb-6'
                     >
-                        GoatPayments - Secure Payment
+                        GTOA - Secure Payment
                     </NeonText>
                 </DialogTitle>
 
@@ -197,6 +200,90 @@ export default function GoatPaymentsModal({ isOpen, onClose, selectedPackage }: 
                     <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl'>
 			{paymentTypes.map((type) => {
 				const isDisabled = type.id === 'applepay' && !isApplePayAvailable;
+				
+				// Official-looking Apple Pay button
+				if (type.id === 'applepay') {
+					return (
+						<button
+							key={type.id}
+							onClick={() => {
+								if (isDisabled) return;
+								handlePaymentTypeSelect(type.id);
+							}}
+							disabled={isDisabled}
+							className={cn(
+								'w-full h-[100px] rounded-lg transition-all duration-200 relative overflow-hidden',
+								'bg-black border-2 flex flex-col items-center justify-center gap-2 p-4',
+								selectedPaymentType === type.id ? 'border-white/80 ring-2 ring-white/50 shadow-lg scale-[1.02]' : 'border-black/20',
+								isDisabled ? 'opacity-60 cursor-not-allowed' : 'hover:scale-[1.01] hover:shadow-md cursor-pointer'
+							)}
+						>
+							<div className='flex items-center justify-center gap-2'>
+								<svg width='20' height='20' viewBox='0 0 24 24' fill='none' className='text-white'>
+									<path d='M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z' fill='currentColor'/>
+								</svg>
+								<span className='text-white font-semibold text-base tracking-wide' style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif' }}>Pay</span>
+							</div>
+							<div className='text-white/70 text-xs text-center'>
+								{type.description}
+							</div>
+							{!isDisabled && selectedPaymentType === type.id && (
+								<div className='absolute top-2 right-2'>
+									<div className='w-6 h-6 bg-green-500 rounded-full flex items-center justify-center'>
+										<NeonIcon
+											icon='lucide:check'
+											size={14}
+											glowColor='--color-green-500'
+										/>
+									</div>
+								</div>
+							)}
+						</button>
+					);
+				}
+				
+				// Official-looking Google Pay button
+				if (type.id === 'googlepay') {
+					return (
+						<button
+							key={type.id}
+							onClick={() => {
+								handlePaymentTypeSelect(type.id);
+							}}
+							className={cn(
+								'w-full h-[100px] rounded-lg transition-all duration-200 relative overflow-hidden',
+								'bg-white border-2 flex flex-col items-center justify-center gap-2 p-4 shadow-sm',
+								selectedPaymentType === type.id ? 'border-blue-500/80 ring-2 ring-blue-500/50 shadow-lg scale-[1.02]' : 'border-gray-200',
+								'hover:scale-[1.01] hover:shadow-md cursor-pointer'
+							)}
+						>
+							<div className='flex items-center justify-center'>
+								<NeonIcon
+									icon={type.icon}
+									size={type.iconSize}
+									color='#5F6368'
+									forceCurrentColor={false}
+								/>
+							</div>
+							<div className='text-gray-600 text-xs text-center'>
+								{type.description}
+							</div>
+							{selectedPaymentType === type.id && (
+								<div className='absolute top-2 right-2'>
+									<div className='w-6 h-6 bg-green-500 rounded-full flex items-center justify-center'>
+										<NeonIcon
+											icon='lucide:check'
+											size={14}
+											glowColor='--color-green-500'
+										/>
+									</div>
+								</div>
+							)}
+						</button>
+					);
+				}
+				
+				// Custom button for card payment
 				return (
                             <Button
                                 key={type.id}
@@ -206,40 +293,38 @@ export default function GoatPaymentsModal({ isOpen, onClose, selectedPackage }: 
                                 glowColor={type.color}
                                 glowSpread={selectedPaymentType === type.id ? 1.2 : 0.8}
                                 backgroundColor={type.color}
-						backgroundOpacity={isDisabled ? 0.06 : selectedPaymentType === type.id ? 0.2 : 0.1}
+						backgroundOpacity={selectedPaymentType === type.id ? 0.2 : 0.1}
                                 neonBoxClass='rounded-md transition-all duration-200'
                                 className={cn(
 							'w-full flex flex-col items-center gap-2 p-4 h-auto min-h-[100px] transition-all duration-200 relative',
-							selectedPaymentType === type.id && !isDisabled && 'ring-2 ring-white/50 shadow-lg scale-[1.02]',
-							!isDisabled && (!selectedPaymentType || selectedPaymentType !== type.id) ? 'hover:scale-[1.01] hover:shadow-md' : 'opacity-60 cursor-not-allowed'
+							selectedPaymentType === type.id && 'ring-2 ring-white/50 shadow-lg scale-[1.02]',
+							!selectedPaymentType || selectedPaymentType !== type.id ? 'hover:scale-[1.01] hover:shadow-md' : ''
                                 )}
-						disabled={isDisabled}
 						onClick={() => {
-							if (isDisabled) return;
 							handlePaymentTypeSelect(type.id);
 						}}
                             >
                                 <NeonIcon
                                     icon={type.icon}
-                                    size={xl ? 28 : 24}
+                                    size={type.iconSize}
                                     glowColor={type.color}
-							glowSpread={!isDisabled && selectedPaymentType === type.id ? 1.5 : 1}
+							glowSpread={selectedPaymentType === type.id ? 1.5 : 1}
                                 />
                                 <div className='text-center'>
                                     <div className={cn(
                                         'font-bold text-base mb-1 transition-colors duration-200',
-								isDisabled ? 'text-white/60' : selectedPaymentType === type.id ? 'text-white' : 'text-white/90'
+								selectedPaymentType === type.id ? 'text-white' : 'text-white/90'
                                     )}>
                                         {type.label}
                                     </div>
                                     <div className={cn(
                                         'text-xs leading-tight transition-colors duration-200',
-								isDisabled ? 'text-white/60' : selectedPaymentType === type.id ? 'text-white/90' : 'text-white/70'
+								selectedPaymentType === type.id ? 'text-white/90' : 'text-white/70'
                                     )}>
                                         {type.description}
                                     </div>
                                 </div>
-						{!isDisabled && selectedPaymentType === type.id && (
+						{selectedPaymentType === type.id && (
                                     <div className='absolute top-2 right-2'>
                                         <div className='w-6 h-6 bg-green-500 rounded-full flex items-center justify-center'>
                                             <NeonIcon

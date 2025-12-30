@@ -1,4 +1,6 @@
 'use client';
+import BannerSlider from '@/app/lobby/components/banner-slider';
+import MotionInView from '@/components/motion/motion-in-view';
 import NeonText from '@/components/neon/neon-text';
 import { Button } from '@/components/ui/button';
 import ButtonGroup from '@/components/ui/button-group';
@@ -20,22 +22,40 @@ const HeroSection = () => {
                             className='display-1'
                             glowColor='--color-pink-400'
                         >
-                            PLAY FOR FREE
+                            PLAY FREE.
                         </NeonText>
                         <NeonText
                             as='span'
                             className='display-1'
+                            glowColor='--color-red-500'
+                        >
+                            HIT BIG.
+                        </NeonText>
+                             <NeonText
+                            as='span'
+                            className='display-1'
                             glowColor='--color-yellow-500'
                         >
-                            UNLOCK REWARDS
+                            UNLOCK REAL REWARDS.
                         </NeonText>
                     </h1>
 
                     {/* Hero Section Description */}
                     <p className='mx-auto mb-7.5 max-w-[1000px] text-2xl sm:text-3xl'>
-                        Experience exciting arcade-style games.
+                        Jump into fast, arcade-style action — no purchase required.
                     </p>
+                </div>
+            </div>
 
+            {/* Full Screen Banner Slider */}
+            <MotionInView>
+                <div className='w-full pl-5'>
+                    <BannerSlider />
+                </div>
+            </MotionInView>
+
+            <div className='container-xl relative z-[1]'>
+                <div className='text-center'>
                     {/* Hero Section Action Button */}
                     <ButtonGroup className='mb-20 sm:mb-32 gap-4 sm:gap-7.5 flex-wrap justify-center'>
                         <Button

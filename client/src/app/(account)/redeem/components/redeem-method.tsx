@@ -371,7 +371,7 @@ export default function RedeemMethod() {
                         {/* VIP Tier Info */}
                         {vipStatus && (
                             <NeonText className='text-blue-400 text-xs mt-2'>
-                                Your {vipStatus.tierName} tier allows up to ${maxRedemptionLimit} SC redemption per day
+                                Your {vipStatus.tierName} tier allows up to {maxRedemptionLimit} SC redemption per day
                             
                             </NeonText>
                         )}

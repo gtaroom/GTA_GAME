@@ -13,27 +13,27 @@ import { Icon } from '@iconify/react';
 import VIPprogramBtn from '@/components/vip-program-btn';
 
 import { useVip } from '@/contexts/vip-context';
-import { getTierImage, getTierColor, getTierDisplayName } from '@/lib/vip-utils';
+import { getTierColor, getTierImage } from '@/lib/vip-utils';
 
 import Image from 'next/image';
 
-import useMeasure from 'react-use-measure';
-import { useRef, useState } from 'react';
-import { uploadAvatar } from '@/lib/api/auth';
-import AccountPageTitle from './account-page-title';
-import EditUserInfoForm from './edit-user-Info-form';
-import ChangePasswordForm from './change-password-form';
-import { useBreakPoint } from '@/hooks/useBreakpoint';
-import { useAuth } from '@/contexts/auth-context';
-import { useWalletBalance } from '@/contexts/wallet-balance-context';
+import NeonIcon from '@/components/neon/neon-icon';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import NeonIcon from '@/components/neon/neon-icon';
+import { useAuth } from '@/contexts/auth-context';
+import { useWalletBalance } from '@/contexts/wallet-balance-context';
+import { useBreakPoint } from '@/hooks/useBreakpoint';
+import { uploadAvatar } from '@/lib/api/auth';
 import { formatNumber } from '@/lib/utils';
+import { useRef, useState } from 'react';
+import useMeasure from 'react-use-measure';
+import AccountPageTitle from './account-page-title';
+import ChangePasswordForm from './change-password-form';
+import EditUserInfoForm from './edit-user-Info-form';
 
 export default function UserInfo() {
     const { lg, xxl } = useBreakPoint();
@@ -54,7 +54,8 @@ export default function UserInfo() {
 
     // Get user avatar URL
     const getUserAvatar = () => {
-        if (user?.avatar?.url) return `${process.env.NEXT_PUBLIC_IMAGE_URL}/public/${user.avatar.url}`;
+        if (user?.avatar?.url)
+            return `${process.env.NEXT_PUBLIC_IMAGE_URL}/public/${user.avatar.url}`;
         return '/account/avatar.jpg'; // Default avatar
     };
 
@@ -66,18 +67,28 @@ export default function UserInfo() {
 
     // Validate file is an image
     const isImageFile = (file: File): boolean => {
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        const validTypes = [
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+        ];
         return validTypes.includes(file.type);
     };
 
     // Handle file selection and upload
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
         // Validate file type
         if (!isImageFile(file)) {
-            setUploadError('Please upload an image file (JPEG, PNG, GIF, or WebP)');
+            setUploadError(
+                'Please upload an image file (JPEG, PNG, GIF, or WebP)'
+            );
             return;
         }
 
@@ -92,7 +103,7 @@ export default function UserInfo() {
         setUploadError(null);
 
         try {
-            const response = await uploadAvatar(file) as any;
+            const response = (await uploadAvatar(file)) as any;
 
             if (response.success && response.data?.avatar) {
                 // Update user context with new avatar
@@ -105,7 +116,11 @@ export default function UserInfo() {
             }
         } catch (error) {
             console.error('Avatar upload error:', error);
-            setUploadError(error instanceof Error ? error.message : 'Failed to upload avatar');
+            setUploadError(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to upload avatar'
+            );
         } finally {
             setIsUploading(false);
             // Reset file input
@@ -126,8 +141,8 @@ export default function UserInfo() {
             },
             color: '--color-yellow-500',
             label: 'Gold Coins',
-            description:'Play-for-fun mode. Used for bonus games, daily rewards, and casual gameplay.',
-
+            description:
+                'Play-for-fun mode. Used for bonus games, daily rewards, and casual gameplay.',
         },
         {
             type: 'gameGC',
@@ -138,7 +153,8 @@ export default function UserInfo() {
             },
             color: '--color-yellow-500',
             label: 'Exclusive Gold Coins',
-            description: 'Play-for-fun mode. Used to access exclusive and signature games for entertainment only.'
+            description:
+                'Play-for-fun mode. Used to access exclusive and signature games for entertainment only.',
         },
         {
             type: 'sweepCoins',
@@ -150,19 +166,23 @@ export default function UserInfo() {
             color: '--color-green-500',
             label: 'Sweep Coins',
             description:
-            'Promotional play mode. Used for sweepstakes-style games available in supported regions per terms.',
-          },
+                'Promotional play mode. Used for sweepstakes-style games available in supported regions per terms.',
+        },
         {
             type: 'tier',
-            image: vipStatus ? getTierImage(vipStatus.tier) : '/vip-program/iron.png',
+            image: vipStatus
+                ? getTierImage(vipStatus.tier)
+                : '/vip-program/iron.png',
             display: {
                 neon: true,
                 text: vipStatus ? vipStatus.tierName : 'Standard',
                 color: '--color-white',
             },
-            color: vipStatus ? getTierColor(vipStatus.tier) : '--color-gray-400',
+            color: vipStatus
+                ? getTierColor(vipStatus.tier)
+                : '--color-gray-400',
             label: 'VIP Tier',
-            description: 'Your current VIP status'
+            description: 'Your current VIP status',
         },
     ];
 
@@ -190,7 +210,11 @@ export default function UserInfo() {
     const ChangePasswordButton = ({ className }: { className?: string }) => (
         <Dialog>
             <DialogTrigger asChild>
-                <Button size={xxl ? 'lg' : 'md'} variant="secondary" className={className}>
+                <Button
+                    size={xxl ? 'lg' : 'md'}
+                    variant='secondary'
+                    className={className}
+                >
                     Change Password
                 </Button>
             </DialogTrigger>
@@ -252,12 +276,12 @@ export default function UserInfo() {
                     />
 
                     {/* Upload overlay */}
-                    <button 
+                    <button
                         onClick={handleAvatarClick}
                         disabled={isUploading}
                         className={`absolute inset-0 bg-black/60 w-full h-full grid place-items-center rounded-full transition-all duration-300 ${
-                            isUploading 
-                                ? 'visible opacity-100' 
+                            isUploading
+                                ? 'visible opacity-100'
                                 : 'invisible opacity-0 group-hover:visible group-hover:opacity-100'
                         }`}
                         aria-label='Change avatar'
@@ -268,7 +292,9 @@ export default function UserInfo() {
                                     icon='lucide:loader-2'
                                     className='xl:text-4xl text-3xl animate-spin'
                                 />
-                                <span className='text-xs font-bold'>Uploading...</span>
+                                <span className='text-xs font-bold'>
+                                    Uploading...
+                                </span>
                             </div>
                         ) : (
                             <span className='text-xs font-bold'>
@@ -287,7 +313,7 @@ export default function UserInfo() {
                     </span>
 
                     {!lg && (
-                        <div className="flex gap-3 mb-4">
+                        <div className='flex gap-3 mb-4'>
                             <EditButton />
                             <ChangePasswordButton />
                         </div>
@@ -315,7 +341,9 @@ export default function UserInfo() {
                                         className='xxl:text-xl xl:text-lg text-base font-extrabold! uppercase'
                                         glowColor={badge.color}
                                         color={badge.display.color}
-                                        glowSpread={badge.display.neon ? 0.2 : 0}
+                                        glowSpread={
+                                            badge.display.neon ? 0.2 : 0
+                                        }
                                     >
                                         {badge.display.text}
                                     </NeonText>
@@ -328,7 +356,9 @@ export default function UserInfo() {
                                                             icon='lucide:info'
                                                             size={14}
                                                             className='opacity-60 hover:opacity-100 transition-opacity'
-                                                            glowColor={badge.color}
+                                                            glowColor={
+                                                                badge.color
+                                                            }
                                                         />
                                                     </div>
                                                 </TooltipTrigger>
@@ -338,7 +368,9 @@ export default function UserInfo() {
                                                     className='max-w-[200px]'
                                                 >
                                                     <div className='text-center'>
-                                                        <div className='font-bold text-white mb-1'>{badge.label}</div>
+                                                        <div className='font-bold text-white mb-1'>
+                                                            {badge.label}
+                                                        </div>
                                                         <div className='text-sm text-white opacity-90'>
                                                             {badge.description}
                                                         </div>

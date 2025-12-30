@@ -108,6 +108,8 @@ export interface GameModalStepProps {
 export interface GamePlayModalProps {
     game: Game;
     accountDetails?: GameAccountDetailsResponse['data'];
+    hasStoredCredentials?: boolean;
+    onTriggerSaveCredentials?: (username: string, password: string) => void;
 }
 
 // Account Selection Types

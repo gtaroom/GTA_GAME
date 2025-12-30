@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 
 let nextConfig: NextConfig = {
     /* your config options here */
+    output: 'standalone', // run app as standalone in production
     images: {
         deviceSizes: [360, 414, 640, 768, 1024, 1280, 1536, 1920],
         imageSizes: [64, 96, 128, 256, 384],

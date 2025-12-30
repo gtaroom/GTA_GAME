@@ -1,0 +1,272 @@
+name: Deploy Staging to VPS
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    name: Staging Deployment
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare Repository Name
+        run: |
+          echo "REPO_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      # Build Staging Images (Tagged :staging)
+      - name: Build and Push Images
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/backend:staging
+            ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}-staging
+          build-args: |
+            MAXMIND_LICENSE_KEY=${{ secrets.MAXMIND_LICENSE_KEY }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Push Client
+        uses: docker/build-push-action@v5
+        with:
+          context: ./client
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/client:staging
+            ghcr.io/${{ env.REPO_LOWER }}/client:${{ github.sha }}-staging
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://staging.gtoarcade.com/api/v1
+            NEXT_PUBLIC_IMAGE_URL=${{ secrets.STAGING_NEXT_PUBLIC_IMAGE_URL || secrets.NEXT_PUBLIC_IMAGE_URL }}
+            NEXT_PUBLIC_VERIFF_API_KEY=${{ secrets.STAGING_NEXT_PUBLIC_VERIFF_API_KEY || secrets.NEXT_PUBLIC_VERIFF_API_KEY }}
+            NEXT_PUBLIC_PRODUCT_ID=${{ secrets.STAGING_NEXT_PUBLIC_PRODUCT_ID || secrets.NEXT_PUBLIC_PRODUCT_ID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Push Admin
+        uses: docker/build-push-action@v5
+        with:
+          context: ./admin
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/admin:staging
+            ghcr.io/${{ env.REPO_LOWER }}/admin:${{ github.sha }}-staging
+          build-args: |
+            VITE_APP_API_URL=https://staging.gtoarcade.com/api/v1
+            VITE_SERVER_URI=https://staging.gtoarcade.com
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.STAGING_TAILSCALE_AUTH_KEY || secrets.TAILSCALE_AUTH_KEY }}
+
+      - name: Setup SSH
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.STAGING_SSH_KEY || secrets.SSH_KEY }}
+          known_hosts: "placeholder"
+          if_key_exists: replace
+          config: |
+            Host staging
+              HostName ${{ secrets.STAGING_SSH_HOST || secrets.SSH_HOST }}
+              User ${{ secrets.STAGING_SSH_USER || secrets.SSH_USER }}
+              Port ${{ secrets.STAGING_SSH_PORT || secrets.SSH_PORT || 22 }}
+              StrictHostKeyChecking no
+
+      - name: Execute Remote Deployment (Staging)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST || secrets.SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER || secrets.SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY || secrets.SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT || secrets.SSH_PORT || 22 }}
+          command_timeout: 30m
+          script: |
+            set -e
+            set -x # Debug Mode: Print commands
+
+            # Prune to free space BEFORE pulling
+            docker system prune -af --volumes || true
+
+            # Staging Directory
+            mkdir -p ~/app-staging
+            cd ~/app-staging
+
+            echo "Installing Standalone Docker Compose V2..."
+            curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
+            chmod +x docker-compose
+
+            # 0. Backup Staging Config
+            echo "Backing up current staging configuration..."
+            if [ -f docker-compose.staging.yml ]; then
+              cp docker-compose.staging.yml docker-compose.staging.yml.bak
+              cp .env.staging .env.staging.bak
+            fi
+
+            echo "Generating Clean docker-compose.staging.yml..."
+            # Note: Distinct Staging Ports (3001, 3501, 5174, 27018)
+            cat <<EOF_COMPOSE | sed 's/^            //' > docker-compose.staging.yml
+            services:
+              mongodb-staging:
+                image: mongo:latest
+                container_name: mongodb-staging
+                command: mongod --auth --wiredTigerCacheSizeGB 0.5 --quiet
+                restart: always
+                ports:
+                  - "127.0.0.1:27018:27017"
+                volumes:
+                  - mongodb_data_staging:/data/db
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '0.60'
+                      memory: 1024M
+                    reservations:
+                      cpus: '0.20'
+                      memory: 512M
+
+              backend-staging:
+                image: ghcr.io/${{ env.REPO_LOWER }}/backend:${{ github.sha }}-staging
+                restart: always
+                env_file: .env.staging
+                environment:
+                  - NODE_ENV=production
+                  - PORT=3501
+                  - UV_THREADPOOL_SIZE=2
+                  - NODE_OPTIONS=--max-old-space-size=192
+                ports:
+                  - "3501:3501"
+                volumes:  
+                  - /app/public:/app/public
+                  - /app/public/games:/app/public/games
+                  - /app/public/game:/app/public/game
+                  - /app/public/GeoLite2-City.mmdb:/app/public/GeoLite2-City.mmdb
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '0.50'
+                      memory: 384M
+                    reservations:
+                      cpus: '0.10'
+                      memory: 128M
+
+              client-staging:
+                image: ghcr.io/${{ env.REPO_LOWER }}/client:${{ github.sha }}-staging
+                restart: always
+                environment:
+                  - NODE_ENV=production
+                  - PORT=3001
+                  - NODE_OPTIONS=--max-old-space-size=256
+                ports:
+                  - "3001:3001"
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '0.40'
+                      memory: 384M
+                    reservations:
+                      cpus: '0.10'
+                      memory: 128M
+
+              admin-staging:
+                image: ghcr.io/${{ env.REPO_LOWER }}/admin:${{ github.sha }}-staging
+                restart: always
+                ports:
+                  - "5174:80"
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '0.20'
+                      memory: 64M
+                    reservations:
+                      cpus: '0.05'
+                      memory: 32M
+
+            volumes:
+              mongodb_data_staging:
+            EOF_COMPOSE
+
+            echo "Injecting Staging variables..."
+            # MONGODB_URI should point to mongodb-staging:27017 (internal docker networking) 
+            # OR localhost:27018 depending on how it's connected.
+            # Docker DNS 'mongodb-staging' is safest.
+            cat <<'EOF_ENV_FILE' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' > .env.staging
+            MONGODB_URI=${{ secrets.STAGING_MONGODB_URI || secrets.MONGODB_URI }}
+            ORIGINS=${{ secrets.STAGING_ORIGINS || secrets.ORIGINS }}
+            DOMAIN=staging.gtoarcade.com
+            EXPRESS_SESSION_SECRET=${{ secrets.STAGING_EXPRESS_SESSION_SECRET || secrets.EXPRESS_SESSION_SECRET }}
+            REFRESH_TOKEN_SECRET=${{ secrets.STAGING_REFRESH_TOKEN_SECRET || secrets.REFRESH_TOKEN_SECRET }}
+            ACCESS_TOKEN_SECRET=${{ secrets.STAGING_ACCESS_TOKEN_SECRET || secrets.ACCESS_TOKEN_SECRET }}
+            EZTEXTING_API_KEY=${{ secrets.EZTEXTING_API_KEY }}
+            EZTEXTING_API_SECRET=${{ secrets.EZTEXTING_API_SECRET }}
+            SMTP_USER=${{ secrets.SMTP_USER }}
+            SMTP_PASS=${{ secrets.SMTP_PASS }}
+            SMTP_PORT=${{ secrets.SMTP_PORT }}
+            SMTP_HOST=${{ secrets.SMTP_HOST }}
+            ACCESS_TOKEN_EXPIRY=${{ secrets.ACCESS_TOKEN_EXPIRY }}
+            REFRESH_TOKEN_EXPIRY=${{ secrets.REFRESH_TOKEN_EXPIRY }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            GOOGLE_CLIENT_CALLBACK_URI=${{ secrets.STAGING_GOOGLE_CLIENT_CALLBACK_URI || secrets.GOOGLE_CLIENT_CALLBACK_URI }}
+            CLIENT_SSO_REDIRECT_URL=${{ secrets.STAGING_CLIENT_SSO_REDIRECT_URL || secrets.CLIENT_SSO_REDIRECT_URL }}
+            FORGOT_PASSWORD_REDIRECT_URL=${{ secrets.STAGING_FORGOT_PASSWORD_REDIRECT_URL || secrets.FORGOT_PASSWORD_REDIRECT_URL }}
+            CLIENT_URL=https://staging.gtoarcade.com
+            WEBHOOK_CALLBACK_URL=${{ secrets.STAGING_WEBHOOK_CALLBACK_URL || secrets.WEBHOOK_CALLBACK_URL }}
+            PLISIO_API_KEY=${{ secrets.PLISIO_API_KEY }}
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            SOAP_API_KEY=${{ secrets.STAGING_SOAP_API_KEY || secrets.SOAP_API_KEY }}
+            SOAP_WEBHOOK_SECRET=${{ secrets.STAGING_SOAP_WEBHOOK_SECRET || secrets.SOAP_WEBHOOK_SECRET }}
+            SOAP_RETURN_URL=${{ secrets.STAGING_SOAP_RETURN_URL || secrets.SOAP_RETURN_URL }}
+            NOWPAYMENTS_API_KEY=${{ secrets.STAGING_NOWPAYMENTS_API_KEY || secrets.NOWPAYMENTS_API_KEY }}
+            TWILIO_MESSAGING_SERVICE_SID=${{ secrets.STAGING_TWILIO_MESSAGING_SERVICE_SID || secrets.TWILIO_MESSAGING_SERVICE_SID }}
+            TWILIO_PHONE_NUMBER=${{ secrets.STAGING_TWILIO_PHONE_NUMBER || secrets.TWILIO_PHONE_NUMBER }}
+            TWILIO_AUTH_TOKEN=${{ secrets.STAGING_TWILIO_AUTH_TOKEN || secrets.TWILIO_AUTH_TOKEN }}
+            TWILIO_ACCOUNT_SID=${{ secrets.STAGING_TWILIO_ACCOUNT_SID || secrets.TWILIO_ACCOUNT_SID }}
+            GOAT_PAYMENTS_USERNAME=${{ secrets.STAGING_GOAT_PAYMENTS_USERNAME || secrets.GOAT_PAYMENTS_USERNAME }}
+            GOAT_PAYMENTS_PASSWORD=${{ secrets.STAGING_GOAT_PAYMENTS_PASSWORD || secrets.GOAT_PAYMENTS_PASSWORD }}
+            CENTRYOS_API_KEY=${{ secrets.STAGING_CENTRYOS_API_KEY || secrets.CENTRYOS_API_KEY }}
+            CENTRYOS_WEBHOOK_SECRET=${{ secrets.STAGING_CENTRYOS_WEBHOOK_SECRET || secrets.CENTRYOS_WEBHOOK_SECRET }}
+            CENTRYOS_RETURN_URL=${{ secrets.STAGING_CENTRYOS_RETURN_URL || secrets.CENTRYOS_RETURN_URL }}
+            CENTRYOS_ACCESS_TOKEN=${{ secrets.STAGING_CENTRYOS_ACCESS_TOKEN || secrets.CENTRYOS_ACCESS_TOKEN }}
+            SENDGRID_API_KEY=${{ secrets.STAGING_SENDGRID_API_KEY || secrets.SENDGRID_API_KEY }}
+            SENDGRID_FROM_EMAIL=${{ secrets.STAGING_SENDGRID_FROM_EMAIL || secrets.SENDGRID_FROM_EMAIL }}
+            PORT=3501
+            PORT=3501
+            EOF_ENV_FILE
+
+            echo "Pulling Staging images..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            ./docker-compose -f docker-compose.staging.yml pull
+
+            echo "Deploying Staging..."
+            mkdir -p /app/uploads-staging
+
+            # Using --project-name staging to keep separate from prod
+            if ! ./docker-compose -p staging -f docker-compose.staging.yml up -d --remove-orphans; then
+              echo "Staging Deployment Failed!"
+              exit 1
+            fi
+
+            echo "Staging Deployed Successfully on Ports 3001, 3501, 5174, 27018"

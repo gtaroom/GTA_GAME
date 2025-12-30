@@ -6,6 +6,7 @@ import {
     AccordionTrigger,
 } from '@/components/ui/accordion';
 import { FaqItem, vipProgramFaqData } from '@/data/faq';
+import { sanitizeHtml } from '@/lib/html-sanitizer';
 
 export default function VIPProgramFAQ() {
     const accordion = (faq: FaqItem, index: number) => (
@@ -16,7 +17,9 @@ export default function VIPProgramFAQ() {
             <AccordionContent>
                 <div
                     className='faq-answer'
-                    dangerouslySetInnerHTML={{ __html: faq.answer }}
+                    dangerouslySetInnerHTML={{
+                        __html: sanitizeHtml(faq.answer),
+                    }}
                 />
             </AccordionContent>
         </AccordionItem>

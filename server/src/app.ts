@@ -86,40 +86,42 @@ const sessionConfig = {
  * - Credentials support for authenticated requests
  */
 const allowedOrigins = process.env.ORIGINS?.split(",") || [];
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       // Allow all origins dynamically
+//       callback(null, origin);
+//     },
+//     credentials: true,
+//   })
+// );
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow all origins dynamically
-      callback(null, origin);
+    origin: (origin, callback) => {
+      console.log("Request Origin:", origin);
+      console.log("Allowed Origins:", allowedOrigins);
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        console.log("✅ Allowed:", origin);
+        callback(null, true);
+      } else {
+        console.log("❌ Blocked:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
     },
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     credentials: true,
   })
 );
-// app.use(
-//   cors(
-//     {
-//     origin: (origin, callback) => {
-//       console.log("Request Origin:", origin);
-//       console.log("Allowed Origins:", allowedOrigins);
-
-//       if (!origin || allowedOrigins.includes(origin)) {
-//         console.log("✅ Allowed:", origin);
-//         callback(null, true);
-//       } else {
-//         console.log("❌ Blocked:", origin);
-//         callback(new Error("Not allowed by CORS"));
-//       }
-//     },
-//     methods: ['GET', 'POST','PATCH', 'PUT', 'DELETE'],
-//     credentials: true,
-//   }
-// )
-// );
+/**
+ * Maps the URL prefix "/uploads" to the physical "public" folder.
+ */
+app.use(express.static(path.join(process.cwd(), "public")));
 
 // Authentication and Session Middleware
 app.use(session(sessionConfig)); // Initialize session handling
-app.use(passport.initialize()); // Initialize Passport authentication
-app.use(passport.session()); // Enable persistent login sessions
+// app.use(passport.initialize()); // Initialize Passport authentication
+// app.use(passport.session()); // Enable persistent login sessions
 
 // Security and Performance Middleware
 app.use(helmet()); // Set security-related HTTP headers

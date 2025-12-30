@@ -62,7 +62,12 @@ export class CentryOSGateway implements SoapPaymentGateway {
 
     private async getHeaders() {
         // const accessToken = await this.generateAccessToken();
-        const accessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl91c2UiOiJhY2Nlc3MiLCJpc3MiOiJodHRwczovL2FwaS5hY2NvdW50cy53YWxsZXRvcy54eXovYXV0aG9yaXplciIsInNjb3BlIjoiZXh0ZXJuYWwuYXBpcyIsInN1YiI6ImRmNDk2YTQyLTA4YzItNDgxMi1hNDVhLTBkOTE5MmJiOTE5MSIsImlhdCI6MTc1ODEzMzEwMzYwNiwiZXhwIjoxNzU4MTM2NzAzNjA2fQ.Bvfzgye2pueAND26hdoHbmCfEU6tQINTj7tm7RcVFrI';
+        const accessToken = process.env.CENTRYOS_ACCESS_TOKEN;
+        
+        if (!accessToken) {
+            throw new ApiError(500, 'Missing CENTRYOS_ACCESS_TOKEN in environment variables');
+        }
+        
         return {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'

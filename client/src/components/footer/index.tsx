@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 
 import { useUI } from '@/contexts/ui-context';
-import { footerLinks, footerProgramsSection } from '@/data/footer';
+import { footerLinks } from '@/data/footer';
 import { footerSocialLinks } from '@/data/links';
 import { cn } from '@/lib/utils';
 
@@ -94,16 +94,19 @@ const Footer = () => {
                             </div>
                         </div>
 
-                        {/* Helper function to render a footer section */}
-                        {(() => {
-                            const renderFooterSection = (
-                                col: (typeof footerLinks)[0]
-                            ) => {
+                        {footerLinks.map((col, colIndex) => {
+                            if (
+                                isLoggedIn === false &&
+                                col.id === 'my-account'
+                            ) {
+                                return null;
+                            }
+
                             const isOpen = openSections[col.id] || false;
 
                             return (
                                 <div
-                                        key={col.id}
+                                    key={colIndex}
                                     className='max-lg:text-center w-full lg:w-auto'
                                 >
                                     {/* Accordion Header */}
@@ -165,9 +168,7 @@ const Footer = () => {
                                                             </>
                                                         ) : (
                                                             <Link
-                                                                    key={
-                                                                        linkIndex
-                                                                    }
+                                                                key={linkIndex}
                                                                 href={
                                                                     link.href ||
                                                                     '#'
@@ -192,128 +193,7 @@ const Footer = () => {
                                     </div>
                                 </div>
                             );
-                            };
-
-                            return (
-                                <>
-                                    {/* Quick Links - First */}
-                                    {renderFooterSection(footerLinks[0])}
-
-                                    {/* Programs & Rewards Section - Center (Only for logged-out users) */}
-                                    {!isLoggedIn && (
-                                        <div className='max-lg:text-center w-full lg:w-auto'>
-                                            {/* Accordion Header */}
-                                            <button
-                                                onClick={() =>
-                                                    toggleSection(
-                                                        footerProgramsSection.id
-                                                    )
-                                                }
-                                                className='w-full lg:cursor-default flex items-center justify-between lg:justify-start gap-2 mb-5'
-                                            >
-                                                <NeonText
-                                                    as='h4'
-                                                    className='h4-title'
-                                                >
-                                                    {
-                                                        footerProgramsSection.title
-                                                    }
-                                                </NeonText>
-                                                <ChevronDown
-                                                    className={cn(
-                                                        'lg:hidden w-5 h-5 text-white transition-transform duration-300',
-                                                        openSections[
-                                                            footerProgramsSection.id
-                                                        ] && 'rotate-180'
-                                                    )}
-                                                />
-                                            </button>
-
-                                            {/* Accordion Content */}
-                                            <div
-                                                className={cn(
-                                                    'lg:block overflow-hidden transition-all duration-300',
-                                                    openSections[
-                                                        footerProgramsSection.id
-                                                    ]
-                                                        ? 'max-h-[500px] opacity-100'
-                                                        : 'max-h-0 opacity-0 lg:max-h-none lg:opacity-100'
-                                                )}
-                                            >
-                                                <ul
-                                                    className={cn(
-                                                        'grid gap-x-[20px] gap-y-[14px]',
-                                                        'lg:grid-cols-2 grid-cols-1'
-                                                    )}
-                                                >
-                                                    {footerProgramsSection.links.map(
-                                                        (
-                                                            link,
-                                                            linkIndex
-                                                        ) => (
-                                                            <li key={linkIndex}>
-                                                                {link.isModal ? (
-                                                                    <>
-                                                                        <Dialog>
-                                                                            <DialogTrigger
-                                                                                asChild
-                                                                            >
-                                                                                <button
-                                                                                    className={
-                                                                                        commonLinkClass
-                                                                                    }
-                                                                                >
-                                                                                    {
-                                                                                        link.title
-                                                                                    }
-                                                                                </button>
-                                                                            </DialogTrigger>
-                                                                            {
-                                                                                link.isModalContent
-                                                                            }
-                                                                        </Dialog>
-                                                                    </>
-                                                                ) : (
-                                                                    <Link
-                                                                        key={
-                                                                            linkIndex
-                                                                        }
-                                                                        href={
-                                                                            link.href ||
-                                                                            '#'
-                                                                        }
-                                                                        title={
-                                                                            link.title
-                                                                        }
-                                                                        className={cn(
-                                                                            commonLinkClass,
-                                                                            pathname ===
-                                                                                link.href &&
-                                                                                'before:w-full before:border-white before:shadow-[0_0_6px_var(--color-purple-500),0_0_12px_var(--color-purple-500),0_0_18px_var(--color-purple-500),inset_0_0_6px_var(--color-purple-500)]'
-                                                                        )}
-                                                                    >
-                                                                        {
-                                                                            link.title
-                                                                        }
-                                                                    </Link>
-                                                                )}
-                                                            </li>
-                                                        )
-                                                    )}
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* My Account - Only for logged-in users */}
-                                    {isLoggedIn &&
-                                        renderFooterSection(footerLinks[1])}
-
-                                    {/* Legal & Policies - Last */}
-                                    {renderFooterSection(footerLinks[2])}
-                                </>
-                            );
-                        })()}
+                        })}
                     </div>
                 </div>
             </div>

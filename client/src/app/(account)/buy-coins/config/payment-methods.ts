@@ -7,7 +7,9 @@ export interface PaymentMethod {
     id: string;
     name: string;
     label: string;
-    icon: string;
+    icon?: string; // Single icon: Iconify icon string (e.g., 'logos:visa') or image path (e.g., '/payment-logos/visa.png')
+    icons?: string[]; // Multiple icons: Array of Iconify icon strings or image paths
+    iconType?: 'iconify' | 'image'; // Optional: defaults to 'iconify' if not specified
     color: string;
     description: string;
     available: boolean;
@@ -18,36 +20,36 @@ export const PAYMENT_METHODS: PaymentMethod[] = [
         id: 'goatpayments',
         name: 'goatpayments',
         label: 'Card/Apple Pay/GPay',
-        icon: 'lucide:credit-card',
+        icons: ['logos:visa', 'simple-icons:applepay', 'simple-icons:googlepay'],
         color: '--color-blue-500',
-        description: 'Pay with credit card, Apple Pay, or Google Pay',
+        description: 'Credit Card, Apple Pay, Google Pay',
         available: true, // Now enabled
     },
     {
         id: 'plisio',
         name: 'plisio',
         label: 'Crypto',
-        icon: 'tabler:currency-bitcoin',
+        icon: 'logos:bitcoin',
         color: '--color-orange-500',
-        description: ' Pay using Bitcoin, Ethereum, or other supported cryptocurrencies',
+        description: 'Bitcoin, Ethereum, Crypto',
         available: true,
     },
     {
         id: 'soap',
         name: 'soap',
         label: 'Card/Bank',
-        icon: 'mingcute:bank-line',
+        icon: 'logos:mastercard',
         color: '--color-green-500',
-        description: 'Pay using debit or or direct bank transfer',
+        description: 'Debit Card, Bank Transfer',
         available: true,
     },
     {
         id: 'centryos',
         name: 'centryos',
         label: 'CashApp/Wallet',
-        icon: 'lucide:smartphone',
+        icons: ['/payment-logos/icons8-cash-app.svg', 'simple-icons:applepay', 'simple-icons:googlepay'],
         color: '--color-purple-500',
-        description: 'Pay using CashApp, Apple Pay, or Google Pay',
+        description: 'CashApp, Apple Pay, Google Pay',
         available: true,
     },
 ];

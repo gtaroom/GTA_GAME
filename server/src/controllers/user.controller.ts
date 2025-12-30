@@ -35,6 +35,7 @@ import withdrawalRequestModel from "../models/withdrawal-request.model";
 import NotificationModel from "../models/notification.model";
 import AmoeModel from "../models/amoe-entry.model";
 import ReferralModel from "../models/referral.model";
+import { creditPendingAmoeEntries } from "../utils/credit-pending-entries.util";
 
 const generateAccessAndRefreshTokens = async (userId: string) => {
   try {
@@ -161,7 +162,7 @@ const registerUser = asyncHandler(async (req, res) => {
       isEmailVerified: false,
       isSmsOpted: acceptSMSMarketing || false,
       isOpted,
-      role: role || rolesEnum.USER,
+      role:  rolesEnum.USER,
     });
   } catch (error: any) {
     // Handle database constraint violations
@@ -477,6 +478,30 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
     });
     bonusData.updateLoginStreak();
     await bonusData.save();
+
+    // Credit any pending AMOE entries for this email
+    try {
+      const creditResult = await creditPendingAmoeEntries(
+        loggedInUser._id,
+        loggedInUser.email
+      );
+      if (creditResult.credited > 0) {
+        logger.info(
+          `Credited ${creditResult.credited} sweep coins from ${creditResult.entries.length} pending entries for user ${loggedInUser._id}`
+        );
+        // Refresh bonusData to reflect the newly credited coins
+        const updatedBonusData = await UserBonusModel.findOne({
+          userId: loggedInUser._id,
+        });
+        if (updatedBonusData) {
+          bonusData.sweepCoins = updatedBonusData.sweepCoins;
+        }
+      }
+    } catch (error) {
+      logger.error("Error crediting pending entries on login:", error);
+      // Don't block login if this fails
+    }
+
     response = {
       ...loggedInUser.toObject(),
       sweepCoins: bonusData.sweepCoins,
@@ -1417,7 +1442,7 @@ export const updateUserBalance = asyncHandler(async (req, res) => {
   if ((!balance && !type) || (!sweepCoins && !type)) {
     throw new ApiError(
       400,
-      "Please provide balance or sweepCoins and type(credit,debit) payload data"
+      "Please provide balance"
     );
   }
   const userBonus = await UserBonusModel.findOne({ userId: _id });

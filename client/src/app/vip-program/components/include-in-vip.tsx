@@ -21,11 +21,11 @@ export default function IncludeInVIP() {
             title: ' Level Up Reward',
             color: 'green',
         },
-        {
-            img: '/vip-program/features/3.png',
-            title: 'Weekly Reward',
-            color: 'lime',
-        },
+        // {
+        //     img: '/vip-program/features/3.png',
+        //     title: 'Weekly Reward',
+        //     color: 'lime',
+        // },
         {
             img: '/vip-program/features/4.png',
             title: 'Personal Manager',

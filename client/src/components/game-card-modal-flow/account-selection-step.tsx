@@ -44,10 +44,10 @@ export default function AccountSelectionStep({
         },
         {
             icon: 'lucide:user-plus',
-            title: 'I need a new account',
+            title: 'Create an account',
             value: 2,
             color: '--color-pink-500',
-            disabled: !hasEnoughBalance,
+            disabled: false, // CHANGED: Allow everyone to proceed
         },
     ];
 
@@ -133,10 +133,7 @@ export default function AccountSelectionStep({
                                 className={`w-full btn-neon ${xs ? 'mb-4' : 'mb-2'} ${option.disabled ? (option.value === 2 ? 'cursor-not-allowed ring-2 ring-yellow-400/50' : 'opacity-50 cursor-not-allowed') : ''}`}
                                 btnInnerClass='inline-flex items-center gap-3 uppercase'
                                 onClick={() => {
-                                    if (option.value === 2 && option.disabled) {
-                                        router.push('/buy-coins');
-                                        return;
-                                    }
+                                    // CHANGED: Always proceed to next step, no redirection
                                     if (!option.disabled) {
                                         onSelect?.(option.value);
                                     }

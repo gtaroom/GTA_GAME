@@ -1,0 +1,121 @@
+name: Run Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration_script:
+        description: "Migration script name"
+        required: true
+        default: "migrate-role-permissions.ts"
+        type: choice
+        options:
+          - migrate-role-permissions.ts
+
+jobs:
+  migrate:
+    name: Database Migration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_KEY }}
+          known_hosts: "placeholder"
+          if_key_exists: replace
+          config: |
+            Host production
+              HostName ${{ secrets.SSH_HOST }}
+              User ${{ secrets.SSH_USER }}
+              Port ${{ secrets.SSH_PORT || 22 }}
+              StrictHostKeyChecking no
+
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+
+      - name: Run Migration
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd ~/app
+
+            echo "🚀 Starting migration: ${{ github.event.inputs.migration_script }}"
+            echo "📅 Timestamp: $(date)"
+
+            if [ ! -f docker-compose ]; then
+              curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o docker-compose
+              chmod +x docker-compose
+            fi
+
+            if ! ./docker-compose -f docker-compose.prod.yml ps backend | grep -q "Up"; then
+              echo "❌ Backend service is not running!"
+              exit 1
+            fi
+
+            echo "✅ Backend service is running"
+            echo ""
+            echo "🔍 Checking container environment..."
+
+            # Check if ts-node exists
+            echo "Checking for ts-node..."
+            if ./docker-compose -f docker-compose.prod.yml exec -T backend test -f node_modules/.bin/ts-node; then
+              echo "✅ ts-node found in node_modules"
+              TS_NODE_CMD="node_modules/.bin/ts-node"
+            elif ./docker-compose -f docker-compose.prod.yml exec -T backend which ts-node 2>/dev/null; then
+              echo "✅ ts-node found globally"
+              TS_NODE_CMD="ts-node"
+            else
+              echo "❌ ts-node not found!"
+              echo ""
+              echo "📦 Checking if TypeScript files are compiled..."
+              
+              # Check if compiled JS exists
+              if ./docker-compose -f docker-compose.prod.yml exec -T backend test -f dist/scripts/migrate-role-permissions.js; then
+                echo "✅ Found compiled JavaScript version"
+                echo "Running migration with node..."
+                ./docker-compose -f docker-compose.prod.yml exec -T backend node dist/scripts/migrate-role-permissions.js
+                exit $?
+              elif ./docker-compose -f docker-compose.prod.yml exec -T backend test -f build/scripts/migrate-role-permissions.js; then
+                echo "✅ Found compiled JavaScript version in build/"
+                echo "Running migration with node..."
+                ./docker-compose -f docker-compose.prod.yml exec -T backend node build/scripts/migrate-role-permissions.js
+                exit $?
+              else
+                echo "❌ Neither ts-node nor compiled JS found!"
+                echo ""
+                echo "Available files in container:"
+                ./docker-compose -f docker-compose.prod.yml exec -T backend ls -la
+                echo ""
+                echo "Checking package.json scripts:"
+                ./docker-compose -f docker-compose.prod.yml exec -T backend cat package.json | grep -A 10 '"scripts"'
+                exit 1
+              fi
+            fi
+
+            # Run migration with ts-node
+            echo ""
+            echo "Running migration with $TS_NODE_CMD..."
+            ./docker-compose -f docker-compose.prod.yml exec -T backend $TS_NODE_CMD src/scripts/${{ github.event.inputs.migration_script }}
+
+            if [ $? -eq 0 ]; then
+              echo "✅ Migration completed successfully at $(date)"
+            else
+              echo "❌ Migration failed"
+              exit 1
+            fi
+
+      - name: Report Status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "::notice::Migration completed successfully"
+          else
+            echo "::error::Migration failed - check logs above"
+          fi
