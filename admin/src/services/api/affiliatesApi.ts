@@ -257,8 +257,8 @@ export const affiliatesApi = baseUserApi.injectEndpoints({
       providesTags: ["AffiliateStatistics"],
     }),
 
-    // Get all withdrawal requests
-    getAllWithdrawals: builder.query<WithdrawalsResponse, WithdrawalQueryParams>({
+    // Get all affiliate withdrawal requests
+    getAllAffiliateWithdrawals: builder.query<WithdrawalsResponse, WithdrawalQueryParams>({
       query: ({ page = 1, limit = 10, status, search }) => {
         const params = new URLSearchParams();
         params.append('page', page.toString());
@@ -282,8 +282,8 @@ export const affiliatesApi = baseUserApi.injectEndpoints({
       providesTags: ["AffiliateWithdrawals"],
     }),
 
-    // Get withdrawal statistics
-    getWithdrawalStatistics: builder.query<WithdrawalStatistics, void>({
+    // Get affiliate withdrawal statistics
+    getAffiliateWithdrawalStatistics: builder.query<WithdrawalStatistics, void>({
       query: () => `/admin/affiliate/withdrawals/stats`,
       transformResponse: (response: { 
         statusCode: number;
@@ -293,8 +293,8 @@ export const affiliatesApi = baseUserApi.injectEndpoints({
       providesTags: ["AffiliateWithdrawalStats"],
     }),
 
-    // Get single withdrawal request
-    getWithdrawalById: builder.query<AffiliateWithdrawal, string>({
+    // Get single affiliate withdrawal request
+    getAffiliateWithdrawalById: builder.query<AffiliateWithdrawal, string>({
       query: (id) => `/admin/affiliate/withdrawals/${id}`,
       transformResponse: (response: { 
         statusCode: number;
@@ -304,8 +304,8 @@ export const affiliatesApi = baseUserApi.injectEndpoints({
       providesTags: (result, error, id) => [{ type: "AffiliateWithdrawals", id }],
     }),
 
-    // Approve withdrawal request
-    approveWithdrawal: builder.mutation<AffiliateWithdrawal, { id: string; payload?: ApproveWithdrawalPayload }>({
+    // Approve affiliate withdrawal request
+    approveAffiliateWithdrawal: builder.mutation<AffiliateWithdrawal, { id: string; payload?: ApproveWithdrawalPayload }>({
       query: ({ id, payload }) => ({
         url: `/admin/affiliate/withdrawals/${id}/approve`,
         method: "POST",
@@ -323,8 +323,8 @@ export const affiliatesApi = baseUserApi.injectEndpoints({
       ],
     }),
 
-    // Reject withdrawal request
-    rejectWithdrawal: builder.mutation<AffiliateWithdrawal, { id: string; payload?: RejectWithdrawalPayload }>({
+    // Reject affiliate withdrawal request
+    rejectAffiliateWithdrawal: builder.mutation<AffiliateWithdrawal, { id: string; payload?: RejectWithdrawalPayload }>({
       query: ({ id, payload }) => ({
         url: `/admin/affiliate/withdrawals/${id}/reject`,
         method: "POST",
@@ -342,8 +342,8 @@ export const affiliatesApi = baseUserApi.injectEndpoints({
       ],
     }),
 
-    // Mark withdrawal as paid
-    markWithdrawalPaid: builder.mutation<AffiliateWithdrawal, { id: string; payload?: MarkPaidPayload }>({
+    // Mark affiliate withdrawal as paid
+    markAffiliateWithdrawalPaid: builder.mutation<AffiliateWithdrawal, { id: string; payload?: MarkPaidPayload }>({
       query: ({ id, payload }) => ({
         url: `/admin/affiliate/withdrawals/${id}/mark-paid`,
         method: "POST",
@@ -370,11 +370,11 @@ export const {
   useRejectAffiliateMutation,
   useUpdateAffiliateMutation,
   useGetAffiliateStatisticsQuery,
-  useGetAllWithdrawalsQuery,
-  useGetWithdrawalStatisticsQuery,
-  useGetWithdrawalByIdQuery,
-  useApproveWithdrawalMutation,
-  useRejectWithdrawalMutation,
-  useMarkWithdrawalPaidMutation,
+  useGetAllAffiliateWithdrawalsQuery,
+  useGetAffiliateWithdrawalStatisticsQuery,
+  useGetAffiliateWithdrawalByIdQuery,
+  useApproveAffiliateWithdrawalMutation,
+  useRejectAffiliateWithdrawalMutation,
+  useMarkAffiliateWithdrawalPaidMutation,
 } = affiliatesApi;
 

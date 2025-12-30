@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, Edit, Filter, Search, Shield, XCircle, Users, BarChart3, DollarSign, UserCheck, Wallet, Eye, RefreshCw } from 'lucide-react';
+import { CheckCircle, Edit, Filter, Search, Shield, XCircle, Users, BarChart3, DollarSign, UserCheck, Wallet, Eye } from 'lucide-react';
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
@@ -10,23 +10,21 @@ import { useToast } from '../context/ToastContext';
 import { usePermissions } from '../hooks/usePermissions';
 import {
   useGetAllAffiliatesQuery,
-  useGetAffiliateByIdQuery,
   useApproveAffiliateMutation,
   useRejectAffiliateMutation,
   useUpdateAffiliateMutation,
   useGetAffiliateStatisticsQuery,
-  useGetAllWithdrawalsQuery,
-  useGetWithdrawalStatisticsQuery,
-  useGetWithdrawalByIdQuery,
-  useApproveWithdrawalMutation,
-  useRejectWithdrawalMutation,
-  useMarkWithdrawalPaidMutation,
+  useGetAllAffiliateWithdrawalsQuery,
+  useGetAffiliateWithdrawalStatisticsQuery,
+  useApproveAffiliateWithdrawalMutation,
+  useRejectAffiliateWithdrawalMutation,
+  useMarkAffiliateWithdrawalPaidMutation,
   Affiliate,
   AffiliateWithdrawal
 } from '../services/api/affiliatesApi';
 
 const AffiliateManagement: React.FC = () => {
-  const { hasPermission, user } = usePermissions();
+  const { user } = usePermissions();
   const { showToast } = useToast();
   
   // Tab state
@@ -86,7 +84,7 @@ const AffiliateManagement: React.FC = () => {
   const queryParams = {
     page: currentPage,
     limit,
-    status: filterStatus || undefined,
+    status: (filterStatus as "pending" | "approved" | "rejected" | undefined) || undefined,
     search: searchTerm || undefined
   };
 
@@ -108,7 +106,7 @@ const AffiliateManagement: React.FC = () => {
   const withdrawalQueryParams = {
     page: withdrawalPage,
     limit,
-    status: withdrawalFilterStatus || undefined,
+    status: (withdrawalFilterStatus as "pending" | "approved" | "rejected" | "paid" | undefined) || undefined,
     search: withdrawalSearchTerm || undefined
   };
 
@@ -117,18 +115,18 @@ const AffiliateManagement: React.FC = () => {
     data: withdrawalsData, 
     isLoading: withdrawalsLoading, 
     refetch: refetchWithdrawals 
-  } = useGetAllWithdrawalsQuery(withdrawalQueryParams, {
+  } = useGetAllAffiliateWithdrawalsQuery(withdrawalQueryParams, {
     refetchOnMountOrArgChange: true,
     skip: activeTab !== 'withdrawals'
   });
 
-  const { data: withdrawalStats } = useGetWithdrawalStatisticsQuery(undefined, {
+  const { data: withdrawalStats } = useGetAffiliateWithdrawalStatisticsQuery(undefined, {
     skip: activeTab !== 'withdrawals'
   });
 
-  const [approveWithdrawal, { isLoading: isApprovingWithdrawal }] = useApproveWithdrawalMutation();
-  const [rejectWithdrawal, { isLoading: isRejectingWithdrawal }] = useRejectWithdrawalMutation();
-  const [markWithdrawalPaid, { isLoading: isMarkingPaid }] = useMarkWithdrawalPaidMutation();
+  const [approveAffiliateWithdrawal, { isLoading: isApprovingWithdrawal }] = useApproveAffiliateWithdrawalMutation();
+  const [rejectAffiliateWithdrawal, { isLoading: isRejectingWithdrawal }] = useRejectAffiliateWithdrawalMutation();
+  const [markAffiliateWithdrawalPaid, { isLoading: isMarkingPaid }] = useMarkAffiliateWithdrawalPaidMutation();
 
   // Check if user is ADMIN
   const isAdmin = user?.role === 'ADMIN';
@@ -300,7 +298,7 @@ const AffiliateManagement: React.FC = () => {
     if (!selectedWithdrawal) return;
     
     try {
-      await approveWithdrawal({
+      await approveAffiliateWithdrawal({
         id: selectedWithdrawal._id,
         payload: withdrawalApproveForm
       }).unwrap();
@@ -317,7 +315,7 @@ const AffiliateManagement: React.FC = () => {
     if (!selectedWithdrawal) return;
     
     try {
-      await rejectWithdrawal({
+      await rejectAffiliateWithdrawal({
         id: selectedWithdrawal._id,
         payload: withdrawalRejectForm
       }).unwrap();
@@ -334,7 +332,7 @@ const AffiliateManagement: React.FC = () => {
     if (!selectedWithdrawal) return;
     
     try {
-      await markWithdrawalPaid({
+      await markAffiliateWithdrawalPaid({
         id: selectedWithdrawal._id,
         payload: withdrawalMarkPaidForm
       }).unwrap();
