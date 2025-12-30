@@ -45,7 +45,7 @@ export default function SpinWheelRewardModal({
     }, []);
 
     const coinIcon = reward.type === 'GC' ? '/coins/bronze-coin.svg' : '/coins/sweep-coin.svg';
-    const coinName = reward.type === 'GC' ? 'Gold Coins' : 'Silver Coins';
+    const coinName = reward.type === 'GC' ? 'Gold Coins' : 'Sweep Coins';
     
     // Determine rarity color and celebration level
     const getRarityColor = () => {

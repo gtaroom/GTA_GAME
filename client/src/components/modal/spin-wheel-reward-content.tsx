@@ -41,7 +41,7 @@ export default function SpinWheelRewardContent({
     }, []);
 
     const coinIcon = reward.type === 'GC' ? '/coins/bronze-coin.svg' : '/coins/sweep-coin.svg';
-    const coinName = reward.type === 'GC' ? 'Gold Coins' : 'Silver Coins';
+    const coinName = reward.type === 'GC' ? 'Gold Coins' : 'Sweep Coins';
     
     // Use type-based colors: Gold for GC, Green for SC
     // GC = Gold Coins = Gold/Orange color

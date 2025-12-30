@@ -379,7 +379,7 @@ function SpinWheelModal({ initialSpinsAvailable = 0, onSpinsUpdate, onClose }: S
                                 }
 
                                 toastSuccess(
-                                    `Successfully claimed ${rewardToClaim.amount} ${rewardToClaim.type === 'GC' ? 'Gold Coins' : 'Silver Coins'}!`
+                                    `Successfully claimed ${rewardToClaim.amount} ${rewardToClaim.type === 'GC' ? 'Gold Coins' : 'Sweep Coins'}!`
                                 );
 
                                 // Refresh eligibility to get updated spin count
@@ -497,7 +497,7 @@ function SpinWheelModal({ initialSpinsAvailable = 0, onSpinsUpdate, onClose }: S
                 }
 
                 toastSuccess(
-                    `Successfully claimed ${reward.amount} ${reward.type === 'GC' ? 'Gold Coins' : 'Silver Coins'}!`
+                    `Successfully claimed ${reward.amount} ${reward.type === 'GC' ? 'Gold Coins' : 'Sweep Coins'}!`
                 );
 
                 // Reset and refresh
