@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import BannerModel from "../models/banner.model";
-import fs from "fs/promises"; // Use promises for professional async handling
+import fs from "fs/promises";
 import path from "path";
 
 /**

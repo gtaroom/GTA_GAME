@@ -29,7 +29,7 @@ export default function CoinCalculator() {
     const calculateCoins = () => {
         const numAmount = parseFloat(amount);
 
-        if (isNaN(numAmount) || numAmount < 5) {
+        if (isNaN(numAmount) || numAmount < 10) {
             setCalculatedCoins(null);
             return;
         }
@@ -39,7 +39,7 @@ export default function CoinCalculator() {
         let bonusCoins = 0;
 
         // Bonus calculation: Every $10 gets bonus, capped at 500
-        if (numAmount >= 5) {
+        if (numAmount >= 10) {
             const bonusTier = Math.floor(numAmount / 10);
             bonusCoins = Math.min((bonusTier + 1) * 100, 500); // Cap at 500
         }
@@ -112,14 +112,14 @@ export default function CoinCalculator() {
                                 value={amount}
                                 onChange={handleAmountChange}
                                 onKeyPress={handleKeyPress}
-                                min='5'
+                                min='10'
                                 step='0.01'
                             />
                             <Button
                                 variant='secondary'
                                 size={ELEMENT_SIZE}
                                 onClick={calculateCoins}
-                                disabled={!amount || parseFloat(amount) < 5}
+                                disabled={!amount || parseFloat(amount) < 10}
                             >
                                 Calculate & Buy
                             </Button>
@@ -183,7 +183,7 @@ export default function CoinCalculator() {
                         )}
 
                         <span className='capitalize font-bold'>
-                            Enter an amount (minimum $5) to customize your
+                            Enter an amount (minimum $10) to customize your
                             package.
                         </span>
                     </div>

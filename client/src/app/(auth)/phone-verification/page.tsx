@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import PINInput from '@/components/ui/pin-input';
 import { useAuth } from '@/contexts/auth-context';
 import { resendPhoneOTP, verifyPhoneOTP } from '@/lib/api/auth';
-import { Mail } from 'lucide-react';
 import { useTransitionRouter } from 'next-transition-router';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -155,12 +154,9 @@ export default function PhoneOTPVerification() {
                 </div>
 
                 {/* Email Verification Reminder - Matches site theme */}
-                <div className='w-full space-y-4'>
-                    {/* Gradient Border Banner - Purple/Pink theme */}
+                {/* <div className='w-full space-y-4'>
                     <div className='rounded-2xl p-[2px] bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-400'>
-                        {/* Inner gradient box - matches site colors */}
                         <div className='bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 rounded-2xl px-5 py-4'>
-                            {/* Header with Icon */}
                             <div className='flex items-center justify-center gap-3'>
                                 <div className='bg-blue-500 rounded-lg p-2 shadow-lg flex-shrink-0'>
                                     <Mail
@@ -175,7 +171,6 @@ export default function PhoneOTPVerification() {
                         </div>
                     </div>
 
-                    {/* Description Text - Using NeonText component like rest of site */}
                     <NeonText
                         className='text-center text-sm leading-relaxed'
                         glowSpread={0.5}
@@ -187,7 +182,7 @@ export default function PhoneOTPVerification() {
                         — verifying both makes it easier to recover your account
                         later.
                     </NeonText>
-                </div>
+                </div> */}
 
                 {/* Error/Success Messages */}
                 {error && (
