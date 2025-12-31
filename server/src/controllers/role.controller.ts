@@ -26,7 +26,6 @@ const createRole = asyncHandler(async (req: Request, res: Response) => {
 
   // Validate permissions structure - Allow any custom permission
   const providedPermissions = Object.keys(permissions || {});
-
   console.log("Creating role with permissions:", providedPermissions);
 
   // Validate that all permissions are boolean values
@@ -209,7 +208,6 @@ const assignRoleToUser = asyncHandler(async (req: Request, res: Response) => {
   // Check if role exists (either built-in or custom)
   const isBuiltInRole = AvailableRoles.includes(role as any);
   const customRole = await RoleModel.findOne({ name: role, isActive: true });
-
   if (!isBuiltInRole && !customRole) {
     throw new ApiError(404, "Role not found");
   }

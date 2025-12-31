@@ -214,21 +214,21 @@ const UserProfile = () => {
                             />
                         </NeonBox>
                     ) : ( */}
-                    {/* // DESKTOP: Show avatar too (or you can keep the button if you prefer) */}
-                    <NeonBox
-                        glowSpread={0.8}
-                        backgroundColor='--color-purple-500'
-                        backgroundOpacity={0.2}
-                        className='p-1 w-[48px] aspect-square rounded-full overflow-hidden backdrop-blur-2xl cursor-pointer'
-                    >
-                        <Image
-                            src={avatarUrl}
-                            width={200}
-                            height={200}
-                            alt='Profile Avatar'
-                            className='h-full w-full object-cover object-center rounded-full'
-                        />
-                    </NeonBox>
+                        {/* // DESKTOP: Show avatar too (or you can keep the button if you prefer) */}
+                        <NeonBox
+                            glowSpread={0.8}
+                            backgroundColor='--color-purple-500'
+                            backgroundOpacity={0.2}
+                            className='p-1 w-[48px] aspect-square rounded-full overflow-hidden backdrop-blur-2xl cursor-pointer'
+                        >
+                            <Image
+                                src={avatarUrl}
+                                width={200}
+                                height={200}
+                                alt='Profile Avatar'
+                                className='h-full w-full object-cover object-center rounded-full'
+                            />
+                        </NeonBox>
                     {/* )} */}
                 </DropdownMenuTrigger>
                 <DropdownMenuContent

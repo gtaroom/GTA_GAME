@@ -1,8 +1,14 @@
 // types/SpinWheel.ts
+export interface GradientColor {
+    from: string;
+    to: string;
+    deg?: number;
+}
+
 export interface SpinWheelOption {
     id: string;
     label: React.ReactNode;
-    color?: string;
+    color?: string | GradientColor;
     value?: any;
 }
 
@@ -20,4 +26,6 @@ export interface SpinWheelProps {
     revealOffsetMs?: number;
     // If your visual pointer is not exactly at 12 o'clock, calibrate here (degrees)
     pointerOffsetDeg?: number;
+    // Disable idle rotation (useful when wheel is in a modal)
+    disableIdleRotation?: boolean;
 }

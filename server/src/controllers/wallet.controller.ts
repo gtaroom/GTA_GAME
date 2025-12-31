@@ -21,6 +21,7 @@ import notificationService from "../services/notification.service";
 import twilioService from "../services/twilio.service";
 import { formatPhoneNumber } from "../utils/phone-formatter";
 import vipService from "../services/vip.service";
+import referralService from "../services/referral.service";
 // Get user's wallet
 export const getWallet = asyncHandler(async (req: Request, res: Response) => {
   const { _id: userId } = getUserFromRequest(req);
@@ -337,6 +338,9 @@ export const processGoatPayment = asyncHandler(
 
       // Update VIP tier after deposit
       await vipService.updateUserTier(userId);
+
+      // Check and qualify referrals
+      await referralService.checkAndQualifyReferrals(userId.toString(), transaction.amount);
 
       logger.info(
         `Goat deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x`
@@ -813,7 +817,7 @@ export const getDashboardTransactions = asyncHandler(
     // Handle null userId/walletId from deleted users/wallets - still show transaction for tracking
     const safeTransactions = transactions.map((transaction) => {
       const transactionObj = transaction.toObject();
-
+      
       // Handle null userId (deleted user)
       if (!transactionObj.userId || transactionObj.userId === null) {
         transactionObj.userId = {
@@ -823,7 +827,7 @@ export const getDashboardTransactions = asyncHandler(
           isDeleted: true,
         };
       }
-
+      
       // Handle null walletId (deleted wallet)
       if (!transactionObj.walletId || transactionObj.walletId === null) {
         transactionObj.walletId = {
@@ -832,7 +836,7 @@ export const getDashboardTransactions = asyncHandler(
           isDeleted: true,
         };
       }
-
+      
       return transactionObj;
     });
 
@@ -939,6 +943,22 @@ export const handlePaymentWebhook = asyncHandler(
 
           // Update VIP tier after deposit
           await vipService.updateUserTier(transaction.userId);
+
+          // Check and qualify referrals
+          await referralService.checkAndQualifyReferrals(
+            transaction.userId.toString(),
+            transaction.amount
+          );
+
+          // Check spin wheel thresholds after deposit
+          try {
+            const spinWheelService = (await import("../services/spin-wheel.service")).default;
+            await spinWheelService.updateEligibilitySpins(transaction.userId);
+            logger.debug(`Updated spin wheel eligibility for user ${transaction.userId} after deposit`);
+          } catch (error) {
+            logger.error(`Error updating spin wheel eligibility after deposit:`, error);
+            // Don't fail deposit if spin wheel update fails
+          }
 
           logger.info(
             `Deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
@@ -1157,6 +1177,12 @@ export const handleSoapWebhook = asyncHandler(
 
           // Update VIP tier after deposit
           await vipService.updateUserTier(transaction.userId);
+
+          // Check and qualify referrals
+          await referralService.checkAndQualifyReferrals(
+            transaction.userId.toString(),
+            transaction.amount
+          );
 
           logger.info(
             `Soap deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
@@ -1615,6 +1641,12 @@ export const handleNowPaymentsWebhook = asyncHandler(
             // Update VIP tier after deposit
             await vipService.updateUserTier(transaction.userId);
 
+            // Check and qualify referrals
+            await referralService.checkAndQualifyReferrals(
+              transaction.userId.toString(),
+              transaction.amount
+            );
+
             logger.info(
               `NowPayments deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
             );
@@ -1855,6 +1887,12 @@ export const handleGoatWebhook = asyncHandler(
 
               // Update VIP tier after deposit
               await vipService.updateUserTier(transaction.userId);
+
+              // Check and qualify referrals
+              await referralService.checkAndQualifyReferrals(
+                transaction.userId.toString(),
+                transaction.amount
+              );
 
               logger.info(
                 `Goat webhook deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`
@@ -2104,6 +2142,12 @@ export const handleCentryOSWebhook = asyncHandler(
 
             // Update VIP tier after deposit
             await vipService.updateUserTier(transaction.userId);
+
+            // Check and qualify referrals
+            await referralService.checkAndQualifyReferrals(
+              transaction.userId.toString(),
+              transaction.amount
+            );
 
             logger.info(
               `CentryOS deposit bonus applied: base=${bonusCalculation.baseBonus}, vip=${bonusCalculation.vipBonus}, total=${bonusCalculation.totalBonus}, multiplier=${bonusCalculation.multiplier}x, tier=${vipTier.currentTier}`

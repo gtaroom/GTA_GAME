@@ -228,7 +228,6 @@ export default function PaymentModal({
                                 />
                             </div>
                         </div>
-
                         <div className='space-y-3'>
                             <NeonText
                                 as='h2'

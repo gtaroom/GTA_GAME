@@ -1,0 +1,227 @@
+import {
+    ChevronLeft,
+    ChevronRight,
+    Pause,
+    Play,
+    Volume2,
+    VolumeX,
+    X,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+const VideoSlider = () => {
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(true);
+    const [isMuted, setIsMuted] = useState(true);
+    const [progress, setProgress] = useState(0);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const videos = [
+        {
+            id: 'e5ZcdY4GSy0',
+            title: 'How to Play',
+            description:
+                'In this video, we walk you through the entire player journey',
+            gradient: 'from-purple-600/80 to-pink-600/80',
+        },
+        {
+            id: '4kd7yetMnK4',
+            title: 'How It Works GC, Exclusive GC & Sweeps Coins',
+            description:
+                'We break down exactly how our ecosystem works so you can maximize your gameplay',
+            gradient: 'from-blue-600/80 to-cyan-600/80',
+        },
+        {
+            id: 'WQkfgGu83Ng',
+            title: 'How To Purchase Gold Coins',
+            description:
+                'Here is the official guide on how to purchase Gold Coins at GTOA',
+            gradient: 'from-orange-600/80 to-red-600/80',
+        },
+        {
+            id: '5LrxNgFp8Bg',
+            title: 'How To Redeem Sweeps Coins',
+            description:
+                'Here is exactly how to redeem your Sweeps Coins for prizes at GTOA',
+            gradient: 'from-green-600/80 to-emerald-600/80',
+        },
+    ];
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (isPlaying && !isModalOpen) {
+                setProgress(prev => {
+                    if (prev >= 100) {
+                        handleNext();
+                        return 0;
+                    }
+                    return prev + 0.5;
+                });
+            }
+        }, 50);
+
+        return () => clearInterval(interval);
+    }, [isPlaying, currentIndex, isModalOpen]);
+
+    const handlePrevious = () => {
+        setCurrentIndex(prev => (prev === 0 ? videos.length - 1 : prev - 1));
+        setProgress(0);
+    };
+
+    const handleNext = () => {
+        setCurrentIndex(prev => (prev === videos.length - 1 ? 0 : prev + 1));
+        setProgress(0);
+    };
+
+    const togglePlay = () => setIsPlaying(!isPlaying);
+    const toggleMute = () => setIsMuted(!isMuted);
+
+    return (
+        <div className='w-full bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 py-6 sm:py-10 px-3 sm:px-6 overflow-hidden font-sans'>
+            <div className='w-full max-w-7xl mx-auto relative'>
+                <div className='relative aspect-video rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl shadow-purple-500/50'>
+                    <div className='absolute inset-0'>
+                        <iframe
+                            src={`https://www.youtube.com/embed/${videos[currentIndex].id}?autoplay=1&mute=${isMuted ? 1 : 0}&controls=0&showinfo=0&rel=0&loop=1&playlist=${videos[currentIndex].id}`}
+                            className='w-full h-full scale-150'
+                            allow='autoplay; encrypted-media'
+                            style={{ border: 'none', pointerEvents: 'none' }}
+                        />
+                    </div>
+
+                    <div
+                        className={`absolute inset-0 bg-gradient-to-r ${videos[currentIndex].gradient} mix-blend-multiply transition-all duration-1000`}
+                    />
+
+                    <div className='relative h-full flex flex-col justify-between p-4 sm:p-6 md:p-12 lg:p-16'>
+                        <div className='flex gap-1 sm:gap-2 mb-2 sm:mb-4'>
+                            {videos.map((_, idx) => (
+                                <div
+                                    key={idx}
+                                    className='flex-1 h-0.5 sm:h-1 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm'
+                                >
+                                    <div
+                                        className='h-full bg-white rounded-full transition-all duration-300'
+                                        style={{
+                                            width:
+                                                idx === currentIndex
+                                                    ? `${progress}%`
+                                                    : idx < currentIndex
+                                                      ? '100%'
+                                                      : '0%',
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className='flex-1 flex items-center justify-center'>
+                            <div className='max-w-2xl space-y-2 sm:space-y-3 md:space-y-4 text-center sm:text-left px-2'>
+                                <h1 className='text-xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-white leading-tight drop-shadow-2xl'>
+                                    {videos[currentIndex].title}
+                                </h1>
+                                <p className='text-xs sm:text-base md:text-lg lg:text-xl text-white/90 drop-shadow-lg line-clamp-2'>
+                                    {videos[currentIndex].description}
+                                </p>
+                                <button
+                                    onClick={() => setIsModalOpen(true)}
+                                    className='px-5 py-2.5 sm:px-8 sm:py-4 bg-white text-purple-900 rounded-full font-bold text-sm sm:text-lg hover:bg-purple-100 transform hover:scale-105 transition-all duration-300 shadow-2xl mt-2 sm:mt-4'
+                                >
+                                    Watch Video
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className='flex items-center justify-between'>
+                            <div className='flex items-center gap-2 sm:gap-4'>
+                                <button
+                                    onClick={togglePlay}
+                                    className='w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-all'
+                                >
+                                    {isPlaying ? (
+                                        <Pause className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
+                                    ) : (
+                                        <Play className='w-4 h-4 sm:w-5 sm:h-5 text-white ml-0.5' />
+                                    )}
+                                </button>
+                                <button
+                                    onClick={toggleMute}
+                                    className='w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center hover:bg-white/30 transition-all'
+                                >
+                                    {isMuted ? (
+                                        <VolumeX className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
+                                    ) : (
+                                        <Volume2 className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
+                                    )}
+                                </button>
+                            </div>
+                            <div className='text-white/80 text-xs sm:text-sm font-medium backdrop-blur-sm bg-white/10 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full'>
+                                {currentIndex + 1} / {videos.length}
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={handlePrevious}
+                        className='absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-all'
+                    >
+                        <ChevronLeft className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
+                    </button>
+                    <button
+                        onClick={handleNext}
+                        className='absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-14 sm:h-14 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-all'
+                    >
+                        <ChevronRight className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
+                    </button>
+                </div>
+
+                <div className='flex gap-2 sm:gap-4 mt-3 sm:mt-6 justify-center overflow-x-auto pb-2'>
+                    {videos.map((video, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => {
+                                setCurrentIndex(idx);
+                                setProgress(0);
+                            }}
+                            className={`relative w-16 h-12 sm:w-24 sm:h-16 rounded-md sm:rounded-lg overflow-hidden transition-all flex-shrink-0 ${idx === currentIndex ? 'ring-2 sm:ring-4 ring-white scale-105 sm:scale-110' : 'opacity-60 hover:opacity-100'}`}
+                        >
+                            <img
+                                src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
+                                className='w-full h-full object-cover'
+                                alt=''
+                            />
+                            <div
+                                className={`absolute inset-0 bg-gradient-to-r ${video.gradient} mix-blend-multiply`}
+                            />
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {isModalOpen && (
+                <div className='fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-10'>
+                    <div
+                        className='absolute inset-0 bg-black/90 backdrop-blur-sm'
+                        onClick={() => setIsModalOpen(false)}
+                    />
+                    <div className='relative w-full max-w-5xl aspect-video bg-black rounded-lg sm:rounded-2xl overflow-hidden shadow-2xl'>
+                        <button
+                            onClick={() => setIsModalOpen(false)}
+                            className='absolute top-2 right-2 sm:top-4 sm:right-4 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors'
+                        >
+                            <X className='w-5 h-5 sm:w-6 sm:h-6' />
+                        </button>
+                        <iframe
+                            src={`https://www.youtube.com/embed/${videos[currentIndex].id}?autoplay=1&controls=1&rel=0`}
+                            className='w-full h-full'
+                            allow='autoplay; encrypted-media; fullscreen'
+                            allowFullScreen
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default VideoSlider;

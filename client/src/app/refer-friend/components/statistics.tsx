@@ -1,10 +1,21 @@
+'use client';
 import AccountPageTitle from '@/app/(account)/profile/components/account-page-title';
 import NeonBox from '@/components/neon/neon-box';
 import NeonText from '@/components/neon/neon-text';
 import { Icon } from '@iconify/react';
 import Image from 'next/image';
+import { useReferral } from '@/hooks/useReferral';
+import { useEffect } from 'react';
+import NeonIcon from '@/components/neon/neon-icon';
 
 export default function Statistics({ isLoggedIn }: { isLoggedIn?: boolean }) {
+    const { stats, isLoadingStats, fetchStats } = useReferral();
+
+    useEffect(() => {
+        if (isLoggedIn) {
+            fetchStats();
+        }
+    }, [isLoggedIn, fetchStats]);
     const StatisticBox = ({
         title,
         children,
@@ -39,63 +50,86 @@ export default function Statistics({ isLoggedIn }: { isLoggedIn?: boolean }) {
 
                 <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
                     <StatisticBox title='Friends statistics'>
-                        {[
-                            {
-                                icon: 'lucide:user',
-                                label: 'Friends invited',
-                                value: 0,
-                            },
-                            {
-                                icon: 'lucide:check-circle',
-                                label: 'Friends qualified',
-                                value: 0,
-                            },
-                        ].map((item, index) => (
-                            <li
-                                className='flex flex-col items-center lg:items-start'
-                                key={index}
-                            >
-                                <div className='flex items-center gap-3'>
-                                    <Icon icon={item.icon} fontSize={24} />
-                                    <span className='text-2xl font-bold'>
-                                        {item.value}
-                                    </span>
-                                </div>
-                                <span className='capitalize'>{item.label}</span>
+                        {isLoadingStats ? (
+                            <li className='flex items-center justify-center w-full py-8'>
+                                <NeonIcon
+                                    icon='svg-spinners:bars-rotate-fade'
+                                    size={32}
+                                />
                             </li>
-                        ))}
+                        ) : (
+                            [
+                                {
+                                    icon: 'lucide:user',
+                                    label: 'Friends invited',
+                                    value: stats.totalInvited || 0,
+                                },
+                                {
+                                    icon: 'lucide:check-circle',
+                                    label: 'Friends qualified',
+                                    value: stats.qualified || 0,
+                                },
+                            ].map((item, index) => (
+                                <li
+                                    className='flex flex-col items-center lg:items-start'
+                                    key={index}
+                                >
+                                    <div className='flex items-center gap-3'>
+                                        <Icon icon={item.icon} fontSize={24} />
+                                        <span className='text-2xl font-bold'>
+                                            {item.value}
+                                        </span>
+                                    </div>
+                                    <span className='capitalize'>
+                                        {item.label}
+                                    </span>
+                                </li>
+                            ))
+                        )}
                     </StatisticBox>
                     <StatisticBox title='Your rewards'>
-                        {[
-                            {
-                                image: '/coins/gold-coin.svg',
-                                label: 'Gold coins earned',
-                                value: 0,
-                            },
-                            {
-                                image: '/coins/sweep-coin.svg',
-                                label: 'Sweep coins earned',
-                                value: 0,
-                            },
-                        ].map((item, index) => (
-                            <li
-                                className='flex flex-col items-center lg:items-start'
-                                key={index}
-                            >
-                                <div className='flex items-center gap-3'>
-                                    <Image
-                                        src={item.image}
-                                        height={24}
-                                        width={24}
-                                        alt={item.label}
-                                    />
-                                    <span className='text-2xl font-bold'>
-                                        {item.value}
-                                    </span>
-                                </div>
-                                <span className='capitalize'>{item.label}</span>
+                        {isLoadingStats ? (
+                            <li className='flex items-center justify-center w-full py-8'>
+                                <NeonIcon
+                                    icon='svg-spinners:bars-rotate-fade'
+                                    size={32}
+                                />
                             </li>
-                        ))}
+                        ) : (
+                            [
+                                {
+                                    image: '/coins/bronze-coin.svg',
+                                    label: 'Total rewards earned',
+                                    value: stats.totalRewards || 0,
+                                    subtext: '1,000 Gold Coins per qualified friend',
+                                },
+                            ].map((item, index) => (
+                                <li
+                                    className='flex flex-col items-center lg:items-start w-full'
+                                    key={index}
+                                >
+                                    <div className='flex items-center gap-3'>
+                                        <Image
+                                            src={item.image}
+                                            height={24}
+                                            width={24}
+                                            alt={item.label}
+                                        />
+                                        <span className='text-2xl font-bold'>
+                                            {item.value}
+                                        </span>
+                                    </div>
+                                    <span className='capitalize'>
+                                        {item.label}
+                                    </span>
+                                    {item.subtext && (
+                                        <span className='text-xs text-white/60 mt-1'>
+                                            {item.subtext}
+                                        </span>
+                                    )}
+                                </li>
+                            ))
+                        )}
                     </StatisticBox>
                 </div>
             </div>
