@@ -28,6 +28,8 @@ import roleRouter from "./role.route"; // Role management routes
 import userManagementRouter from "./user-management.route"; // User management routes
 import vipRouter from "./vip.route"; // VIP tier system routes
 import spinWheelRouter from "./spin-wheel.route"; // Spin wheel routes
+import referralRouter from "./referral.route"; // Referral system routes
+import affiliateRouter from "./affiliate.route"; // Affiliate partnership routes
 import migrationRouter from "./migration.routes";
 import mailchimpRouter from "./mailchimp.routes"; // Email marketing routes
 import twilioRouter from "./twilio.routes"; // SMS marketing routes
@@ -55,6 +57,9 @@ router.use("/roles", roleRouter); // Role management endpoints
 router.use("/user-management", userManagementRouter); // User management endpoints
 router.use("/vip", vipRouter); // VIP tier system endpoints
 router.use("/spin-wheel", spinWheelRouter); // Spin wheel endpoints
+router.use("/referral", referralRouter); // Referral system endpoints
+router.use("/affiliate", affiliateRouter); // Affiliate partnership endpoints
+
 router.use("/email-marketing", mailchimpRouter); // Email marketing endpoints
 router.use("/sms-marketing", twilioRouter); // SMS marketing endpoints
 router.use("/legal", legalRouter); // Legal document management endpoints

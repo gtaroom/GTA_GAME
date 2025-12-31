@@ -131,7 +131,7 @@ userRouter.post(
   "/update-wallet-balance",
   verifyJWT,
   updateUserExclusiveBalance
-);   // In progress yet and in test for exclusive games yet will be adding security tokens for it.
+);
 userRouter.put(
   "/update-balance/:userId",
   verifyJWT,

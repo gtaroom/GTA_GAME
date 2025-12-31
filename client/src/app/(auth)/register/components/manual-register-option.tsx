@@ -27,9 +27,12 @@ import { statesData } from '@/data/states';
 import { register as registerUser } from '@/lib/api/auth';
 import { cn } from '@/lib/utils';
 import { useTransitionRouter } from 'next-transition-router';
+import { useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 
 const ManualregisterOption = () => {
     const id = useId();
+    const searchParams = useSearchParams();
     const [open, setOpen] = useState<boolean>(false);
     const [value, setValue] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
@@ -48,6 +51,16 @@ const ManualregisterOption = () => {
     });
     const router = useTransitionRouter();
     const { setLoggedIn, setUser } = useAuth();
+
+    // Get referral code from URL
+    const referralCode = searchParams.get('ref') || searchParams.get('referral') || searchParams.get('aff') || searchParams.get('affiliateCode') ;
+
+    // Store referral code in sessionStorage to persist across navigation
+    useEffect(() => {
+        if (referralCode) {
+            sessionStorage.setItem('referralCode', referralCode);
+        }
+    }, [referralCode]);
 
     // Format phone number as user types: (XXX) XXX-XXXX
     const formatPhoneNumber = (value: string) => {
@@ -202,6 +215,13 @@ const ManualregisterOption = () => {
                     const phoneDigits = form.phone.replace(/\D/g, '');
                     const e164Phone = `+1${phoneDigits}`;
 
+                    // Get referral code from URL or sessionStorage
+                    const refCode =
+                        referralCode ||
+                        (typeof window !== 'undefined'
+                            ? sessionStorage.getItem('referralCode')
+                            : null);
+
                     const payload = {
                         name: { first, middle, last },
                         email: form.email.toLowerCase(),
@@ -211,7 +231,13 @@ const ManualregisterOption = () => {
                         acceptSMSMarketing: form.acceptSMSMarketing,
                         acceptSMSTerms: form.acceptSMSTerms,
                         isOpted: form.acceptSMSMarketing,
+                        ...(refCode && { referralCode: refCode }),
                     };
+
+                    // Clear referral code from sessionStorage after use
+                    if (refCode && typeof window !== 'undefined') {
+                        sessionStorage.removeItem('referralCode');
+                    }
                     const response = (await registerUser(payload)) as any;
 
                     if (response.success && response.data?.data?.user) {

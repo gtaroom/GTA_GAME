@@ -49,6 +49,7 @@ export interface UserSchemaIn extends Document {
   forgotPasswordToken: string | undefined;
   forgotPasswordExpiry: string | undefined;
   isSmsOpted: Boolean;
+  referralCode?: string; // Unique referral code for this user
 }
 
 const UserSchema = new Schema<UserSchemaIn>(
@@ -94,6 +95,7 @@ const UserSchema = new Schema<UserSchemaIn>(
     forgotPasswordExpiry: { type: String },
     forgotPasswordToken: { type: String },
     isSmsOpted: { type: Boolean, default: false },
+    referralCode: { type: String, unique: true, sparse: true, index: true },
   },
   { timestamps: true }
 );
@@ -101,6 +103,23 @@ const UserSchema = new Schema<UserSchemaIn>(
 UserSchema.pre<UserSchemaIn>("save", async function (next) {
   if (this.isModified("email") && this.email) {
     this.email = this.email.toLowerCase();
+  }
+  
+  // Generate referral code if it doesn't exist
+  if (!this.referralCode && this.isNew) {
+    let code: string;
+    let isUnique = false;
+    
+    // Generate a unique referral code
+    while (!isUnique) {
+      // Generate a random 8-character alphanumeric code
+      code = crypto.randomBytes(4).toString("hex").toUpperCase();
+      const existingUser = await models.User?.findOne({ referralCode: code });
+      if (!existingUser) {
+        isUnique = true;
+        this.referralCode = code;
+      }
+    }
   }
   
   if (!this.isModified("password")) return next();
