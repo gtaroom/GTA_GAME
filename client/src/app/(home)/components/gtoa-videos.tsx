@@ -116,16 +116,16 @@ const VideoSlider = () => {
                         </div>
 
                         <div className='flex-1 flex items-center justify-center'>
-                            <div className='max-w-2xl space-y-3 sm:space-y-4 md:space-y-6 text-center sm:text-left px-2'>
-                                <h1 className='text-2xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-white leading-tight drop-shadow-2xl'>
+                            <div className='max-w-2xl space-y-2 sm:space-y-3 md:space-y-4 text-center sm:text-left px-2'>
+                                <h1 className='text-xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-white leading-tight drop-shadow-2xl'>
                                     {videos[currentIndex].title}
                                 </h1>
-                                <p className='text-sm sm:text-lg md:text-xl lg:text-2xl text-white/90 drop-shadow-lg'>
+                                <p className='text-xs sm:text-base md:text-lg lg:text-xl text-white/90 drop-shadow-lg line-clamp-2'>
                                     {videos[currentIndex].description}
                                 </p>
                                 <button
                                     onClick={() => setIsModalOpen(true)}
-                                    className='px-6 py-3 sm:px-8 sm:py-4 bg-white text-purple-900 rounded-full font-bold text-base sm:text-lg hover:bg-purple-100 transform hover:scale-105 transition-all duration-300 shadow-2xl'
+                                    className='px-5 py-2.5 sm:px-8 sm:py-4 bg-white text-purple-900 rounded-full font-bold text-sm sm:text-lg hover:bg-purple-100 transform hover:scale-105 transition-all duration-300 shadow-2xl mt-2 sm:mt-4'
                                 >
                                     Watch Video
                                 </button>
