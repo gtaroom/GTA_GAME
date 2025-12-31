@@ -103,6 +103,27 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         const iconClasses = getIconClasses(size ?? undefined);
 
+        // When asChild is true, we should pass children directly without wrapping
+        if (asChild) {
+            return (
+                <Comp
+                    ref={ref}
+                    className={cn(
+                        buttonVariants({ variant, size: icon ? 'icon' : size }),
+                        animCls,
+                        icon && iconClasses,
+                        icon && 'gap-0',
+                        className
+                    )}
+                    {...props}
+                    onMouseEnter={() => setHovered(true)}
+                    onMouseLeave={() => setHovered(false)}
+                >
+                    {children}
+                </Comp>
+            );
+        }
+
         return (
             <Comp
                 ref={ref}

@@ -5,6 +5,7 @@ import { useBreakPoint } from '@/hooks/useBreakpoint';
 import { useTransitionRouter } from 'next-transition-router';
 import AffiliateHighlights from './components/affiliate-highlights';
 import CommissionStructure from './components/commission-structure';
+import HowCommissionsWork from './components/how-commissions-work';
 import PartnerWithUs from './components/partner-with-us';
 import PartnershipForm from './components/partnership-form';
 
@@ -18,7 +19,7 @@ export default function AffiliatePage() {
                 className='mb-14 md:mb-16'
                 bgImage='/page-banner/affiliate.jpg'
                 title='Affiliate Partnership Program'
-                description='Join our curated network of performance-driven partners and earn commissions by referring new players to Golden Ticket Online Arcade.'
+                description='Join our affiliate network and earn one-time commissions when your referrals qualify. Public applications welcome - no account required. Approved affiliates get access to a powerful dashboard with real-time tracking and analytics.'
                 bottomContent={
                     <Button
                         size={xl ? 'xl' : `${lg ? 'lg' : 'md'}`}
@@ -30,6 +31,7 @@ export default function AffiliatePage() {
             />
             <AffiliateHighlights />
             <CommissionStructure />
+            <HowCommissionsWork />
             <PartnerWithUs />
             <PartnershipForm />
         </>

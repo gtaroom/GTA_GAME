@@ -2,6 +2,7 @@ import {
     footerAccountLinks,
     footerLegalLinks,
     footerQuickLinks,
+    footerProgramsLinks,
 } from './links';
 
 export const footerLinks = [
@@ -21,3 +22,9 @@ export const footerLinks = [
         links: footerLegalLinks,
     },
 ];
+
+export const footerProgramsSection = {
+    id: 'programs-rewards',
+    title: 'PROGRAMS & REWARDS',
+    links: footerProgramsLinks,
+};

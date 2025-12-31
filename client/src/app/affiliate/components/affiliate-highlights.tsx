@@ -4,8 +4,8 @@ import NeonText from '@/components/neon/neon-text';
 function AffiliateHighlights() {
     const highlightInfo = [
         {
-            value: '25%',
-            label: 'Revenue Share',
+            value: 'Commission %',
+            label: 'Performance Based',
             color: '--color-green-500',
         },
         {

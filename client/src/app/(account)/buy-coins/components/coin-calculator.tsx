@@ -14,7 +14,7 @@ export default function CoinCalculator() {
     const { sm, xl } = useBreakPoint();
     const ELEMENT_SIZE = xl ? 'lg' : sm ? 'md' : 'sm';
     const { isLoggedIn } = useIsLoggedIn();
-
+    
     const [amount, setAmount] = useState<string>('');
     const [calculatedCoins, setCalculatedCoins] = useState<{
         baseCoins: number;
@@ -124,7 +124,6 @@ export default function CoinCalculator() {
                                 Calculate & Buy
                             </Button>
                         </div>
-
                         {/* Calculation Results */}
                         {calculatedCoins && (
                             <div className='w-full mb-5'>

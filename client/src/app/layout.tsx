@@ -22,6 +22,7 @@ import { GameProvider } from '@/contexts/game-context';
 import { GameSearchProvider } from '@/contexts/game-search-context';
 import { NotificationProvider } from '@/contexts/notification-context';
 import { UIProvider } from '@/contexts/ui-context';
+import { SpinWheelProvider } from '@/contexts/spin-wheel-context';
 import { VipProvider } from '@/contexts/vip-context';
 import { WalletBalanceProvider } from '@/contexts/wallet-balance-context';
 import { ApiInterceptor } from '@/lib/api-interceptor';
@@ -187,8 +188,9 @@ export default function RootLayout({
                         <AuthProvider>
                             <WalletBalanceProvider>
                                 <VipProvider>
-                                    <NotificationProvider>
-                                        <GameProvider>
+                                    <SpinWheelProvider>
+                                        <NotificationProvider>
+                                            <GameProvider>
                                             <UIProvider defaultOpen={true}>
                                                 <GameSearchProvider>
                                                     <PageTransitionWrapper>
@@ -204,7 +206,8 @@ export default function RootLayout({
                                                 </GameSearchProvider>
                                             </UIProvider>
                                         </GameProvider>
-                                    </NotificationProvider>
+                                        </NotificationProvider>
+                                    </SpinWheelProvider>
                                 </VipProvider>
                             </WalletBalanceProvider>
                         </AuthProvider>

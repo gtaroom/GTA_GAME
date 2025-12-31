@@ -92,22 +92,108 @@ export const getSpinHistory = asyncHandler(async (req: Request, res: Response) =
  * Get spin wheel configuration (public endpoint)
  */
 export const getSpinWheelConfig = asyncHandler(async (req: Request, res: Response) => {
-  const { SPIN_WHEEL_REWARDS } = await import("../models/spin-wheel.model");
+  const config = await spinWheelService.getConfig();
   
-  // Return only safe configuration data (no probabilities)
-  const safeConfig = SPIN_WHEEL_REWARDS.map(reward => ({
-    id: reward.id,
-    amount: reward.amount,
-    type: reward.type,
-    rarity: reward.rarity,
-    description: reward.description,
-  }));
+  // Return only safe configuration data (no probabilities, only active rewards)
+  const safeConfig = config.rewards
+    .filter(reward => reward.isActive)
+    .map(reward => ({
+      id: reward.id,
+      amount: reward.amount,
+      type: reward.type,
+      rarity: reward.rarity,
+      description: reward.description,
+    }));
 
   return res.status(200).json(
     new ApiResponse(
       200,
-      { rewards: safeConfig },
+      { 
+        rewards: safeConfig,
+        isActive: config.isActive,
+      },
       "Spin wheel configuration retrieved successfully"
+    )
+  );
+});
+
+/**
+ * Check user's spin eligibility
+ */
+export const checkSpinEligibility = asyncHandler(async (req: Request, res: Response) => {
+  const { _id: userId } = getUserFromRequest(req);
+  
+  logger.debug(`Checking spin eligibility for user ${userId}`);
+  
+  const eligibility = await spinWheelService.checkSpinEligibility(userId);
+  
+  // Also check for random trigger (this can award spins)
+  await spinWheelService.checkRandomTrigger(userId);
+  
+  // Re-check eligibility after random trigger check
+  const updatedEligibility = await spinWheelService.checkSpinEligibility(userId);
+  
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      updatedEligibility,
+      updatedEligibility.message
+    )
+  );
+});
+
+/**
+ * Get spin wheel configuration (Admin only - includes full config)
+ */
+export const getSpinWheelConfigAdmin = asyncHandler(async (req: Request, res: Response) => {
+  const config = await spinWheelService.getConfig();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { config },
+      "Spin wheel configuration retrieved successfully"
+    )
+  );
+});
+
+/**
+ * Update spin wheel configuration (Admin only)
+ */
+export const updateSpinWheelConfig = asyncHandler(async (req: Request, res: Response) => {
+  const { isActive, rewards, triggers } = req.body;
+  
+  logger.info("Admin updating spin wheel configuration");
+  
+  const updates: any = {};
+  
+  if (typeof isActive === "boolean") {
+    updates.isActive = isActive;
+  }
+  
+  if (rewards && Array.isArray(rewards)) {
+    updates.rewards = rewards;
+  }
+  
+  if (triggers) {
+    updates.triggers = triggers;
+  }
+  
+  const updatedConfig = await spinWheelService.updateConfig(updates);
+  
+  // Validate the updated configuration
+  const validation = await spinWheelService.validateSpinWheelConfig();
+  
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        config: updatedConfig,
+        validation,
+      },
+      validation.valid 
+        ? "Spin wheel configuration updated successfully" 
+        : "Configuration updated but has validation issues"
     )
   );
 });
@@ -116,7 +202,7 @@ export const getSpinWheelConfig = asyncHandler(async (req: Request, res: Respons
  * Validate spin wheel configuration (Admin only)
  */
 export const validateSpinWheelConfig = asyncHandler(async (req: Request, res: Response) => {
-  const validation = spinWheelService.validateSpinWheelConfig();
+  const validation = await spinWheelService.validateSpinWheelConfig();
 
   return res.status(200).json(
     new ApiResponse(

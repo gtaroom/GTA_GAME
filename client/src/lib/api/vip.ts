@@ -163,7 +163,9 @@ export interface SpinWheelConfigResponse {
       amount: number;
       type: 'GC' | 'SC';
       rarity?: string;
+      description?: string;
     }>;
+    isActive?: boolean;
   };
 }
 
@@ -185,6 +187,47 @@ export function claimSpinReward(spinId: string) {
   return httpWithErrorHandling<ClaimSpinRewardResponse>('/spin-wheel/claim', {
     method: 'POST',
     body: { spinId },
+  });
+}
+
+// Spin Wheel Eligibility
+export interface SpinWheelEligibilityResponse {
+  statusCode: number;
+  success: boolean;
+  message: string;
+  data: {
+    eligible: boolean;
+    spinsAvailable: number;
+    message: string;
+    error?: string;
+  };
+}
+
+export function checkSpinWheelEligibility() {
+  return httpWithErrorHandling<SpinWheelEligibilityResponse>('/spin-wheel/eligibility', { method: 'GET' });
+}
+
+// Spin Wheel Spin
+export interface SpinWheelSpinResponse {
+  statusCode: number;
+  success: boolean;
+  message: string;
+  data: {
+    rewardId: number;
+    amount: number;
+    type: 'GC' | 'SC';
+    rarity?: string;
+    description?: string;
+    timestamp?: string;
+    spinId: string;
+  } | null;
+  errors?: any[];
+  error?: string;
+}
+
+export function performSpinWheelSpin() {
+  return httpWithErrorHandling<SpinWheelSpinResponse>('/spin-wheel/spin', {
+    method: 'POST',
   });
 }
 

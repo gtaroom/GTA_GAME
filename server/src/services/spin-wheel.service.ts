@@ -9,16 +9,127 @@ import SpinWheelUsageModel, {
   SpinRewardRarity, 
   ISpinWheelUsage
 } from "../models/spin-wheel.model";
+import SpinWheelConfigModel, { ISpinRewardConfig, ISpinWheelConfig } from "../models/spin-wheel-config.model";
+import SpinWheelEligibilityModel, { ISpinWheelEligibility } from "../models/spin-wheel-eligibility.model";
 import walletModel from "../models/wallet.model";
 import UserBonusModel from "../models/bonus.model";
+import TransactionModel from "../models/transaction.model";
+import UserModel from "../models/user.model";
 
 class SpinWheelService {
   /**
-   * Generate a secure random spin result based on probability weights
+   * Get or create spin wheel configuration
    */
-  private generateSecureSpinResult(): ISpinReward {
+  async getOrCreateConfig(): Promise<ISpinWheelConfig> {
+    let config = await SpinWheelConfigModel.findOne();
+    
+    if (!config) {
+      // Create default configuration with existing rewards
+      const defaultRewards: ISpinRewardConfig[] = SPIN_WHEEL_REWARDS.map(reward => ({
+        id: reward.id,
+        amount: reward.amount,
+        type: reward.type,
+        rarity: reward.rarity,
+        probability: reward.probability,
+        description: reward.description,
+        isActive: true,
+      }));
+      
+      config = await SpinWheelConfigModel.create({
+        isActive: true,
+        rewards: defaultRewards,
+        triggers: {
+          firstTime: {
+            enabled: true,
+            spinsPerUser: 1,
+          },
+          random: {
+            enabled: false,
+            probability: 0,
+            cooldownHours: 24,
+          },
+          threshold: {
+            enabled: false,
+            thresholds: [],
+          },
+        },
+      });
+      
+      logger.info("Created default spin wheel configuration");
+    }
+    
+    return config;
+  }
+
+  /**
+   * Get or create user spin eligibility
+   */
+  async getOrCreateEligibility(userId: string | mongoose.Types.ObjectId): Promise<ISpinWheelEligibility> {
+    let eligibility = await SpinWheelEligibilityModel.findOne({ userId });
+    
+    if (!eligibility) {
+      const config = await this.getOrCreateConfig();
+      
+      // Initialize first-time spins if enabled
+      const firstTimeSpins = config.triggers.firstTime.enabled 
+        ? config.triggers.firstTime.spinsPerUser 
+        : 0;
+      
+      eligibility = await SpinWheelEligibilityModel.create({
+        userId,
+        hasUsedFirstTimeSpin: false,
+        firstTimeSpinsRemaining: firstTimeSpins,
+        thresholdSpinsEarned: [],
+        totalSpinsAvailable: firstTimeSpins,
+      });
+    }
+    
+    return eligibility;
+  }
+
+  /**
+   * Generate a secure random spin result based on probability weights
+   * Uses admin-configurable rewards if available, otherwise falls back to default
+   */
+  private generateSecureSpinResult(rewards: ISpinRewardConfig[]): ISpinRewardConfig {
+    // Filter only active rewards
+    const activeRewards = rewards.filter(r => r.isActive);
+    
+    if (activeRewards.length === 0) {
+      // Fallback to default rewards if no active rewards configured
+      const totalWeight = SPIN_WHEEL_REWARDS.reduce((sum, reward) => sum + reward.probability, 0);
+      const randomBuffer = crypto.randomBytes(4);
+      const randomValue = randomBuffer.readUInt32BE(0) / 0xFFFFFFFF;
+      const weightedRandom = randomValue * totalWeight;
+      
+      let currentWeight = 0;
+      for (const reward of SPIN_WHEEL_REWARDS) {
+        currentWeight += reward.probability;
+        if (weightedRandom <= currentWeight) {
+          return {
+            id: reward.id,
+            amount: reward.amount,
+            type: reward.type,
+            rarity: reward.rarity,
+            probability: reward.probability,
+            description: reward.description,
+            isActive: true,
+          };
+        }
+      }
+      return {
+        id: SPIN_WHEEL_REWARDS[0].id,
+        amount: SPIN_WHEEL_REWARDS[0].amount,
+        type: SPIN_WHEEL_REWARDS[0].type,
+        rarity: SPIN_WHEEL_REWARDS[0].rarity,
+        probability: SPIN_WHEEL_REWARDS[0].probability,
+        description: SPIN_WHEEL_REWARDS[0].description,
+        isActive: true,
+      };
+    }
+    
     // Calculate total probability weight
-    const totalWeight = SPIN_WHEEL_REWARDS.reduce((sum, reward) => sum + reward.probability, 0);
+    const totalWeight = activeRewards.reduce((sum, reward) => sum + reward.probability, 0);
     
     // Generate cryptographically secure random number
     const randomBuffer = crypto.randomBytes(4);
@@ -27,15 +138,192 @@ class SpinWheelService {
     
     // Find the reward based on weighted random selection
     let currentWeight = 0;
-    for (const reward of SPIN_WHEEL_REWARDS) {
+    for (const reward of activeRewards) {
       currentWeight += reward.probability;
       if (weightedRandom <= currentWeight) {
         return reward;
       }
     }
     
-    // Fallback to first reward (should never happen)
-    return SPIN_WHEEL_REWARDS[0];
+    // Fallback to first active reward (should never happen)
+    return activeRewards[0];
+  }
+
+  /**
+   * Check if user is eligible for a spin
+   */
+  async checkSpinEligibility(userId: string | mongoose.Types.ObjectId): Promise<{
+    eligible: boolean;
+    spinsAvailable: number;
+    message: string;
+    error?: string;
+  }> {
+    try {
+      const config = await this.getOrCreateConfig();
+      
+      if (!config.isActive) {
+        return {
+          eligible: false,
+          spinsAvailable: 0,
+          message: "Spin wheel is currently disabled",
+          error: "SPIN_WHEEL_DISABLED",
+        };
+      }
+      
+      const eligibility = await this.getOrCreateEligibility(userId);
+      
+      // Update total spins available
+      await this.updateEligibilitySpins(userId);
+      
+      // Refresh eligibility to get updated spins
+      const updatedEligibility = await SpinWheelEligibilityModel.findOne({ userId });
+      
+      if (!updatedEligibility || updatedEligibility.totalSpinsAvailable <= 0) {
+        return {
+          eligible: false,
+          spinsAvailable: 0,
+          message: "No spins available. Check back later!",
+          error: "NO_SPINS_AVAILABLE",
+        };
+      }
+      
+      return {
+        eligible: true,
+        spinsAvailable: updatedEligibility.totalSpinsAvailable,
+        message: `You have ${updatedEligibility.totalSpinsAvailable} spin(s) available!`,
+      };
+    } catch (error) {
+      logger.error(`Error checking spin eligibility for user ${userId}:`, error);
+      return {
+        eligible: false,
+        spinsAvailable: 0,
+        message: "Error checking eligibility",
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  /**
+   * Update user's spin eligibility based on triggers
+   */
+  async updateEligibilitySpins(userId: string | mongoose.Types.ObjectId): Promise<void> {
+    const config = await this.getOrCreateConfig();
+    const eligibility = await this.getOrCreateEligibility(userId);
+    
+    let totalSpins = 0;
+    
+    // First-time spins
+    if (config.triggers.firstTime.enabled && !eligibility.hasUsedFirstTimeSpin) {
+      totalSpins += eligibility.firstTimeSpinsRemaining;
+    }
+    
+    // Threshold spins
+    if (config.triggers.threshold.enabled) {
+      const lifetimeSpending = await this.calculateLifetimeSpending(userId);
+      
+      for (const threshold of config.triggers.threshold.thresholds) {
+        if (!threshold.isActive) continue;
+        
+        // Check if we've already recorded this threshold
+        const existingThreshold = eligibility.thresholdSpinsEarned.find(
+          t => t.thresholdId === threshold.id
+        );
+        
+        // Check if user has reached this threshold
+        if (lifetimeSpending >= threshold.spendingAmount) {
+          if (!existingThreshold) {
+            // New threshold reached - add spins
+            eligibility.thresholdSpinsEarned.push({
+              thresholdId: threshold.id,
+              spendingAmount: threshold.spendingAmount,
+              spinsAwarded: threshold.spinsAwarded,
+              reachedAt: new Date(),
+              spinsUsed: 0,
+            });
+            totalSpins += threshold.spinsAwarded;
+          } else {
+            // Threshold already reached - add remaining spins
+            const remainingSpins = existingThreshold.spinsAwarded - existingThreshold.spinsUsed;
+            totalSpins += remainingSpins;
+          }
+        } else if (existingThreshold) {
+          // User has reached this threshold before but spending dropped (shouldn't happen, but handle it)
+          // Add remaining spins from previously reached threshold
+          const remainingSpins = existingThreshold.spinsAwarded - existingThreshold.spinsUsed;
+          totalSpins += remainingSpins;
+        }
+      }
+    }
+    
+    // Update total spins available
+    eligibility.totalSpinsAvailable = totalSpins;
+    await eligibility.save();
+  }
+
+  /**
+   * Calculate user's lifetime spending
+   */
+  private async calculateLifetimeSpending(userId: string | mongoose.Types.ObjectId): Promise<number> {
+    const result = await TransactionModel.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId.toString()),
+          type: "deposit",
+          status: "completed",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalSpending: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    return result.length > 0 ? result[0].totalSpending : 0;
+  }
+
+  /**
+   * Check for random spin trigger
+   */
+  async checkRandomTrigger(userId: string | mongoose.Types.ObjectId): Promise<boolean> {
+    const config = await this.getOrCreateConfig();
+    
+    if (!config.triggers.random.enabled || config.triggers.random.probability <= 0) {
+      return false;
+    }
+    
+    const eligibility = await this.getOrCreateEligibility(userId);
+    const now = new Date();
+    
+    // Check cooldown
+    if (eligibility.lastRandomSpinDate) {
+      const hoursSinceLastSpin = (now.getTime() - eligibility.lastRandomSpinDate.getTime()) / (1000 * 60 * 60);
+      if (hoursSinceLastSpin < config.triggers.random.cooldownHours) {
+        return false;
+      }
+    }
+    
+    // Generate random number to check probability
+    const randomBuffer = crypto.randomBytes(4);
+    const randomValue = randomBuffer.readUInt32BE(0) / 0xFFFFFFFF;
+    const triggerChance = randomValue * 100;
+    
+    if (triggerChance <= config.triggers.random.probability) {
+      // Award a random spin
+      eligibility.totalSpinsAvailable = (eligibility.totalSpinsAvailable || 0) + 1;
+      eligibility.lastRandomSpinDate = now;
+      eligibility.lastRandomTriggerCheck = now;
+      await eligibility.save();
+      
+      logger.info(`Random spin triggered for user ${userId}`);
+      return true;
+    }
+    
+    eligibility.lastRandomTriggerCheck = now;
+    await eligibility.save();
+    
+    return false;
   }
 
   /**
@@ -59,8 +347,23 @@ class SpinWheelService {
     error?: string;
   }> {
     try {
-      // Generate secure spin result
-      const reward = this.generateSecureSpinResult();
+      // Check eligibility first
+      const eligibilityCheck = await this.checkSpinEligibility(userId);
+      
+      if (!eligibilityCheck.eligible) {
+        return {
+          success: false,
+          message: eligibilityCheck.message,
+          error: eligibilityCheck.error,
+        };
+      }
+      
+      // Get configuration
+      const config = await this.getOrCreateConfig();
+      const eligibility = await this.getOrCreateEligibility(userId);
+      
+      // Generate secure spin result using admin-configurable rewards
+      const reward = this.generateSecureSpinResult(config.rewards);
       const spinId = this.generateSpinId();
       
       // Create spin result
@@ -88,6 +391,30 @@ class SpinWheelService {
         ipAddress,
         userAgent,
       });
+
+      // Consume a spin from eligibility
+      eligibility.totalSpinsAvailable = Math.max(0, eligibility.totalSpinsAvailable - 1);
+      
+      // Update first-time spin tracking
+      if (!eligibility.hasUsedFirstTimeSpin && config.triggers.firstTime.enabled) {
+        eligibility.firstTimeSpinsRemaining = Math.max(0, eligibility.firstTimeSpinsRemaining - 1);
+        if (eligibility.firstTimeSpinsRemaining === 0) {
+          eligibility.hasUsedFirstTimeSpin = true;
+        }
+      }
+      
+      // Update threshold spin tracking
+      if (config.triggers.threshold.enabled && eligibility.thresholdSpinsEarned.length > 0) {
+        // Find the first threshold with remaining spins and consume one
+        for (const threshold of eligibility.thresholdSpinsEarned) {
+          if (threshold.spinsUsed < threshold.spinsAwarded) {
+            threshold.spinsUsed += 1;
+            break;
+          }
+        }
+      }
+      
+      await eligibility.save();
 
       logger.info(`User ${userId} spun wheel and got: ${reward.amount} ${reward.type} (${reward.rarity}) - Spin ID: ${spinId}`);
 
@@ -215,23 +542,35 @@ if (spinUsage.type === SpinRewardType.SC) {
   /**
    * Validate spin wheel configuration (admin function)
    */
-  validateSpinWheelConfig(): {
+  async validateSpinWheelConfig(): Promise<{
     valid: boolean;
     issues: string[];
     totalProbability: number;
-  } {
+  }> {
     const issues: string[] = [];
     let totalProbability = 0;
 
+    const config = await this.getOrCreateConfig();
+    const activeRewards = config.rewards.filter(r => r.isActive);
+
+    if (activeRewards.length === 0) {
+      issues.push("No active rewards configured");
+      return {
+        valid: false,
+        issues,
+        totalProbability: 0,
+      };
+    }
+
     // Check for duplicate IDs
-    const ids = SPIN_WHEEL_REWARDS.map(r => r.id);
+    const ids = activeRewards.map(r => r.id);
     const uniqueIds = new Set(ids);
     if (ids.length !== uniqueIds.size) {
       issues.push("Duplicate reward IDs found");
     }
 
     // Validate each reward
-    for (const reward of SPIN_WHEEL_REWARDS) {
+    for (const reward of activeRewards) {
       totalProbability += reward.probability;
       
       if (reward.amount <= 0) {
@@ -256,6 +595,33 @@ if (spinUsage.type === SpinRewardType.SC) {
       issues.push(`Total probability is ${totalProbability}%, should be close to 100%`);
     }
 
+    // Validate triggers
+    if (config.triggers.random.enabled) {
+      if (config.triggers.random.probability < 0 || config.triggers.random.probability > 100) {
+        issues.push("Random trigger probability must be between 0 and 100");
+      }
+      if (config.triggers.random.cooldownHours < 0) {
+        issues.push("Random trigger cooldown must be non-negative");
+      }
+    }
+
+    if (config.triggers.threshold.enabled) {
+      const thresholdIds = new Set<string>();
+      for (const threshold of config.triggers.threshold.thresholds) {
+        if (thresholdIds.has(threshold.id)) {
+          issues.push(`Duplicate threshold ID: ${threshold.id}`);
+        }
+        thresholdIds.add(threshold.id);
+        
+        if (threshold.spendingAmount < 0) {
+          issues.push(`Threshold ${threshold.id}: Spending amount must be non-negative`);
+        }
+        if (threshold.spinsAwarded < 1) {
+          issues.push(`Threshold ${threshold.id}: Spins awarded must be at least 1`);
+        }
+      }
+    }
+
     return {
       valid: issues.length === 0,
       issues,
@@ -271,6 +637,8 @@ if (spinUsage.type === SpinRewardType.SC) {
     spinsByRarity: Record<SpinRewardRarity, number>;
     totalRewardsGiven: Record<SpinRewardType, number>;
     recentSpins: ISpinWheelUsage[];
+    usersWithSpins: number;
+    totalSpinsAvailable: number;
   }> {
     const totalSpins = await SpinWheelUsageModel.countDocuments();
     
@@ -322,12 +690,79 @@ if (spinUsage.type === SpinRewardType.SC) {
       .limit(20)
       .populate('userId', 'name email');
 
+    // Get users with available spins
+    const usersWithSpins = await SpinWheelEligibilityModel.countDocuments({
+      totalSpinsAvailable: { $gt: 0 },
+    });
+
+    // Get total spins available across all users
+    const totalSpinsResult = await SpinWheelEligibilityModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$totalSpinsAvailable" },
+        },
+      },
+    ]);
+
+    const totalSpinsAvailable = totalSpinsResult.length > 0 ? totalSpinsResult[0].total : 0;
+
     return {
       totalSpins,
       spinsByRarity: rarityStats,
       totalRewardsGiven,
       recentSpins,
+      usersWithSpins,
+      totalSpinsAvailable,
     };
+  }
+
+  /**
+   * Get spin wheel configuration (admin function)
+   */
+  async getConfig(): Promise<ISpinWheelConfig> {
+    return await this.getOrCreateConfig();
+  }
+
+  /**
+   * Update spin wheel configuration (admin function)
+   */
+  async updateConfig(updates: Partial<ISpinWheelConfig>): Promise<ISpinWheelConfig> {
+    const config = await this.getOrCreateConfig();
+    
+    if (updates.isActive !== undefined) {
+      config.isActive = updates.isActive;
+    }
+    
+    if (updates.rewards) {
+      config.rewards = updates.rewards;
+    }
+    
+    if (updates.triggers) {
+      if (updates.triggers.firstTime) {
+        config.triggers.firstTime = {
+          ...config.triggers.firstTime,
+          ...updates.triggers.firstTime,
+        };
+      }
+      if (updates.triggers.random) {
+        config.triggers.random = {
+          ...config.triggers.random,
+          ...updates.triggers.random,
+        };
+      }
+      if (updates.triggers.threshold) {
+        config.triggers.threshold = {
+          ...config.triggers.threshold,
+          ...updates.triggers.threshold,
+        };
+      }
+    }
+    
+    await config.save();
+    logger.info("Spin wheel configuration updated");
+    
+    return config;
   }
 }
 

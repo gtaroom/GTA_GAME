@@ -283,6 +283,8 @@ export const footerAccountLinks: LinkProps[] = [
     coinWalletLink,
     uniqueLinks.vipStatus,
     transactionHistoryLink,
+    uniqueLinks.affiliate,
+    uniqueLinks.referFriend,
     // uniqueLinks.gameHistory,
     // uniqueLinks.notifications,
 ];
@@ -296,6 +298,12 @@ export const footerLegalLinks: LinkProps[] = [
     legalLinks.sweepstakesRules,
     legalLinks.responsibleGaming,
     legalLinks.smsTerms,
+];
+
+// Footer Programs/Rewards Links (shown when not logged in)
+export const footerProgramsLinks: LinkProps[] = [
+    uniqueLinks.referFriend,
+    uniqueLinks.affiliate,
 ];
 
 export const footerSocialLinks: LinkProps[] = [
@@ -317,8 +325,8 @@ export const sidebarLinks: LinkProps[] = [
     coinWalletLink,
     // uniqueLinks.promotions,
     vipProgramLink,
-    // uniqueLinks.affiliate,
-    // uniqueLinks.referFriend,
+    uniqueLinks.affiliate,
+    uniqueLinks.referFriend,
     communityLink,
 ];
 
