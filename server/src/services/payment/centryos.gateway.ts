@@ -103,8 +103,8 @@ export class CentryOSGateway implements SoapPaymentGateway {
                 customUrlPath: 'GTOA',
                 acceptedPaymentOptions: [
                     'cashapp',
-                    'google_pay',
-                    'apple_pay'
+                    // 'google_pay',
+                    // 'apple_pay'
                 ],
                 dataCollections: []
             };

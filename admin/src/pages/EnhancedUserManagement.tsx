@@ -2,6 +2,7 @@ import {
   CheckCircle,
   Download,
   Edit,
+  Eye,
   Filter,
   Mail,
   Phone,
@@ -14,6 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
 import LoadingSpinner from "../components/UI/LoadingSpinner";
@@ -42,7 +44,8 @@ import {
 const EnhancedUserManagement: React.FC = () => {
   const { hasPermission } = usePermissions();
   const { showToast } = useToast();
-
+  const navigate = useNavigate();
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -533,6 +536,16 @@ const EnhancedUserManagement: React.FC = () => {
 
       actions: (
         <div className="flex space-x-3">
+        <Button
+          size="sm"
+          variant="primary"
+          onClick={() => navigate(`/users/${user._id}`)}
+          className="px-3 py-2"
+          title="View Full Details"
+        >
+          <Eye className="h-4 w-4 mr-1" />
+          View
+        </Button>
           {hasPermission("canEditUsers") && (
             <Button
               size="sm"
