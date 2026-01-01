@@ -184,8 +184,117 @@ export const userManagementApi = baseUserApi.injectEndpoints({
       transformResponse: (response: { data: UserStatistics }) => response.data,
       providesTags: ["UserStatistics"],
     }),
+
+    // Get user full details (comprehensive view)
+    getUserFullDetails: builder.query<UserDetailsResponse, string>({
+      query: (userId) => `/user/details/${userId}`,
+      transformResponse: (response: { 
+        statusCode: number;
+        success: boolean;
+        data: UserDetailsResponse;
+        message: string;
+      }) => response.data,
+      providesTags: (result, error, userId) => [{ type: "UserDetails", id: userId }],
+    }),
   }),
 });
+
+// User Details Types
+export interface UserDetails {
+  _id: string;
+  name: {
+    first: string;
+    middle?: string;
+    last?: string;
+  };
+  email: string;
+  phone?: string;
+  address?: {
+    line1?: string;
+    line2?: string;
+  };
+  zipCode?: string;
+  city?: string;
+  state?: string;
+  gender?: string;
+  dob?: string;
+  birthday?: string;
+  avatar?: {
+    url: string | null;
+    localPath?: string;
+  };
+  role: "USER";
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  isKYC: boolean;
+  isOpted: boolean;
+  acceptSMSTerms?: boolean;
+  isSmsOpted: boolean;
+  referralCode?: string;
+  loginType?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserWallet {
+  balance: number;
+  currency: "GC";
+  balanceInDollars: string;
+}
+
+export interface UserBonus {
+  goldCoins: number;
+  sweepCoins: number;
+  loginStreak: number;
+  lastLoginDate: string | null;
+  lastSweeDate: string | null;
+  claimedDailyBonus: boolean;
+  claimedDailySweepBonus: boolean;
+  claimedNewUserBonus: boolean;
+  canClaimSpinwheel: boolean;
+}
+
+export interface UserTransaction {
+  _id: string;
+  type: string;
+  amount: number;
+  currency: string;
+  status: string;
+  paymentGateway: string;
+  gatewayTransactionId: string;
+  gatewayInvoiceId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserVipTier {
+  currentTier: "none" | "iron" | "bronze" | "silver" | "gold" | "platinum" | "onyx" | "sapphire" | "ruby" | "emerald";
+  isVipConfirmed: boolean;
+  last7DaysSpending: number;
+  totalLifetimeSpending: number;
+  vipPeriodStartDate?: string | null;
+  vipPeriodEndDate?: string | null;
+  bonusSpinsRemaining: number;
+  bonusSpinsGrantedAt?: string | null;
+  bonusSpinsExpireAt?: string | null;
+  birthdayBonusClaimed?: boolean;
+  lastBirthdayBonusDate?: string | null;
+}
+
+export interface UserSpinWheel {
+  totalSpinsUsed: number;
+  totalGCWon: number;
+  totalSCWon: number;
+}
+
+export interface UserDetailsResponse {
+  user: UserDetails;
+  wallet: UserWallet;
+  bonus: UserBonus;
+  transactions: UserTransaction[];
+  vipTier: UserVipTier;
+  spinWheel: UserSpinWheel;
+}
 
 export const {
   useGetAllUsersQuery,
@@ -196,5 +305,6 @@ export const {
   useBulkAssignRoleMutation,
   useSearchUsersQuery,
   useGetUserStatisticsQuery,
+  useGetUserFullDetailsQuery,
   useLazyGetAllUsersForExportQuery,
 } = userManagementApi;

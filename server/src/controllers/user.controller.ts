@@ -35,6 +35,9 @@ import withdrawalRequestModel from "../models/withdrawal-request.model";
 import NotificationModel from "../models/notification.model";
 import AmoeModel from "../models/amoe-entry.model";
 import ReferralModel from "../models/referral.model";
+import TransactionModel from "../models/transaction.model";
+import vipService from "../services/vip.service";
+import SpinWheelUsageModel, { SpinRewardType } from "../models/spin-wheel.model";
 import { creditPendingAmoeEntries } from "../utils/credit-pending-entries.util";
 
 const generateAccessAndRefreshTokens = async (userId: string) => {
@@ -1627,6 +1630,189 @@ export const uploadAvatar = asyncHandler(
   }
 );
 
+/**
+ * Get complete user data by ID (only for USER role)
+ * GET /user/:id
+ * Middleware: canViewUsers
+ */
+const getUserById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, "Invalid user ID");
+  }
+
+  // Find user by ID
+  const user = await User.findById(id).select(
+    "-password -refreshToken -emailVerificationToken -emailVerificationExpiry -forgotPasswordToken -forgotPasswordExpiry"
+  );
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Only allow viewing USER role data
+  if (user.role !== rolesEnum.USER) {
+    throw new ApiError(403, "Access denied. This endpoint only shows data for users with USER role.");
+  }
+
+  // Get wallet balance
+  const wallet = await WalletModel.findOne({ userId: user._id });
+
+  // Get user bonus data
+  const bonusData = await UserBonusModel.findOne({ userId: user._id });
+
+  // Get top 10 recent transactions
+  const transactions = await TransactionModel.find({ userId: user._id })
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .select("-metadata")
+    .lean();
+
+  // Get VIP tier status
+  let vipTier = null;
+  try {
+    vipTier = await vipService.getOrCreateVipTier(user._id.toString());
+  } catch (error) {
+    logger.error(`Error fetching VIP tier for user ${user._id}:`, error);
+    // Continue without VIP data if there's an error
+  }
+
+  // Get spin wheel statistics
+  let spinStats = {
+    totalSpinsUsed: 0,
+    totalGCWon: 0,
+    totalSCWon: 0,
+  };
+
+  try {
+    // Count total spins used
+    const totalSpins = await SpinWheelUsageModel.countDocuments({
+      userId: user._id,
+    });
+
+    // Calculate total GC won (sum of amounts where type is "GC")
+    const gcWonResult = await SpinWheelUsageModel.aggregate([
+      {
+        $match: {
+          userId: user._id,
+          type: SpinRewardType.GC,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    // Calculate total SC won (sum of amounts where type is "SC")
+    const scWonResult = await SpinWheelUsageModel.aggregate([
+      {
+        $match: {
+          userId: user._id,
+          type: SpinRewardType.SC,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$amount" },
+        },
+      },
+    ]);
+
+    spinStats = {
+      totalSpinsUsed: totalSpins,
+      totalGCWon: gcWonResult[0]?.total || 0,
+      totalSCWon: scWonResult[0]?.total || 0,
+    };
+  } catch (error) {
+    logger.error(`Error fetching spin wheel statistics for user ${user._id}:`, error);
+    // Continue with default values if there's an error
+  }
+
+  // Format response
+  const response = {
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      address: user.address,
+      zipCode: user.zipCode,
+      city: user.city,
+      state: user.state,
+      gender: user.gender,
+      dob: user.dob,
+      birthday: user.birthday,
+      avatar: user.avatar,
+      role: user.role,
+      isEmailVerified: user.isEmailVerified,
+      isPhoneVerified: user.isPhoneVerified,
+      isKYC: user.isKYC,
+      isOpted: user.isOpted,
+      acceptSMSTerms: user.acceptSMSTerms,
+      isSmsOpted: user.isSmsOpted,
+      referralCode: user.referralCode,
+      loginType: user.loginType,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
+    wallet: {
+      balance: wallet?.balance || 0,
+      currency: wallet?.currency || "GC",
+      balanceInDollars: wallet ? (wallet.balance / 100).toFixed(2) : "0.00",
+    },
+    bonus: bonusData
+      ? {
+          goldCoins: bonusData.goldCoins,
+          sweepCoins: bonusData.sweepCoins,
+          loginStreak: bonusData.loginStreak,
+          lastLoginDate: bonusData.lastLoginDate,
+          lastSweeDate: bonusData.lastSweeDate,
+          claimedDailyBonus: bonusData.claimedDailyBonus,
+          claimedDailySweepBonus: bonusData.claimedDailySweepBonus,
+          claimedNewUserBonus: bonusData.claimedNewUserBonus,
+          canClaimSpinwheel: bonusData.canClaimSpinwheel,
+        }
+      : null,
+    transactions: transactions.map((tx) => ({
+      _id: tx._id,
+      type: tx.type,
+      amount: tx.amount,
+      currency: tx.currency,
+      status: tx.status,
+      paymentGateway: tx.paymentGateway,
+      gatewayTransactionId: tx.gatewayTransactionId,
+      gatewayInvoiceId: tx.gatewayInvoiceId,
+      createdAt: tx.createdAt,
+      updatedAt: tx.updatedAt,
+    })),
+    vipTier: vipTier
+      ? {
+          currentTier: vipTier.currentTier,
+          isVipConfirmed: vipTier.isVipConfirmed,
+          last7DaysSpending: vipTier.last7DaysSpending,
+          totalLifetimeSpending: vipTier.totalLifetimeSpending,
+          vipPeriodStartDate: vipTier.vipPeriodStartDate,
+          vipPeriodEndDate: vipTier.vipPeriodEndDate,
+          bonusSpinsRemaining: vipTier.bonusSpinsRemaining,
+          bonusSpinsGrantedAt: vipTier.bonusSpinsGrantedAt,
+          bonusSpinsExpireAt: vipTier.bonusSpinsExpireAt,
+          birthdayBonusClaimed: vipTier.birthdayBonusClaimed,
+          lastBirthdayBonusDate: vipTier.lastBirthdayBonusDate,
+        }
+      : null,
+    spinWheel: spinStats,
+  };
+
+  res.status(200).json(
+    new ApiResponse(200, response, "User data retrieved successfully")
+  );
+});
+
 export {
   allUsers,
   changeCurrentPassword,
@@ -1634,6 +1820,7 @@ export {
   forgotPasswordRequest,
   getUser,
   getUserBalance,
+  getUserById,
   handleSocialLogin,
   loginUser,
   logoutUser,

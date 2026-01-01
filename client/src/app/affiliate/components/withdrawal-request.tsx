@@ -20,6 +20,97 @@ interface WithdrawalRequestProps {
   publicToken?: string;
 }
 
+// Function to detect sensitive information patterns
+const containsSensitiveInfo = (value: string): { detected: boolean; message: string } => {
+  if (!value || value.trim().length === 0) {
+    return { detected: false, message: '' };
+  }
+
+  const normalizedValue = value.toLowerCase().trim();
+
+  // Bank-related keywords
+  const bankKeywords = [
+    'account number',
+    'account no',
+    'acc no',
+    'acc number',
+    'bank account',
+    'routing number',
+    'routing no',
+    'swift code',
+    'iban',
+    'bank name',
+    'bank details',
+    'checking account',
+    'savings account',
+    'credit card',
+    'card number',
+    'cvv',
+    'cvc',
+    'expiry',
+    'expiration',
+    'ssn',
+    'social security',
+    'tax id',
+    'ein',
+    'passport',
+    'drivers license',
+    'driver license',
+    'dl number',
+  ];
+
+  // Check for bank keywords
+  for (const keyword of bankKeywords) {
+    if (normalizedValue.includes(keyword)) {
+      return {
+        detected: true,
+        message: 'Please do not include bank account details, card numbers, or other sensitive financial information.',
+      };
+    }
+  }
+
+  // Check for long numeric sequences (potential account numbers - 8+ digits)
+  const longNumericSequence = /\d{8,}/g;
+  if (longNumericSequence.test(value.replace(/[\s-]/g, ''))) {
+    // Allow crypto wallet addresses (they start with 0x or are alphanumeric)
+    if (!/^0x[a-fA-F0-9]+$/.test(value.trim()) && !/^[a-zA-Z0-9]{26,}$/.test(value.trim())) {
+      return {
+        detected: true,
+        message: 'Please do not include account numbers or other sensitive numeric information.',
+      };
+    }
+  }
+
+  // Check for routing number pattern (exactly 9 digits)
+  const routingNumberPattern = /\b\d{9}\b/;
+  if (routingNumberPattern.test(value.replace(/[\s-]/g, ''))) {
+    return {
+      detected: true,
+      message: 'Please do not include routing numbers or bank identifiers.',
+    };
+  }
+
+  // Check for credit card pattern (13-19 digits with possible spaces/dashes)
+  const creditCardPattern = /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{1,4}\b/;
+  if (creditCardPattern.test(value)) {
+    return {
+      detected: true,
+      message: 'Please do not include credit card numbers or payment card information.',
+    };
+  }
+
+  // Check for SSN pattern (XXX-XX-XXXX or XXX XX XXXX)
+  const ssnPattern = /\b\d{3}[\s-]?\d{2}[\s-]?\d{4}\b/;
+  if (ssnPattern.test(value)) {
+    return {
+      detected: true,
+      message: 'Please do not include Social Security Numbers or personal identification numbers.',
+    };
+  }
+
+  return { detected: false, message: '' };
+};
+
 export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProps) {
   const { balance, isSubmitting, submitWithdrawal, fetchBalance } = useAffiliateWithdrawal(publicToken);
   
@@ -33,13 +124,87 @@ export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProp
     walletAddress: '',
     notes: '',
   });
+  const [sensitiveInfoError, setSensitiveInfoError] = useState<{
+    field: string;
+    message: string;
+  } | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBalance();
   }, [fetchBalance]);
 
+  // Validate input for sensitive information
+  const validateInput = (field: string, value: string): boolean => {
+    // Always allow clearing the field
+    if (!value || value.trim().length === 0) {
+      if (sensitiveInfoError?.field === field) {
+        setSensitiveInfoError(null);
+      }
+      return true;
+    }
+
+    const validation = containsSensitiveInfo(value);
+    if (validation.detected) {
+      setSensitiveInfoError({
+        field,
+        message: validation.message,
+      });
+      return false;
+    } else {
+      // Clear error if it was for this field
+      if (sensitiveInfoError?.field === field) {
+        setSensitiveInfoError(null);
+      }
+      return true;
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    // Final validation check before submission
+    let hasSensitiveInfo = false;
+
+    // Check PayPal email
+    if (paymentMethod === 'PayPal' && paymentDetails.paypalEmail) {
+      const validation = containsSensitiveInfo(paymentDetails.paypalEmail);
+      if (validation.detected) {
+        setSensitiveInfoError({
+          field: 'paypalEmail',
+          message: validation.message,
+        });
+        hasSensitiveInfo = true;
+      }
+    }
+
+    // Check wallet address
+    if (paymentMethod === 'Crypto' && paymentDetails.walletAddress) {
+      const validation = containsSensitiveInfo(paymentDetails.walletAddress);
+      if (validation.detected) {
+        setSensitiveInfoError({
+          field: 'walletAddress',
+          message: validation.message,
+        });
+        hasSensitiveInfo = true;
+      }
+    }
+
+    // Check notes
+    if (paymentDetails.notes) {
+      const validation = containsSensitiveInfo(paymentDetails.notes);
+      if (validation.detected) {
+        setSensitiveInfoError({
+          field: 'notes',
+          message: validation.message,
+        });
+        hasSensitiveInfo = true;
+      }
+    }
+
+    if (hasSensitiveInfo) {
+      return;
+    }
 
     const result = await submitWithdrawal({
       amount: parseFloat(amount),
@@ -48,6 +213,9 @@ export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProp
     });
 
     if (result.success) {
+      // Show success message
+      setSuccessMessage('Withdrawal request submitted successfully! Our team will review it and you will receive an email confirmation once processed.');
+      
       // Reset form
       setAmount('');
       setPaymentDetails({
@@ -58,6 +226,13 @@ export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProp
         walletAddress: '',
         notes: '',
       });
+      setSensitiveInfoError(null);
+      setPaymentMethod('PayPal');
+
+      // Clear success message after 10 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 10000);
     }
   };
 
@@ -108,6 +283,37 @@ export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProp
         </NeonBox>
       </div>
 
+      {/* Success Message */}
+      {successMessage && (
+        <NeonBox
+          className='p-4 rounded-lg mb-6'
+          backgroundColor='--color-green-500'
+          backgroundOpacity={0.1}
+          glowColor='--color-green-500'
+        >
+          <div className='flex items-start gap-3'>
+            <NeonIcon
+              icon='lucide:check-circle'
+              size={20}
+              className='text-green-400 flex-shrink-0 mt-0.5'
+              glowColor='--color-green-500'
+            />
+            <div className='flex-1'>
+              <p className='text-sm font-medium text-green-400 mb-1'>Success!</p>
+              <p className='text-xs text-green-300/80'>{successMessage}</p>
+            </div>
+            <button
+              type='button'
+              onClick={() => setSuccessMessage(null)}
+              className='text-green-400/60 hover:text-green-400 transition-colors flex-shrink-0'
+              aria-label='Close success message'
+            >
+              <NeonIcon icon='lucide:x' size={16} />
+            </button>
+          </div>
+        </NeonBox>
+      )}
+
       {/* Form */}
       <form onSubmit={handleSubmit} className='space-y-6'>
         {/* Amount */}
@@ -121,7 +327,10 @@ export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProp
             min={balance.minimumWithdrawal}
             max={balance.availableBalance}
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => {
+              setAmount(e.target.value);
+              if (successMessage) setSuccessMessage(null);
+            }}
             placeholder={`Min: $${balance.minimumWithdrawal.toFixed(2)}`}
             required
             className='w-full'
@@ -136,13 +345,19 @@ export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProp
           <label className='block text-sm font-medium text-white/80 mb-2'>
             Payment Method <span className='text-red-400'>*</span>
           </label>
-          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+          <Select 
+            value={paymentMethod} 
+            onValueChange={(value) => {
+              setPaymentMethod(value);
+              if (successMessage) setSuccessMessage(null);
+            }}
+          >
             <SelectTrigger className='w-full'>
               <SelectValue placeholder='Select payment method' />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value='PayPal'>PayPal</SelectItem>
-              <SelectItem value='Bank Transfer'>Bank Transfer</SelectItem>
+              {/* <SelectItem value='Bank Transfer'>Bank Transfer</SelectItem> */}
               <SelectItem value='Crypto'>Cryptocurrency</SelectItem>
               <SelectItem value='Other'>Other</SelectItem>
             </SelectContent>
@@ -158,21 +373,34 @@ export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProp
             <Input
               type='email'
               value={paymentDetails.paypalEmail}
-              onChange={(e) =>
-                setPaymentDetails({
-                  ...paymentDetails,
-                  paypalEmail: e.target.value,
-                })
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                if (successMessage) setSuccessMessage(null);
+                if (validateInput('paypalEmail', value)) {
+                  setPaymentDetails({
+                    ...paymentDetails,
+                    paypalEmail: value,
+                  });
+                }
+              }}
               placeholder='your.email@example.com'
               required
-              className='w-full'
+              className={cn(
+                'w-full',
+                sensitiveInfoError?.field === 'paypalEmail' && 'border-red-500'
+              )}
             />
+            {sensitiveInfoError?.field === 'paypalEmail' && (
+              <p className='text-xs text-red-400 mt-1 flex items-center gap-1'>
+                <NeonIcon icon='lucide:alert-circle' size={14} />
+                {sensitiveInfoError.message}
+              </p>
+            )}
           </div>
         )}
 
         {/* Payment Details - Bank Transfer */}
-        {paymentMethod === 'Bank Transfer' && (
+        {/* {paymentMethod === 'Bank Transfer' && (
           <>
             <div>
               <label className='block text-sm font-medium text-white/80 mb-2'>
@@ -229,7 +457,7 @@ export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProp
               />
             </div>
           </>
-        )}
+        )} */}
 
         {/* Payment Details - Crypto */}
         {paymentMethod === 'Crypto' && (
@@ -240,16 +468,29 @@ export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProp
             <Input
               type='text'
               value={paymentDetails.walletAddress}
-              onChange={(e) =>
-                setPaymentDetails({
-                  ...paymentDetails,
-                  walletAddress: e.target.value,
-                })
-              }
+              onChange={(e) => {
+                const value = e.target.value;
+                if (successMessage) setSuccessMessage(null);
+                if (validateInput('walletAddress', value)) {
+                  setPaymentDetails({
+                    ...paymentDetails,
+                    walletAddress: value,
+                  });
+                }
+              }}
               placeholder='0x...'
               required
-              className='w-full'
+              className={cn(
+                'w-full',
+                sensitiveInfoError?.field === 'walletAddress' && 'border-red-500'
+              )}
             />
+            {sensitiveInfoError?.field === 'walletAddress' && (
+              <p className='text-xs text-red-400 mt-1 flex items-center gap-1'>
+                <NeonIcon icon='lucide:alert-circle' size={14} />
+                {sensitiveInfoError.message}
+              </p>
+            )}
           </div>
         )}
 
@@ -261,22 +502,58 @@ export default function WithdrawalRequest({ publicToken }: WithdrawalRequestProp
           <Input
             type='text'
             value={paymentDetails.notes}
-            onChange={(e) =>
-              setPaymentDetails({
-                ...paymentDetails,
-                notes: e.target.value,
-              })
-            }
-            placeholder='Any additional information'
-            className='w-full'
+            onChange={(e) => {
+              const value = e.target.value;
+              if (successMessage) setSuccessMessage(null);
+              if (validateInput('notes', value)) {
+                setPaymentDetails({
+                  ...paymentDetails,
+                  notes: value,
+                });
+              }
+            }}
+            placeholder='Need a different payment method? Let us know here...'
+            className={cn(
+              'w-full',
+              sensitiveInfoError?.field === 'notes' && 'border-red-500'
+            )}
           />
+          {sensitiveInfoError?.field === 'notes' && (
+            <p className='text-xs text-red-400 mt-1 flex items-center gap-1'>
+              <NeonIcon icon='lucide:alert-circle' size={14} />
+              {sensitiveInfoError.message}
+            </p>
+          )}
+          <div className='space-y-2 mt-2'>
+            <p className='text-xs text-blue-400/80 flex items-start gap-1'>
+              <NeonIcon icon='lucide:info' size={14} className='mt-0.5 flex-shrink-0' />
+              <span>
+                <strong>Alternative Payment Methods:</strong> If you prefer a different payment method 
+                not listed above, please mention it here and our team will reach out to you directly 
+                to arrange the payment.
+              </span>
+            </p>
+            <p className='text-xs text-yellow-400/70 flex items-start gap-1'>
+              <NeonIcon icon='lucide:shield-alert' size={14} className='mt-0.5 flex-shrink-0' />
+              <span>
+                <strong>Security Notice:</strong> Do not include bank account numbers, routing numbers, 
+                credit card details, SSN, or any other sensitive financial information. 
+                Only mention the payment method type you prefer.
+              </span>
+            </p>
+          </div>
         </div>
 
         {/* Submit Button */}
         <Button
           type='submit'
           size='lg'
-          disabled={isSubmitting || !amount || parseFloat(amount) < balance.minimumWithdrawal}
+          disabled={
+            isSubmitting || 
+            !amount || 
+            parseFloat(amount) < balance.minimumWithdrawal ||
+            !!sensitiveInfoError
+          }
           className='w-full'
         >
           {isSubmitting ? (

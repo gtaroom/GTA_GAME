@@ -56,6 +56,7 @@ export const baseUserApi = createApi({
     "SpinWheelStats",
     "AffiliateWithdrawals",
     "AffiliateWithdrawalStats",
+    "UserDetails",
     "Mailchimp",
     "MailchimpLists",
     "MailchimpSubscribers",

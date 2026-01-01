@@ -14,6 +14,7 @@ import {
   forgotPasswordRequest,
   updateProfile,
   getUser,
+  getUserById,
   updateUser,
   deleteUser,
   subscribeNotifications,
@@ -157,6 +158,9 @@ userRouter.put(
   markAllNotificationsAsRead
 );
 userRouter.delete("/notifications/read", verifyJWT, deleteReadNotifications);
+
+// Get user by ID (must be after all specific routes to avoid conflicts)
+userRouter.get("/details/:id", verifyJWT, canViewUsers, apiLimiter, getUserById);
 
 // Twilio Opt-Out Webhook
 userRouter.post("/twilio-optout-webhook", handleTwilioWebhook);
