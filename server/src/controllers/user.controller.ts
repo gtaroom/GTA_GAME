@@ -1672,6 +1672,7 @@ const getUserById = asyncHandler(async (req, res) => {
   // Get VIP tier status
   let vipTier = null;
   try {
+    await vipService.updateUserTier(user._id.toString());
     vipTier = await vipService.getOrCreateVipTier(user._id.toString());
   } catch (error) {
     logger.error(`Error fetching VIP tier for user ${user._id}:`, error);
