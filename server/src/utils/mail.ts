@@ -285,7 +285,7 @@ const forgotPasswordMailgenContent = (
     </p>
     
     <p style="font-size: 14px; color: ${BRAND_COLORS.secondary}; margin-bottom: 30px;">
-      Click the button below to reset your password. This link will expire in 20 minutes for security reasons.
+      Click the button below to reset your password. This link will expire in 24 hours for security reasons.
     </p>
   `;
 
@@ -402,7 +402,9 @@ const generateAdminNotificationContent = (
           <p><strong>Website:</strong> ${data.website ? `<a href="${data.website}" style="color: ${BRAND_COLORS.primary};">${data.website}</a>` : "N/A"}</p>
           <p><strong>Phone:</strong> ${data.phone || "N/A"}</p>
           <p><strong>Audience Size:</strong> ${data.audienceSize || "N/A"}</p>
-          ${data.socialMedia ? `
+          ${
+            data.socialMedia
+              ? `
           <p><strong>Social Media:</strong></p>
           <ul style="margin: 10px 0; padding-left: 20px;">
             ${data.socialMedia.instagram ? `<li>Instagram: ${data.socialMedia.instagram}</li>` : ""}
@@ -411,10 +413,16 @@ const generateAdminNotificationContent = (
             ${data.socialMedia.youtube ? `<li>YouTube: ${data.socialMedia.youtube}</li>` : ""}
             ${data.socialMedia.tiktok ? `<li>TikTok: ${data.socialMedia.tiktok}</li>` : ""}
           </ul>
-          ` : ""}
-          ${data.promotionMethods && data.promotionMethods.length > 0 ? `
+          `
+              : ""
+          }
+          ${
+            data.promotionMethods && data.promotionMethods.length > 0
+              ? `
           <p><strong>Promotion Methods:</strong> ${data.promotionMethods.join(", ")}</p>
-          ` : ""}
+          `
+              : ""
+          }
           <p><strong>Application ID:</strong> ${data.applicationId || "N/A"}</p>
           <p><strong>Status:</strong> <span class="highlight">${data.status || "Pending"}</span></p>
           <p><strong>Applied At:</strong> ${data.appliedAt || "N/A"}</p>
@@ -441,7 +449,9 @@ const generateAdminNotificationContent = (
           <p><strong>Affiliate Code:</strong> ${data.affiliateCode || "N/A"}</p>
           <p><strong>Amount:</strong> <span style="color: ${BRAND_COLORS.primary}; font-size: 20px; font-weight: 700;">$${data.amount?.toFixed(2) || "0.00"}</span></p>
           <p><strong>Payment Method:</strong> ${data.paymentMethod || "Not specified"}</p>
-          ${data.paymentDetails ? `
+          ${
+            data.paymentDetails
+              ? `
           <p><strong>Payment Details:</strong></p>
           <ul style="margin: 10px 0; padding-left: 20px;">
             ${data.paymentDetails.accountNumber ? `<li>Account Number: ${data.paymentDetails.accountNumber}</li>` : ""}
@@ -451,7 +461,9 @@ const generateAdminNotificationContent = (
             ${data.paymentDetails.walletAddress ? `<li>Wallet Address: ${data.paymentDetails.walletAddress}</li>` : ""}
             ${data.paymentDetails.notes ? `<li>Notes: ${data.paymentDetails.notes}</li>` : ""}
           </ul>
-          ` : ""}
+          `
+              : ""
+          }
           <p><strong>Request ID:</strong> ${data.requestId || "N/A"}</p>
           <p><strong>Requested At:</strong> ${data.requestedAt || "N/A"}</p>
           <p><strong>Status:</strong> <span class="highlight">Pending Review</span></p>
@@ -610,7 +622,9 @@ const generateUserNotificationContent = (
           You can now start promoting our platform and earn commissions on every qualified referral!
         </p>
         
-        ${data.dashboardLink ? `
+        ${
+          data.dashboardLink
+            ? `
         <div style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center;">
           <p style="font-size: 16px; margin-bottom: 15px; color: ${BRAND_COLORS.primary}; font-weight: 600;">
             Access Your Dashboard:
@@ -622,7 +636,9 @@ const generateUserNotificationContent = (
             Use this secure link to access your affiliate dashboard anytime without creating an account.
           </p>
         </div>
-        ` : ""}
+        `
+            : ""
+        }
         
         <p style="font-size: 16px; color: ${BRAND_COLORS.secondary};">
           ${data.userId ? "You can also access your affiliate dashboard by logging into your account." : data.dashboardLink ? "Save this dashboard link - you can use it anytime to check your earnings and referrals!" : "Please create an account to access your affiliate dashboard and track your earnings."}

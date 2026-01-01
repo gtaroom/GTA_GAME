@@ -81,10 +81,8 @@ export default function GamePlayStep({
         const amount = parseFloat(purchaseAmount);
 
         // Validate amount
-        if (!purchaseAmount || isNaN(amount) || amount < MIN_ADD_LOOT) {
-            setShowAmountError(
-                `Please enter a valid amount (minimum $${MIN_ADD_LOOT})`
-            );
+        if (!purchaseAmount || isNaN(amount) || amount < 1) {
+            setShowAmountError(`Please enter a valid amount`);
             return;
         }
 
@@ -473,28 +471,33 @@ export default function GamePlayStep({
                                 <div className='space-y-4 mb-4'>
                                     <div className='space-y-2'>
                                         <label className='text-sm font-semibold text-red-300 flex items-center gap-2'>
-                                            <NeonIcon
+                                            {/* <NeonIcon
                                                 icon='lucide:dollar-sign'
                                                 size={14}
                                                 glowColor='--color-red-500'
-                                            />
+                                            /> */}
                                             Purchase Amount
                                         </label>
-                                        <Input
-                                            type='number'
-                                            placeholder={`Enter amount (min $${MIN_ADD_LOOT})`}
-                                            value={purchaseAmount}
-                                            onChange={e => {
-                                                setPurchaseAmount(
-                                                    e.target.value
-                                                );
-                                                setShowAmountError(null);
-                                            }}
-                                            disabled={loading}
-                                            min={MIN_ADD_LOOT}
-                                            step='1'
-                                            className='w-full bg-red-900/20 border-red-500/30 focus:border-red-500/50 text-white'
-                                        />
+                                        <div className='relative w-full'>
+                                            <div className='absolute left-3 top-1/2 -translate-y-1/2 text-white pointer-events-none z-10 text-lg'>
+                                                $
+                                            </div>
+                                            <Input
+                                                type='number'
+                                                placeholder={`Enter amount`}
+                                                value={purchaseAmount}
+                                                onChange={e => {
+                                                    setPurchaseAmount(
+                                                        e.target.value
+                                                    );
+                                                    setShowAmountError(null);
+                                                }}
+                                                disabled={loading}
+                                                min={1}
+                                                step='1'
+                                                className='w-full bg-red-900/20 border-red-500/30 focus:border-red-500/50 text-white pl-8'
+                                            />
+                                        </div>
                                         {purchaseAmount &&
                                             !isNaN(
                                                 parseFloat(purchaseAmount)

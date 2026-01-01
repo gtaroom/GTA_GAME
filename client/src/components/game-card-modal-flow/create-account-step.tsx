@@ -60,10 +60,14 @@ export default function CreateAccountStep({
         const amount = parseFloat(rechargeAmount);
 
         // Validate amount
-        if (!rechargeAmount || isNaN(amount) || amount < MIN_ADD_LOOT) {
-            setShowAmountError(
-                `Please enter a valid amount (minimum $${MIN_ADD_LOOT})`
-            );
+        // if (!rechargeAmount || isNaN(amount) || amount < MIN_ADD_LOOT) {
+        //     setShowAmountError(
+        //         `Please enter a valid amount (minimum $${MIN_ADD_LOOT})`
+        //     );
+        //     return;
+        // }
+        if (!rechargeAmount || isNaN(amount) || amount < 1) {
+            setShowAmountError(`Please enter a valid amount `);
             return;
         }
 
@@ -237,16 +241,17 @@ export default function CreateAccountStep({
                                 <div className='space-y-4 mb-4'>
                                     <div className='space-y-2'>
                                         <label className='text-sm font-semibold text-red-300 flex items-center gap-2'>
-                                            <NeonIcon
+                                            {/* <NeonIcon
                                                 icon='lucide:dollar-sign'
                                                 size={14}
                                                 glowColor='--color-red-500'
-                                            />
-                                            Amount to load into Game
+                                            /> */}
+                                            Purchase Amount
                                         </label>
-                                        <Input
+                                        {/* <Input
                                             type='number'
-                                            placeholder={`Enter amount (min $${MIN_ADD_LOOT})`}
+                                            // placeholder={`Enter amount (min $${MIN_ADD_LOOT})`}
+                                            placeholder={`Enter amount`}
                                             value={rechargeAmount}
                                             onChange={e => {
                                                 setRechargeAmount(
@@ -255,10 +260,32 @@ export default function CreateAccountStep({
                                                 setShowAmountError(null);
                                             }}
                                             disabled={isLoading}
-                                            min={MIN_ADD_LOOT}
+                                            min={0}
                                             step='1'
                                             className='w-full bg-red-900/20 border-red-500/30 focus:border-red-500/50 text-white'
-                                        />
+                                        /> */}
+
+                                        <div className='relative w-full'>
+                                            <span className='absolute left-3 top-1/2 -translate-y-1/2 text-white text-base font-medium pointer-events-none z-10'>
+                                                $
+                                            </span>
+                                            <Input
+                                                type='number'
+                                                placeholder='Enter amount'
+                                                value={rechargeAmount}
+                                                onChange={e => {
+                                                    setRechargeAmount(
+                                                        e.target.value
+                                                    );
+                                                    setShowAmountError(null);
+                                                }}
+                                                disabled={isLoading}
+                                                min={0}
+                                                step='1'
+                                                className='w-full bg-red-900/20 border-red-500/30 focus:border-red-500/50 text-white pl-8'
+                                            />
+                                        </div>
+
                                         {rechargeAmount &&
                                             !isNaN(
                                                 parseFloat(rechargeAmount)
@@ -383,11 +410,11 @@ export default function CreateAccountStep({
                                     <div className='space-y-2'>
                                         <label className='text-sm font-semibold text-purple-300 flex items-center justify-between gap-2'>
                                             <span className='flex items-center gap-2'>
-                                                <NeonIcon
+                                                {/* <NeonIcon
                                                     icon='lucide:dollar-sign'
                                                     size={14}
                                                     glowColor='--color-purple-500'
-                                                />
+                                                /> */}
                                                 Amount to load into Game
                                             </span>
                                             {/* Buy Coins Badge */}
@@ -406,21 +433,26 @@ export default function CreateAccountStep({
                                                 Buy More Coins
                                             </button>
                                         </label>
-                                        <Input
-                                            type='number'
-                                            placeholder={`Enter up to available balance (min $${MIN_ADD_LOOT})`}
-                                            value={rechargeAmount}
-                                            onChange={e => {
-                                                setRechargeAmount(
-                                                    e.target.value
-                                                );
-                                                setShowAmountError(null);
-                                            }}
-                                            disabled={isLoading}
-                                            min={MIN_ADD_LOOT}
-                                            step='1'
-                                            className='w-full bg-purple-900/20 border-purple-500/30 focus:border-purple-500/50'
-                                        />
+                                        <div className='relative w-full'>
+                                            <div className='absolute left-3 top-1/2 -translate-y-1/2 text-white pointer-events-none z-10 text-lg'>
+                                                $
+                                            </div>
+                                            <Input
+                                                type='number'
+                                                placeholder={`Enter up to available balance (min $${MIN_ADD_LOOT})`}
+                                                value={rechargeAmount}
+                                                onChange={e => {
+                                                    setRechargeAmount(
+                                                        e.target.value
+                                                    );
+                                                    setShowAmountError(null);
+                                                }}
+                                                disabled={isLoading}
+                                                min={MIN_ADD_LOOT}
+                                                step='1'
+                                                className='w-full bg-purple-900/20 border-purple-500/30 focus:border-purple-500/50 pl-8'
+                                            />
+                                        </div>
                                         {rechargeAmount &&
                                             !isNaN(
                                                 parseFloat(rechargeAmount)
