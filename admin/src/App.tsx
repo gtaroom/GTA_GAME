@@ -13,6 +13,7 @@ import Recharges from "./pages/Recharges";
 import UserBalance from "./pages/UserBalance";
 // import UserManagement from './pages/UserManagement';
 import EnhancedUserManagement from "./pages/EnhancedUserManagement";
+import UserDetails from './pages/UserDetails';
 import RoleManagement from "./pages/RoleManagement";
 import { HomeRedirect } from "./components/HomeRedirect";
 // import SupportManagement from './pages/SupportManagement';
@@ -64,6 +65,15 @@ function App() {
                   </RoleBasedRoute>
                 }
               />
+              
+              {/* User Details - accessible by users with canViewAllUsers permission */}
+              <Route path="/users/:id" element={
+                <RoleBasedRoute requiredPermissions={["canViewAllUsers"]}>
+                  <MainLayout>
+                    <UserDetails />
+                  </MainLayout>
+                </RoleBasedRoute>
+              } />
 
               {/* Role Management - accessible by users with canManageRoles permission */}
               <Route
