@@ -306,7 +306,7 @@ const UserDetails: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-600">Current Tier</p>
                 <p className="text-2xl font-bold text-gray-900 capitalize">
-                  {vipTier.currentTier === 'none' ? 'None' : vipTier.currentTier}
+                  {vipTier.currentTier === 'none' ? 'Standard' : vipTier.currentTier}
                 </p>
               </div>
               {vipTier.currentTier !== 'none' && (
