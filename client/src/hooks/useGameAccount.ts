@@ -3,24 +3,28 @@
  * Custom hook for managing game account operations
  */
 
-import { useState, useCallback, useEffect } from 'react';
 import {
-    getGameAccountStatus,
     getGameAccountDetails,
-    storeExistingAccount,
+    getGameAccountStatus,
     requestNewAccount,
+    storeExistingAccount,
 } from '@/lib/api/game-accounts';
 import type {
-    GameAccountStatusResponse,
     GameAccountDetailsResponse,
-    StoreExistingAccountRequest,
+    GameAccountStatusResponse,
     RequestNewAccountRequest,
+    StoreExistingAccountRequest,
     UseGameAccountReturn,
 } from '@/types/game-account.types';
+import { useCallback, useEffect, useState } from 'react';
 
 export const useGameAccount = (): UseGameAccountReturn => {
-    const [accountStatus, setAccountStatus] = useState<GameAccountStatusResponse['data'] | null>(null);
-    const [accountDetails, setAccountDetails] = useState<GameAccountDetailsResponse['data'] | null>(null);
+    const [accountStatus, setAccountStatus] = useState<
+        GameAccountStatusResponse['data'] | null
+    >(null);
+    const [accountDetails, setAccountDetails] = useState<
+        GameAccountDetailsResponse['data'] | null
+    >(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -34,14 +38,18 @@ export const useGameAccount = (): UseGameAccountReturn => {
 
         try {
             const response = await getGameAccountStatus(gameId);
-            
+
             if (response.data) {
                 setAccountStatus(response.data);
             } else {
                 setError(response.message || 'Failed to check account status');
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to check account status');
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Failed to check account status'
+            );
         } finally {
             setIsLoading(false);
         }
@@ -58,8 +66,15 @@ export const useGameAccount = (): UseGameAccountReturn => {
                 checkAccountStatus(targetGameId);
             }
         };
-        window.addEventListener('trigger-check-game-account', handler as EventListener);
-        return () => window.removeEventListener('trigger-check-game-account', handler as EventListener);
+        window.addEventListener(
+            'trigger-check-game-account',
+            handler as EventListener
+        );
+        return () =>
+            window.removeEventListener(
+                'trigger-check-game-account',
+                handler as EventListener
+            );
     }, [checkAccountStatus]);
 
     const getAccountDetails = useCallback(async (gameId: string) => {
@@ -68,59 +83,79 @@ export const useGameAccount = (): UseGameAccountReturn => {
 
         try {
             const response = await getGameAccountDetails(gameId);
-            
+
             if (response.data) {
                 setAccountDetails(response.data);
             } else {
                 setError(response.message || 'Failed to get account details');
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to get account details');
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : 'Failed to get account details'
+            );
         } finally {
             setIsLoading(false);
         }
     }, []);
 
-    const storeExistingAccountData = useCallback(async (data: StoreExistingAccountRequest) => {
-        setIsLoading(true);
-        setError(null);
+    const storeExistingAccountData = useCallback(
+        async (data: StoreExistingAccountRequest) => {
+            setIsLoading(true);
+            setError(null);
 
-        try {
-            const response = await storeExistingAccount(data);
-            
-            if (response.data) {
-                setAccountDetails(response.data);
-                // Refresh account status after storing
-                await checkAccountStatus(data.gameId);
-            } else {
-                setError(response.message || 'Failed to store account');
+            try {
+                const response = await storeExistingAccount(data);
+
+                if (response.data) {
+                    setAccountDetails(response.data);
+                    // Refresh account status after storing
+                    await checkAccountStatus(data.gameId);
+                } else {
+                    setError(response.message || 'Failed to store account');
+                }
+            } catch (err) {
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : 'Failed to store account'
+                );
+            } finally {
+                setIsLoading(false);
             }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to store account');
-        } finally {
-            setIsLoading(false);
-        }
-    }, [checkAccountStatus]);
+        },
+        [checkAccountStatus]
+    );
 
-    const requestNewAccountData = useCallback(async (data: RequestNewAccountRequest) => {
-        setIsLoading(true);
-        setError(null);
+    const requestNewAccountData = useCallback(
+        async (data: RequestNewAccountRequest) => {
+            setIsLoading(true);
+            setError(null);
 
-        try {
-            const response = await requestNewAccount(data);
-            
-            if (response.data) {
-                // Refresh account status after requesting
-                await checkAccountStatus(data.gameId);
-            } else {
-                setError(response.message || 'Failed to request new account');
+            try {
+                const response = await requestNewAccount(data);
+
+                if (response.data) {
+                    // Refresh account status after requesting
+                    await checkAccountStatus(data.gameId);
+                } else {
+                    setError(
+                        response.message || 'Failed to request new account'
+                    );
+                }
+            } catch (err) {
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : 'Failed to request new account'
+                );
+            } finally {
+                setIsLoading(false);
             }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to request new account');
-        } finally {
-            setIsLoading(false);
-        }
-    }, [checkAccountStatus]);
+        },
+        [checkAccountStatus]
+    );
 
     return {
         accountStatus,

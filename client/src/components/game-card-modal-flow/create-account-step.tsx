@@ -28,6 +28,8 @@ export default function CreateAccountStep({
     isLoading = false,
     error = null,
     hasPendingRequest = false,
+    requestStatus,
+    rejectionReason,
 }: CreateAccountStepProps) {
     const { balance: userBalance, loading: balanceLoading } =
         useWalletBalance();
@@ -43,6 +45,8 @@ export default function CreateAccountStep({
 
     // Balance validation
     const hasEnoughBalance = userBalance >= MIN_BALANCE_REQUIRED;
+    const isRejected = requestStatus === 'rejected';
+
     const processInfo: ProcessInfo[] = [
         {
             description: 'This process usually takes a few minutes.',
@@ -143,7 +147,9 @@ export default function CreateAccountStep({
                     description={
                         hasPendingRequest
                             ? 'Your request is being processed by our support team.'
-                            : "We're currently waiting for your game account confirmation."
+                            : isRejected
+                              ? 'Your previous request was not approved. Please review and try again.'
+                              : "We're currently waiting for your game account confirmation."
                     }
                 />
 
@@ -184,6 +190,61 @@ export default function CreateAccountStep({
                     </NeonBox>
                 )}
 
+                {isRejected && rejectionReason && (
+                    <NeonBox
+                        glowColor='--color-red-500'
+                        backgroundColor='--color-red-500'
+                        backgroundOpacity={0.1}
+                        className='p-5 rounded-lg mb-6'
+                    >
+                        <div className='flex items-start gap-4'>
+                            <NeonIcon
+                                icon='lucide:x-circle'
+                                size={24}
+                                glowColor='--color-red-500'
+                            />
+                            <div className='flex-1'>
+                                <NeonText
+                                    glowColor='--color-red-500'
+                                    className='text-lg font-bold text-red-400 mb-3'
+                                >
+                                    ❌ Request Rejected
+                                </NeonText>
+                                <div className='bg-red-900/30 border border-red-500/30 rounded-lg p-4 mb-4'>
+                                    <div className='mb-2'>
+                                        <span className='text-sm font-semibold text-red-300'>
+                                            Reason:
+                                        </span>
+                                    </div>
+                                    <p className='text-sm text-red-200 leading-relaxed'>
+                                        {rejectionReason}
+                                    </p>
+                                </div>
+
+                                <div className='p-3 bg-red-900/30 rounded-lg border border-red-500/20'>
+                                    <div className='flex items-start gap-2 text-xs text-red-300'>
+                                        <NeonIcon
+                                            icon='lucide:info'
+                                            size={14}
+                                            glowColor='--color-red-500'
+                                            className='mt-0.5 flex-shrink-0'
+                                        />
+                                        <div>
+                                            <span className='font-semibold'>
+                                                What's next?
+                                            </span>{' '}
+                                            Please review the reason above and
+                                            make any necessary changes before
+                                            submitting a new request. If you
+                                            need assistance, contact our support
+                                            team.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </NeonBox>
+                )}
                 {/* Balance warning with Amount Input */}
                 {!hasEnoughBalance && !hasPendingRequest && !balanceLoading && (
                     <NeonBox
@@ -518,6 +579,7 @@ export default function CreateAccountStep({
                 )}
 
                 {/* Only show action buttons if not pending request */}
+                {/* Only show action buttons if not pending request */}
                 {!hasPendingRequest && !isLoading && (
                     <div className='mb-6'>
                         <Button
@@ -529,7 +591,9 @@ export default function CreateAccountStep({
                                 ? rechargeAmount &&
                                   parseFloat(rechargeAmount) >= MIN_ADD_LOOT
                                     ? `Confirm & Load Game ($${parseFloat(rechargeAmount).toFixed(2)})`
-                                    : 'Request New Account'
+                                    : isRejected
+                                      ? 'Submit New Request'
+                                      : 'Request New Account'
                                 : 'Insufficient Balance'}
                         </Button>
 

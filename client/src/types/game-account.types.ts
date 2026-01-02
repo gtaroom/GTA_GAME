@@ -12,6 +12,8 @@ export interface GameAccountStatusResponse {
         hasExistingAccount: boolean;
         isCredentialsStored: boolean;
         hasPendingRequest: boolean;
+        status?: 'pending' | 'approved' | 'rejected' | 'complete';
+        rejectionReason?: string | null;
         accountDetails?: {
             username: string;
             hasExistingAccount: boolean;
@@ -135,8 +137,9 @@ export interface CreateAccountStepProps extends GameModalStepProps {
     isLoading?: boolean;
     error?: string | null;
     hasPendingRequest?: boolean;
+    requestStatus?: 'pending' | 'approved' | 'rejected' | 'complete';
+    rejectionReason?: string | null;
 }
-
 // Process Info Types
 export interface ProcessInfo {
     icon?: string;

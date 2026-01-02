@@ -15,7 +15,7 @@ import { getUserFromRequest } from "../utils/get-user";
 import { sendEmailNotify } from "../utils/mail";
 import { formatPhoneNumber } from "../utils/phone-formatter";
 import WalletModel from "../models/wallet.model";
-
+import mongoose from "mongoose";
 // Store existing game account credentials
 export const storeExistingGameAccount = asyncHandler(
   async (req: Request, res: Response) => {
@@ -594,112 +594,299 @@ export const approveAccountRequest = asyncHandler(
 );
 
 // Admin: Reject account request
+// export const rejectAccountRequest = asyncHandler(
+//   async (req: Request, res: Response) => {
+//     const { requestId } = req.params;
+//     const { adminNotes } = req.body;
+
+//     // 1. Start a Session for Atomic Operations
+//     const session = await mongoose.startSession();
+//     session.startTransaction();
+
+//     try {
+//       // Find the request within the session
+//       const accountRequest = await GameAccountRequestModel.findById(requestId).session(session);
+
+//       if (!accountRequest) {
+//         throw new ApiError(404, "Account request not found");
+//       }
+
+//       if (accountRequest.status !== "pending") {
+//         throw new ApiError(400, "Request is already processed and cannot be rejected");
+//       }
+
+//       // 2. Update Request Status
+//       accountRequest.status = "rejected";
+//       accountRequest.adminNotes = adminNotes;
+//       // Ensure rejectionReason is synced for the frontend status check
+//       accountRequest.rejectionReason = adminNotes;
+//       await accountRequest.save({ session });
+
+//       // 3. Refund the 'requestedAmount' to Wallet 'balance'
+//       const refundAmount = accountRequest.requestedAmount || 0;
+
+//       if (refundAmount > 0) {
+//         const updatedWallet = await WalletModel.findOneAndUpdate(
+//           { userId: accountRequest.userId },
+//           { $inc: { balance: refundAmount } },
+//           { session, new: true }
+//         );
+
+//         if (!updatedWallet) {
+//           throw new ApiError(404, "User wallet not found. Refund failed.");
+//         }
+
+//         console.log(`Successfully refunded ${refundAmount} GC to User: ${accountRequest.userId}`);
+//       }
+
+//       // Commit all changes
+//       await session.commitTransaction();
+//       session.endSession();
+
+//     // Get user details for notifications
+//     const user = await UserModel.findById(accountRequest.userId);
+//     if (!user) {
+//       throw new ApiError(404, "User not found");
+//     }
+
+//     // Create game account rejected notification
+//     const gameAccountRejectedNotification = {
+//       id: uuidv4(),
+//       timestamp: new Date(),
+//       read: false,
+//       type: "game_account_rejected" as const,
+//       requestId: accountRequest._id.toString(),
+//       userId: user._id.toString(),
+//       userName: `${user.name?.first || ""} ${user.name?.last || ""}`,
+//       userEmail: user.email,
+//       gameName: accountRequest.gameName,
+//       gameId: accountRequest.gameId.toString(),
+//     };
+
+//     // Send to user with persistent storage
+//     await notificationService.sendNotification(
+//       user._id.toString(),
+//       SocketEvents.GAME_ACCOUNT_REJECTED,
+//       gameAccountRejectedNotification
+//     );
+
+//     // Send SMS notification to user (if they have SMS enabled)
+//     // if (user.phone && user.isSmsOpted) {
+//     if (user.phone) {
+//       try {
+//         const formattedPhone = formatPhoneNumber(user.phone);
+//         if (formattedPhone) {
+//           const firstName = user.name?.first || "User";
+
+//           const smsMessage = `GTOA Account Update\n\nHello ${firstName},\n\nYour ${accountRequest.gameName} account request could not be approved at this time.\n\n${adminNotes ? `Reason: ${adminNotes}\n\n` : ""}You can submit a new request anytime.\n\nFor questions, text 702-356-3435 or DM http://m.me/105542688498394.`;
+
+//           const smsResult = await twilioService.sendTransactionalSMS(
+//             formattedPhone,
+//             {
+//               playerName: firstName,
+//               transactionType: "subscription",
+//               details: "Account request rejected",
+//             },
+//             smsMessage
+//           );
+
+//           if (smsResult.success) {
+//             console.log(
+//               `SMS notification sent successfully to ${formattedPhone} for game account rejection. SID: ${smsResult.sid}`
+//             );
+//           } else {
+//             console.error(
+//               `Failed to send SMS notification to ${formattedPhone}: ${smsResult.error}`
+//             );
+//           }
+//         } else {
+//           console.warn(
+//             `Invalid phone number format: ${user.phone}. Email notification sent instead.`
+//           );
+//         }
+//       } catch (error) {
+//         console.error("Error sending SMS notification:", error);
+//         // Don't throw error here as email notification is already sent
+//       }
+//     }
+
+//     // Send email notification to user (always send email as backup)
+//     await sendEmailNotify({
+//       email: user.email,
+//       subject: `Game Account Request Update - ${accountRequest.gameName}`,
+//       mailgenContent: `
+//       <h2>Game Account Request Update</h2>
+//       <p>Hello ${user.name?.first || ""} ${user.name?.last || ""},</p>
+//       <p>Your request for a <strong>${accountRequest.gameName}</strong> account could not be approved at this time.</p>
+//       ${adminNotes ? `<p><strong>Reason:</strong> ${adminNotes}</p>` : ""}
+//       <p>If you have any questions or would like to submit a new request, please contact our support team.</p>
+//     `,
+//     });
+
+//     return res
+//       .status(200)
+//       .json(
+//         new ApiResponse(
+//           200,
+//           accountRequest,
+//           "Account request rejected successfully"
+//         )
+//       );
+//   }
+// }
+
+// );
+
 export const rejectAccountRequest = asyncHandler(
   async (req: Request, res: Response) => {
     const { requestId } = req.params;
     const { adminNotes } = req.body;
 
-    const accountRequest = await GameAccountRequestModel.findById(requestId);
-    if (!accountRequest) {
-      throw new ApiError(404, "Account request not found");
-    }
+    // 1. Start a Session for Atomic Operations
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    if (accountRequest.status !== "pending") {
-      throw new ApiError(400, "Request is not pending");
-    }
+    try {
+      // Find the request within the session
+      const accountRequest =
+        await GameAccountRequestModel.findById(requestId).session(session);
 
-    accountRequest.status = "rejected";
-    accountRequest.adminNotes = adminNotes;
-    await accountRequest.save();
+      if (!accountRequest) {
+        throw new ApiError(404, "Account request not found");
+      }
 
-    // Get user details for notifications
-    const user = await UserModel.findById(accountRequest.userId);
-    if (!user) {
-      throw new ApiError(404, "User not found");
-    }
+      if (accountRequest.status !== "pending") {
+        throw new ApiError(
+          400,
+          "Request is already processed and cannot be rejected"
+        );
+      }
 
-    // Create game account rejected notification
-    const gameAccountRejectedNotification = {
-      id: uuidv4(),
-      timestamp: new Date(),
-      read: false,
-      type: "game_account_rejected" as const,
-      requestId: accountRequest._id.toString(),
-      userId: user._id.toString(),
-      userName: `${user.name?.first || ""} ${user.name?.last || ""}`,
-      userEmail: user.email,
-      gameName: accountRequest.gameName,
-      gameId: accountRequest.gameId.toString(),
-    };
+      // 2. Update Request Status
+      accountRequest.status = "rejected";
+      accountRequest.adminNotes = adminNotes;
+      // Ensure rejectionReason is synced for the frontend status check
+      accountRequest.rejectionReason = adminNotes;
+      await accountRequest.save({ session });
 
-    // Send to user with persistent storage
-    await notificationService.sendNotification(
-      user._id.toString(),
-      SocketEvents.GAME_ACCOUNT_REJECTED,
-      gameAccountRejectedNotification
-    );
+      // 3. Refund the 'requestedAmount' to Wallet 'balance'
+      const refundAmount = accountRequest.requestedAmount * 100 || 0;
 
-    // Send SMS notification to user (if they have SMS enabled)
-    // if (user.phone && user.isSmsOpted) {
-    if (user.phone) {
-      try {
-        const formattedPhone = formatPhoneNumber(user.phone);
-        if (formattedPhone) {
-          const firstName = user.name?.first || "User";
+      if (refundAmount > 0) {
+        const updatedWallet = await WalletModel.findOneAndUpdate(
+          { userId: accountRequest.userId },
+          { $inc: { balance: refundAmount } },
+          { session, new: true }
+        );
 
-          const smsMessage = `GTOA Account Update\n\nHello ${firstName},\n\nYour ${accountRequest.gameName} account request could not be approved at this time.\n\n${adminNotes ? `Reason: ${adminNotes}\n\n` : ""}You can submit a new request anytime.\n\nFor questions, text 702-356-3435 or DM http://m.me/105542688498394.`;
+        if (!updatedWallet) {
+          throw new ApiError(404, "User wallet not found. Refund failed.");
+        }
 
-          const smsResult = await twilioService.sendTransactionalSMS(
-            formattedPhone,
-            {
-              playerName: firstName,
-              transactionType: "subscription",
-              details: "Account request rejected",
-            },
-            smsMessage
-          );
+        console.log(
+          `Successfully refunded ${refundAmount} GC to User: ${accountRequest.userId}`
+        );
+      }
 
-          if (smsResult.success) {
-            console.log(
-              `SMS notification sent successfully to ${formattedPhone} for game account rejection. SID: ${smsResult.sid}`
+      // Commit all changes
+      await session.commitTransaction();
+      session.endSession();
+
+      // 4. Send Notifications (After successful DB commit)
+      const user = await UserModel.findById(accountRequest.userId);
+      // Get user details for notifications
+      if (!user) {
+        throw new ApiError(404, "User not found");
+      }
+
+      // Create game account rejected notification
+      const gameAccountRejectedNotification = {
+        id: uuidv4(),
+        timestamp: new Date(),
+        read: false,
+        type: "game_account_rejected" as const,
+        requestId: accountRequest._id.toString(),
+        userId: user._id.toString(),
+        userName: `${user.name?.first || ""} ${user.name?.last || ""}`,
+        userEmail: user.email,
+        gameName: accountRequest.gameName,
+        gameId: accountRequest.gameId.toString(),
+      };
+
+      // Send to user with persistent storage
+      await notificationService.sendNotification(
+        user._id.toString(),
+        SocketEvents.GAME_ACCOUNT_REJECTED,
+        gameAccountRejectedNotification
+      );
+
+      // Send SMS notification to user (if they have SMS enabled)
+      // if (user.phone && user.isSmsOpted) {
+      if (user.phone) {
+        try {
+          const formattedPhone = formatPhoneNumber(user.phone);
+          if (formattedPhone) {
+            const firstName = user.name?.first || "User";
+
+            const smsMessage = `GTOA Account Update\n\nHello ${firstName},\n\nYour ${accountRequest.gameName} account request could not be approved at this time.\n\n${adminNotes ? `Reason: ${adminNotes}\n\n` : ""}You can submit a new request anytime.\n\nFor questions, text 702-356-3435 or DM http://m.me/105542688498394.`;
+
+            const smsResult = await twilioService.sendTransactionalSMS(
+              formattedPhone,
+              {
+                playerName: firstName,
+                transactionType: "subscription",
+                details: "Account request rejected",
+              },
+              smsMessage
             );
+
+            if (smsResult.success) {
+              console.log(
+                `SMS notification sent successfully to ${formattedPhone} for game account rejection. SID: ${smsResult.sid}`
+              );
+            } else {
+              console.error(
+                `Failed to send SMS notification to ${formattedPhone}: ${smsResult.error}`
+              );
+            }
           } else {
-            console.error(
-              `Failed to send SMS notification to ${formattedPhone}: ${smsResult.error}`
+            console.warn(
+              `Invalid phone number format: ${user.phone}. Email notification sent instead.`
             );
           }
-        } else {
-          console.warn(
-            `Invalid phone number format: ${user.phone}. Email notification sent instead.`
-          );
+        } catch (error) {
+          console.error("Error sending SMS notification:", error);
+          // Don't throw error here as email notification is already sent
         }
-      } catch (error) {
-        console.error("Error sending SMS notification:", error);
-        // Don't throw error here as email notification is already sent
       }
-    }
 
-    // Send email notification to user (always send email as backup)
-    await sendEmailNotify({
-      email: user.email,
-      subject: `Game Account Request Update - ${accountRequest.gameName}`,
-      mailgenContent: `
+      // Send email notification to user (always send email as backup)
+      await sendEmailNotify({
+        email: user.email,
+        subject: `Game Account Request Update - ${accountRequest.gameName}`,
+        mailgenContent: `
       <h2>Game Account Request Update</h2>
       <p>Hello ${user.name?.first || ""} ${user.name?.last || ""},</p>
       <p>Your request for a <strong>${accountRequest.gameName}</strong> account could not be approved at this time.</p>
       ${adminNotes ? `<p><strong>Reason:</strong> ${adminNotes}</p>` : ""}
       <p>If you have any questions or would like to submit a new request, please contact our support team.</p>
     `,
-    });
+      });
 
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          accountRequest,
-          "Account request rejected successfully"
-        )
-      );
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            accountRequest,
+            "Request rejected and funds restored to wallet."
+          )
+        );
+    } catch (error) {
+      // If anything fails, undo the rejection and the refund
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
   }
 );
