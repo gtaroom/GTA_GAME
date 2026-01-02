@@ -21,7 +21,7 @@ import GameModalTitle from './game-modal-title';
 
 // Validation constants
 const MIN_ADD_LOOT = 10;
-const MIN_REDEEM = 40;
+const MIN_REDEEM = 50;
 const MAX_REDEEM = 500;
 const CONVERSION_RATE = 100; // 1 USD = 100 GC
 const MIN_BALANCE_REQUIRED = 1000; // Minimum GC required to add game loot
@@ -729,7 +729,7 @@ export default function GamePlayStep({
                                         glowColor='--color-green-500'
                                     />
                                     <NeonText className='text-sm font-semibold'>
-                                        Redeem Game GC
+                                        Redeem Game SC
                                     </NeonText>
                                 </div>
                                 <button
