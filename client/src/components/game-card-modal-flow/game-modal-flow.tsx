@@ -232,6 +232,8 @@ export default function GameCardModalFlow({
                                 hasPendingRequest={
                                     accountStatus?.hasPendingRequest || false
                                 }
+                                requestStatus={accountStatus?.status}
+                                rejectionReason={accountStatus?.rejectionReason}
                             />
                         )}
 

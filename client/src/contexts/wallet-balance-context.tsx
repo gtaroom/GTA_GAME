@@ -1,16 +1,16 @@
 'use client';
 
+import { getBalance } from '@/lib/api/wallet';
+import type { BalanceResponse } from '@/types/wallet.types';
 import {
     createContext,
+    useCallback,
     useContext,
     useEffect,
     useState,
-    useCallback,
     type ReactNode,
 } from 'react';
 import { useAuth } from './auth-context';
-import { getBalance } from '@/lib/api/wallet';
-import type { BalanceResponse } from '@/types/wallet.types';
 
 interface WalletBalanceCache {
     balance: number;
@@ -27,7 +27,9 @@ interface WalletBalanceContextType {
     clearCache: () => void;
 }
 
-const WalletBalanceContext = createContext<WalletBalanceContextType | undefined>(undefined);
+const WalletBalanceContext = createContext<
+    WalletBalanceContextType | undefined
+>(undefined);
 
 // Cache duration: 1 minute
 const CACHE_DURATION = 60 * 1000;
@@ -73,7 +75,7 @@ export function WalletBalanceProvider({ children }: { children: ReactNode }) {
 
         fetchPromise = (async () => {
             try {
-                const response = await getBalance() as BalanceResponse;
+                const response = (await getBalance()) as BalanceResponse;
 
                 if (response.success && response.data) {
                     const { balance: bal, currency: cur } = response.data;
@@ -93,7 +95,11 @@ export function WalletBalanceProvider({ children }: { children: ReactNode }) {
                 }
             } catch (err) {
                 console.error('Wallet balance fetch error:', err);
-                setError(err instanceof Error ? err.message : 'Failed to fetch balance');
+                setError(
+                    err instanceof Error
+                        ? err.message
+                        : 'Failed to fetch balance'
+                );
             } finally {
                 setLoading(false);
                 isFetching = false;
@@ -106,7 +112,10 @@ export function WalletBalanceProvider({ children }: { children: ReactNode }) {
 
     // Fetch on mount only if user is logged in
     useEffect(() => {
-        console.log('🔄 WalletBalanceProvider effect triggered, isLoggedIn:', isLoggedIn);
+        console.log(
+            '🔄 WalletBalanceProvider effect triggered, isLoggedIn:',
+            isLoggedIn
+        );
         if (isLoggedIn) {
             console.log('✅ User is logged in, fetching balance');
             fetchBalance();
@@ -154,7 +163,9 @@ export function WalletBalanceProvider({ children }: { children: ReactNode }) {
 export function useWalletBalance() {
     const context = useContext(WalletBalanceContext);
     if (context === undefined) {
-        throw new Error('useWalletBalance must be used within a WalletBalanceProvider');
+        throw new Error(
+            'useWalletBalance must be used within a WalletBalanceProvider'
+        );
     }
     return context;
 }

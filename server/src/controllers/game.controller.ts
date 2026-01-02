@@ -1,18 +1,17 @@
 import axios from "axios";
-import { Request, Response } from 'express';
+import { Request, Response } from "express";
 import fs from "fs";
-import NodeCache from 'node-cache';
-import path from 'path';
-import GameModel from '../models/games.model';
-import UserGameAccountModel from '../models/user-game-account.model';
-import GameAccountRequestModel from '../models/game-account-request.model';
-import { ApiError } from '../utils/api-error';
-import { ApiResponse } from '../utils/api-response';
-import { asyncHandler } from '../utils/async-handler';
+import NodeCache from "node-cache";
+import path from "path";
+import GameModel from "../models/games.model";
+import UserGameAccountModel from "../models/user-game-account.model";
+import GameAccountRequestModel from "../models/game-account-request.model";
+import { ApiError } from "../utils/api-error";
+import { ApiResponse } from "../utils/api-response";
+import { asyncHandler } from "../utils/async-handler";
 import { getUserFromRequest } from "../utils/get-user";
 
 const cache = new NodeCache({ stdTTL: 86400 });
-
 
 async function checkIframeSupport(url: string): Promise<string | null> {
   try {
@@ -25,7 +24,10 @@ async function checkIframeSupport(url: string): Promise<string | null> {
       return "er";
     }
 
-    if (contentSecurityPolicy && contentSecurityPolicy.includes("frame-ancestors 'none'")) {
+    if (
+      contentSecurityPolicy &&
+      contentSecurityPolicy.includes("frame-ancestors 'none'")
+    ) {
       // console.log("Content Security Policy prevents embedding");
       return "re";
     }
@@ -48,7 +50,7 @@ export const createGame = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Check iframe support
-  const type = req.body.type || await checkIframeSupport(link);
+  const type = req.body.type || (await checkIframeSupport(link));
   // console.log(type, "TYPE");
 
   // Path to games folder
@@ -61,12 +63,12 @@ export const createGame = asyncHandler(async (req: Request, res: Response) => {
   const sanitizedName = sanitizeName(name);
 
   // Find a matching file
-  const matchedFile = files.find((file) => sanitizeName(path.parse(file).name) === sanitizedName);
+  const matchedFile = files.find(
+    (file) => sanitizeName(path.parse(file).name) === sanitizedName
+  );
 
   // Construct image URL if a match is found
-  const imageUrl = matchedFile
-    ? `/public/games/${matchedFile}`
-    : null;
+  const imageUrl = matchedFile ? `/public/games/${matchedFile}` : null;
 
   const newGame = new GameModel({
     name,
@@ -78,56 +80,59 @@ export const createGame = asyncHandler(async (req: Request, res: Response) => {
 
   await newGame.save();
   cache.flushAll();
-  return res.status(201).json(new ApiResponse(201, newGame, "Game created successfully"));
+  return res
+    .status(201)
+    .json(new ApiResponse(201, newGame, "Game created successfully"));
 });
 // Get all games with pagination and search
 export const getAllGames = asyncHandler(async (req: Request, res: Response) => {
   const { page = 1, limit = 100, search = "" } = req.query;
 
-
   // Convert to number and ensure they are valid
   const pageNumber = parseInt(page as string);
   const limitNumber = parseInt(limit as string);
 
-  if (isNaN(pageNumber) || isNaN(limitNumber) || pageNumber < 1 || limitNumber < 1) {
-      throw new ApiError(400, "Invalid pagination parameters");
+  if (
+    isNaN(pageNumber) ||
+    isNaN(limitNumber) ||
+    pageNumber < 1 ||
+    limitNumber < 1
+  ) {
+    throw new ApiError(400, "Invalid pagination parameters");
   }
 
-  const searchQuery = search
-      ? { name: { $regex: search, $options: 'i' } }
-      : {};
+  const searchQuery = search ? { name: { $regex: search, $options: "i" } } : {};
 
   // Calculate skip value for pagination
   const skip = (pageNumber - 1) * limitNumber;
 
   // Fetch games with pagination and search query
   let games = await GameModel.find(searchQuery)
-      .skip(skip)
-      .limit(limitNumber)
-      .select("-creds -createdAt -updatedAt");
+    .skip(skip)
+    .limit(limitNumber)
+    .select("-creds -createdAt -updatedAt");
 
   const totalGames = await GameModel.countDocuments(searchQuery);
 
   // Sort games: Push 'Web Only' games to the end
-  games = games.sort((a, b) => (a.type === "Web Only" ? 1 : b.type === "Web Only" ? -1 : 0));
+  games = games.sort((a, b) =>
+    a.type === "Web Only" ? 1 : b.type === "Web Only" ? -1 : 0
+  );
 
   // Calculate total pages
   const totalPages = Math.ceil(totalGames / limitNumber);
 
   const responseData = {
-      games,
-      pagination: {
-          page: pageNumber,
-          limit: limitNumber,
-          totalPages,
-          totalGames
-      }
+    games,
+    pagination: {
+      page: pageNumber,
+      limit: limitNumber,
+      totalPages,
+      totalGames,
+    },
   };
 
-
-  return res.status(200).json(
-      new ApiResponse(200, responseData)
-  );
+  return res.status(200).json(new ApiResponse(200, responseData));
 });
 
 // Get a single game by ID
@@ -148,13 +153,19 @@ export const updateGame = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, link, creds } = req.body;
 
-  const game = await GameModel.findByIdAndUpdate(id, { name, link, creds }, { new: true });
+  const game = await GameModel.findByIdAndUpdate(
+    id,
+    { name, link, creds },
+    { new: true }
+  );
 
   if (!game) {
     throw new ApiError(404, `Game with id ${id} not found`);
   }
   cache.flushAll();
-  return res.status(200).json(new ApiResponse(200, game, 'Game updated successfully'));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, game, "Game updated successfully"));
 });
 
 // Delete a game
@@ -167,97 +178,120 @@ export const deleteGame = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(404, `Game with id ${id} not found`);
   }
   cache.flushAll();
-  return res.status(200).json(new ApiResponse(200, null, 'Game deleted successfully'));
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Game deleted successfully"));
 });
 
-
-export const getToken=asyncHandler(async(req:Request,res:Response)=>{
+export const getToken = asyncHandler(async (req: Request, res: Response) => {
   const token =
-  req.cookies?.accessToken ||
-  req.header("Authorization")?.replace("Bearer ", "");
-return res.status(200).json(new ApiResponse(200,{token}));
+    req.cookies?.accessToken ||
+    req.header("Authorization")?.replace("Bearer ", "");
+  return res.status(200).json(new ApiResponse(200, { token }));
 });
 
 // Bulk add games
-export const bulkAddGames = asyncHandler(async (req: Request, res: Response) => {
-  const { games } = req.body;
-  if (!Array.isArray(games) || games.length === 0) {
-    throw new ApiError(400, 'Games array is required');
-  }
-
-  // Allowed types (for validation, if needed)
-  const allowedTypes = ['allow', 'bonus', 'exclusive', 'download', 'web only', 'owned'];
-
-  const addedGames = [];
-  for (const game of games) {
-    let { name, link, type } = game;
-    if (!name || !link) continue;
-
-    // Remove query params from link
-    link = link.split('?')[0];
-
-    // If type is not provided, set to 'owned' (since these are your own games)
-    if (!type || !allowedTypes.includes(type)) {
-      type = 'owned';
+export const bulkAddGames = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { games } = req.body;
+    if (!Array.isArray(games) || games.length === 0) {
+      throw new ApiError(400, "Games array is required");
     }
 
-    const newGame = new GameModel({
-      name,
-      link,
-      type,
-      image: '', // No image for now
-      creds: { username: '', password: '' }, // No creds for now
-    });
-    await newGame.save();
-    addedGames.push(newGame);
-  }
+    // Allowed types (for validation, if needed)
+    const allowedTypes = [
+      "allow",
+      "bonus",
+      "exclusive",
+      "download",
+      "web only",
+      "owned",
+    ];
 
-  res.status(201).json(new ApiResponse(201, addedGames, 'Games added successfully'));
-});
+    const addedGames = [];
+    for (const game of games) {
+      let { name, link, type } = game;
+      if (!name || !link) continue;
+
+      // Remove query params from link
+      link = link.split("?")[0];
+
+      // If type is not provided, set to 'owned' (since these are your own games)
+      if (!type || !allowedTypes.includes(type)) {
+        type = "owned";
+      }
+
+      const newGame = new GameModel({
+        name,
+        link,
+        type,
+        image: "", // No image for now
+        creds: { username: "", password: "" }, // No creds for now
+      });
+      await newGame.save();
+      addedGames.push(newGame);
+    }
+
+    res
+      .status(201)
+      .json(new ApiResponse(201, addedGames, "Games added successfully"));
+  }
+);
 
 // Get user's game account status for a specific game
-export const getUserGameStatus = asyncHandler(async (req: Request, res: Response) => {
-  const { gameId } = req.params;
-  const { _id:userId } = getUserFromRequest(req);
+export const getUserGameStatus = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { gameId } = req.params;
+    const { _id: userId } = getUserFromRequest(req);
 
-  if (!userId) {
-    throw new ApiError(401, "User not authenticated");
+    if (!userId) {
+      throw new ApiError(401, "User not authenticated");
+    }
+
+    // 1. Check if game exists
+    const game = await GameModel.findById(gameId);
+    if (!game) {
+      throw new ApiError(404, "Game not found");
+    }
+
+    // 2. Run queries in parallel for better performance
+    const [userAccount, latestRequest] = await Promise.all([
+      UserGameAccountModel.findOne({ userId, gameId }),
+      GameAccountRequestModel.findOne({ userId, gameId }).sort({
+        createdAt: -1,
+      }),
+    ]);
+
+    // 3. Construct the response following the GameAccountStatusResponse interface
+    const response = {
+      gameId,
+      gameName: game.name,
+      hasAccount: !!userAccount,
+      hasExistingAccount: userAccount?.hasExistingAccount || false,
+      isCredentialsStored: userAccount?.isCredentialsStored || false,
+      hasPendingRequest: latestRequest?.status === "pending",
+      status: latestRequest?.status || null,
+      rejectionReason: latestRequest?.rejectionReason || null,
+      accountDetails: userAccount
+        ? {
+            username: userAccount.username,
+            hasExistingAccount: userAccount.hasExistingAccount,
+            isCredentialsStored: userAccount.isCredentialsStored,
+          }
+        : null,
+    };
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          response,
+          "Game account status retrieved successfully"
+        )
+      );
   }
-console.log(gameId,"GAME ID");
-  // Check if game exists
-  const game = await GameModel.findById(gameId);
-  if (!game) {
-    throw new ApiError(404, "Game not found");
-  }
-
-  // Check if user has an account for this game
-  const userAccount = await UserGameAccountModel.findOne({ userId, gameId });
-  
-  // Check if user has a pending request for this game
-  const pendingRequest = await GameAccountRequestModel.findOne({ 
-    userId, 
-    gameId, 
-    status: 'pending' 
-  });
-
-  const response = {
-    gameId,
-    gameName: game.name,
-    hasAccount: !!userAccount,
-    hasExistingAccount: userAccount?.hasExistingAccount || false,
-    isCredentialsStored: userAccount?.isCredentialsStored || false,
-    hasPendingRequest: !!pendingRequest,
-    accountDetails: userAccount ? {
-      username: userAccount.username,
-      hasExistingAccount: userAccount.hasExistingAccount,
-      isCredentialsStored: userAccount.isCredentialsStored
-    } : null
-  };
-
-  return res.status(200).json(
-    new ApiResponse(200, response, "Game account status retrieved successfully")
-  );
-});
+);
 
 // Filter games by tag/types/type with search and pagination (optimized)
 export const filterGames = asyncHandler(async (req: Request, res: Response) => {
@@ -273,7 +307,12 @@ export const filterGames = asyncHandler(async (req: Request, res: Response) => {
 
   const pageNumber = parseInt(page as string);
   const limitNumber = parseInt(limit as string);
-  if (isNaN(pageNumber) || isNaN(limitNumber) || pageNumber < 1 || limitNumber < 1) {
+  if (
+    isNaN(pageNumber) ||
+    isNaN(limitNumber) ||
+    pageNumber < 1 ||
+    limitNumber < 1
+  ) {
     throw new ApiError(400, "Invalid pagination parameters");
   }
   const cacheKey = JSON.stringify({
