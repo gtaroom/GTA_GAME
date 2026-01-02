@@ -20,8 +20,8 @@ import {
 } from '@/components/ui/popover';
 import { useAuth } from '@/contexts/auth-context';
 import { useVip } from '@/contexts/vip-context';
-import { useKYCVerification } from '@/hooks/useKYCVerification';
 import { useBreakPoint } from '@/hooks/useBreakpoint';
+import { useKYCVerification } from '@/hooks/useKYCVerification';
 import { getGames } from '@/lib/api/games';
 import { createWithdrawal } from '@/lib/api/wallet';
 import { cn } from '@/lib/utils';
@@ -29,7 +29,7 @@ import type { Game } from '@/types/game.types';
 import type { WithdrawalResponse } from '@/types/wallet.types';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { SecBox } from './sec-box';
 
 type GameType = 'signature' | 'exclusive';
@@ -44,7 +44,9 @@ export default function RedeemMethod() {
 
     // State management
     const [gameType, setGameType] = useState<GameType>('exclusive');
-    const [paymentGateway, setPaymentGateway] = useState<PaymentGateway | null>(null);
+    const [paymentGateway, setPaymentGateway] = useState<PaymentGateway | null>(
+        null
+    );
     const [exclusiveGames, setExclusiveGames] = useState<Game[]>([]);
     const [selectedGame, setSelectedGame] = useState<string>('');
     const [amount, setAmount] = useState<string>('');
@@ -76,16 +78,19 @@ export default function RedeemMethod() {
     // Validation
     const amountNum = parseFloat(amount);
     const maxRedemptionLimit = vipStatus?.perks?.scRedemptionLimit || 500; // Fallback to 500 if VIP data not loaded
-    const isAmountValid = !isNaN(amountNum) && amountNum >= 40 && amountNum <= maxRedemptionLimit;
-    
+    const isAmountValid =
+        !isNaN(amountNum) && amountNum >= 50 && amountNum <= maxRedemptionLimit;
+
     // Only check insufficient balance for signature games (exclusive games are third-party)
-    const hasInsufficientBalance = gameType === 'signature' && amountNum > (user?.sweepCoins || 0);
-    
-    const canSubmit = 
+    const hasInsufficientBalance =
+        gameType === 'signature' && amountNum > (user?.sweepCoins || 0);
+
+    const canSubmit =
         paymentGateway !== null &&
         isAmountValid &&
         !hasInsufficientBalance &&
-        (gameType === 'signature' || (gameType === 'exclusive' && selectedGame && gameUsername));
+        (gameType === 'signature' ||
+            (gameType === 'exclusive' && selectedGame && gameUsername));
 
     // Handle submission
     const handleSubmit = async () => {
@@ -94,11 +99,13 @@ export default function RedeemMethod() {
         // Check KYC verification first
         if (!user?.isKYC) {
             // Redirect to KYC verification with current page as return URL
-            const currentUrl = window.location.pathname + window.location.search;
-            redirectToKYC({ 
+            const currentUrl =
+                window.location.pathname + window.location.search;
+            redirectToKYC({
                 redirectUrl: currentUrl,
                 showToast: true,
-                toastMessage: 'KYC verification is required to redeem winnings. Redirecting to verification...'
+                toastMessage:
+                    'KYC verification is required to redeem winnings. Redirecting to verification...',
             });
             return;
         }
@@ -110,30 +117,43 @@ export default function RedeemMethod() {
         try {
             const payload = {
                 amount: amountNum,
-                paymentGateway: paymentGateway === 'card_transfer' ? 'payouts' : 'soap',
-                    gameName:gameType === 'exclusive' ? selectedGame : 'featuredGames',
-                    username: gameType === 'exclusive' ? gameUsername : 'featured'
+                paymentGateway:
+                    paymentGateway === 'card_transfer' ? 'payouts' : 'soap',
+                gameName:
+                    gameType === 'exclusive' ? selectedGame : 'featuredGames',
+                username: gameType === 'exclusive' ? gameUsername : 'featured',
             };
 
-            const response = await createWithdrawal(payload) as WithdrawalResponse;
+            const response = (await createWithdrawal(
+                payload
+            )) as WithdrawalResponse;
 
             if (response.success) {
-                setSuccess(response.message || 'Redemption request submitted successfully!');
-                
+                setSuccess(
+                    response.message ||
+                        'Redemption request submitted successfully!'
+                );
+
                 // Refetch user data to update balance
                 await refetchUser();
-                
+
                 // Reset form
                 setAmount('');
                 setSelectedGame('');
                 setGameUsername('');
                 setPaymentGateway(null);
             } else {
-                setError(response.message || 'Failed to submit redemption request');
+                setError(
+                    response.message || 'Failed to submit redemption request'
+                );
             }
         } catch (error) {
             console.error('Redemption error:', error);
-            setError(error instanceof Error ? error.message : 'An error occurred during redemption');
+            setError(
+                error instanceof Error
+                    ? error.message
+                    : 'An error occurred during redemption'
+            );
         } finally {
             setLoading(false);
         }
@@ -166,7 +186,6 @@ export default function RedeemMethod() {
                 backgroundOpacity={0.1}
                 className='xxl:p-10 lg:p-8 md:p-6 p-5 rounded-lg flex flex-col items-start justify-between backdrop-blur-2xl'
             >
-
                 {/* Game Type Selection */}
                 <SecBox title='Select Game Type*'>
                     <ButtonGroup className='xl:gap-8 lg:gap-7 gap-6'>
@@ -201,7 +220,9 @@ export default function RedeemMethod() {
                             glowColor='--color-orange-500'
                             glowSpread={gameType === 'exclusive' ? 0.8 : 0.3}
                             backgroundColor='--color-orange-500'
-                            backgroundOpacity={gameType === 'exclusive' ? 0.2 : 0.05}
+                            backgroundOpacity={
+                                gameType === 'exclusive' ? 0.2 : 0.05
+                            }
                             neonBoxClass='rounded-md w-full'
                             className='w-full flex-1'
                             btnInnerClass='inline-flex items-center gap-3'
@@ -225,9 +246,13 @@ export default function RedeemMethod() {
                             variant='neon'
                             size={ELEMENT_SIZE}
                             glowColor='--color-blue-500'
-                            glowSpread={paymentGateway === 'card_transfer' ? 0.8 : 0.3}
+                            glowSpread={
+                                paymentGateway === 'card_transfer' ? 0.8 : 0.3
+                            }
                             backgroundColor='--color-blue-500'
-                            backgroundOpacity={paymentGateway === 'card_transfer' ? 0.2 : 0.05}
+                            backgroundOpacity={
+                                paymentGateway === 'card_transfer' ? 0.2 : 0.05
+                            }
                             neonBoxClass='rounded-md w-full'
                             className='w-full flex-1'
                             btnInnerClass='inline-flex items-center gap-3'
@@ -245,9 +270,13 @@ export default function RedeemMethod() {
                             variant='neon'
                             size={ELEMENT_SIZE}
                             glowColor='--color-fuchsia-500'
-                            glowSpread={paymentGateway === 'bank_ach' ? 0.8 : 0.3}
+                            glowSpread={
+                                paymentGateway === 'bank_ach' ? 0.8 : 0.3
+                            }
                             backgroundColor='--color-fuchsia-500'
-                            backgroundOpacity={paymentGateway === 'bank_ach' ? 0.2 : 0.05}
+                            backgroundOpacity={
+                                paymentGateway === 'bank_ach' ? 0.2 : 0.05
+                            }
                             neonBoxClass='rounded-md w-full'
                             className='w-full flex-1'
                             btnInnerClass='inline-flex items-center gap-3'
@@ -266,7 +295,10 @@ export default function RedeemMethod() {
                 {/* Exclusive Game Selection (only for exclusive games) */}
                 {gameType === 'exclusive' && (
                     <SecBox title='Select Game*'>
-                        <Popover open={gameDropdownOpen} onOpenChange={setGameDropdownOpen}>
+                        <Popover
+                            open={gameDropdownOpen}
+                            onOpenChange={setGameDropdownOpen}
+                        >
                             <PopoverTrigger asChild>
                                 <Button
                                     role='combobox'
@@ -280,12 +312,20 @@ export default function RedeemMethod() {
                                     {...inputSettings}
                                 >
                                     <div className='flex w-full items-center justify-between'>
-                                        <span className={cn(!selectedGame && 'text-white/80')}>
+                                        <span
+                                            className={cn(
+                                                !selectedGame && 'text-white/80'
+                                            )}
+                                        >
                                             {fetchingGames
                                                 ? 'Loading games...'
                                                 : selectedGame
-                                                ? exclusiveGames.find(g => g.name === selectedGame)?.name
-                                                : 'Select a Game'}
+                                                  ? exclusiveGames.find(
+                                                        g =>
+                                                            g.name ===
+                                                            selectedGame
+                                                    )?.name
+                                                  : 'Select a Game'}
                                         </span>
                                         <ChevronDownIcon
                                             size={16}
@@ -302,20 +342,33 @@ export default function RedeemMethod() {
                                 <Command>
                                     <CommandInput placeholder='Search Games...' />
                                     <CommandList>
-                                        <CommandEmpty>No game found.</CommandEmpty>
+                                        <CommandEmpty>
+                                            No game found.
+                                        </CommandEmpty>
                                         <CommandGroup>
-                                            {exclusiveGames.map((game) => (
+                                            {exclusiveGames.map(game => (
                                                 <CommandItem
                                                     key={game._id}
                                                     value={game.name}
-                                                    onSelect={(currentValue) => {
-                                                        setSelectedGame(currentValue === selectedGame ? '' : currentValue);
-                                                        setGameDropdownOpen(false);
+                                                    onSelect={currentValue => {
+                                                        setSelectedGame(
+                                                            currentValue ===
+                                                                selectedGame
+                                                                ? ''
+                                                                : currentValue
+                                                        );
+                                                        setGameDropdownOpen(
+                                                            false
+                                                        );
                                                     }}
                                                 >
                                                     {game.name}
-                                                    {selectedGame === game.name && (
-                                                        <CheckIcon size={16} className='ml-auto' />
+                                                    {selectedGame ===
+                                                        game.name && (
+                                                        <CheckIcon
+                                                            size={16}
+                                                            className='ml-auto'
+                                                        />
                                                     )}
                                                 </CommandItem>
                                             ))}
@@ -332,9 +385,9 @@ export default function RedeemMethod() {
                     <Input
                         className='mb-4'
                         type='number'
-                        placeholder={`Enter amount (min 40SC, max ${maxRedemptionLimit}SC)`}
+                        placeholder={`Enter amount (min 50SC, max ${maxRedemptionLimit}SC)`}
                         value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
+                        onChange={e => setAmount(e.target.value)}
                         {...inputSettings}
                     />
 
@@ -357,8 +410,8 @@ export default function RedeemMethod() {
                         {/* Validation Messages */}
                         {amount && !isAmountValid && (
                             <NeonText className='text-red-400 text-sm'>
-                                {amountNum < 40 
-                                    ? 'Minimum redemption amount is 40 SC' 
+                                {amountNum < 50
+                                    ? 'Minimum redemption amount is 50 SC'
                                     : `Maximum redemption amount is ${maxRedemptionLimit} SC (based on your VIP tier)`}
                             </NeonText>
                         )}
@@ -367,12 +420,12 @@ export default function RedeemMethod() {
                                 Insufficient balance
                             </NeonText>
                         )}
-                        
+
                         {/* VIP Tier Info */}
                         {vipStatus && (
                             <NeonText className='text-blue-400 text-xs mt-2'>
-                                Your {vipStatus.tierName} tier allows up to {maxRedemptionLimit} SC redemption per day
-                            
+                                Your {vipStatus.tierName} tier allows up to{' '}
+                                {maxRedemptionLimit} SC redemption per day
                             </NeonText>
                         )}
                     </div>
@@ -386,7 +439,7 @@ export default function RedeemMethod() {
                             type='text'
                             placeholder='Enter your game username'
                             value={gameUsername}
-                            onChange={(e) => setGameUsername(e.target.value)}
+                            onChange={e => setGameUsername(e.target.value)}
                             {...inputSettings}
                         />
                     </SecBox>
@@ -402,9 +455,9 @@ export default function RedeemMethod() {
                 >
                     {loading ? 'Processing...' : 'Submit Request'}
                 </Button>
-                
-               {/* Success Message */}
-               {success && (
+
+                {/* Success Message */}
+                {success && (
                     <div className='w-full mt-2 mb-6 p-4 bg-green-500/20 border border-green-500/50 rounded-lg'>
                         <NeonText className='text-green-400 text-sm font-bold'>
                             {success}
@@ -421,7 +474,6 @@ export default function RedeemMethod() {
                     </div>
                 )}
             </NeonBox>
-
         </section>
     );
 }
