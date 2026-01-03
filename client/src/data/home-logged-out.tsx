@@ -4,11 +4,11 @@ import {
     GoldCoinsIcon,
     MailIcon,
 } from '@/app/(home)/components/feature-tiels-icons';
+import SweepstakesSpinModal from '@/components/modal/sweepstakes-spin';
 import NeonBox from '@/components/neon/neon-box';
 import NeonText from '@/components/neon/neon-text';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import SweepstakesSpinModal from '@/components/modal/sweepstakes-spin';
 import { FeatureTile } from '@/types/content.types';
 import type { GameDataProps } from '@/types/global.type';
 
@@ -1956,21 +1956,24 @@ export const featureTielsData: FeatureTile[] = [
             content: (
                 <FeatureTielsModalWrapper>
                     <FeatureTielsText>
-                        Sweeps Coins may be requested without purchase by using one of the following free entry methods:
+                        Sweeps Coins may be requested without purchase by using
+                        one of the following free entry methods:
                     </FeatureTielsText>
 
                     <FeatureTielsText className='text-base md:text-lg leading-6 md:leading-8 font-bold'>
                         1. Mail-In Request
                     </FeatureTielsText>
                     <FeatureTielsText>
-                        To qualify, mail a handwritten entry including the following:
+                        To qualify, mail a handwritten entry including the
+                        following:
                     </FeatureTielsText>
                     <FeatureTielsList>
                         <FeatureTielsListItem>Full name</FeatureTielsListItem>
                         <FeatureTielsListItem>Address</FeatureTielsListItem>
                         <FeatureTielsListItem>Email</FeatureTielsListItem>
                         <FeatureTielsListItem>
-                            The phrase: “Golden Ticket Online Arcade Sweepstakes Entry”
+                            The phrase: “Golden Ticket Online Arcade Sweepstakes
+                            Entry”
                         </FeatureTielsListItem>
                     </FeatureTielsList>
                     <FeatureTielsText>Mail to:</FeatureTielsText>
@@ -1985,9 +1988,16 @@ export const featureTielsData: FeatureTile[] = [
                         Mail-In Rules:
                     </FeatureTielsText>
                     <FeatureTielsList>
-                        <FeatureTielsListItem>One request per envelope per day</FeatureTielsListItem>
-                        <FeatureTielsListItem>Requests must be handwritten and legible</FeatureTielsListItem>
-                        <FeatureTielsListItem>Valid entries will receive Sweeps Coins credited to their account</FeatureTielsListItem>
+                        <FeatureTielsListItem>
+                            One request per envelope per day
+                        </FeatureTielsListItem>
+                        <FeatureTielsListItem>
+                            Requests must be handwritten and legible
+                        </FeatureTielsListItem>
+                        <FeatureTielsListItem>
+                            Valid entries will receive Sweeps Coins credited to
+                            their account
+                        </FeatureTielsListItem>
                     </FeatureTielsList>
 
                     <div className='h-px w-full bg-white/10 my-2 md:my-3' />
@@ -1996,13 +2006,15 @@ export const featureTielsData: FeatureTile[] = [
                         2. Free Online Entry Form
                     </FeatureTielsText>
                     <FeatureTielsText>
-                        You can also request a free entry once per week by completing our online form.
+                        You can also request a free entry once per week by
+                        completing our online form.
                     </FeatureTielsText>
                     <div>
                         <Dialog>
                             <DialogTrigger asChild>
                                 <Button className='inline-flex items-center mt-1 md:mt-2 px-4 py-2 rounded-md bg-white/10 hover:bg-white/15 text-white font-bold transition-colors'>
-                                    <span className='mr-2'>👉</span> Submit Free Entry Form
+                                    <span className='mr-2'>👉</span> Submit Free
+                                    Entry Form
                                 </Button>
                             </DialogTrigger>
                             <SweepstakesSpinModal />
@@ -2012,9 +2024,16 @@ export const featureTielsData: FeatureTile[] = [
                         Online Entry Rules:
                     </FeatureTielsText>
                     <FeatureTielsList>
-                        <FeatureTielsListItem>Limit: 1 free entry per person, per 7 days</FeatureTielsListItem>
-                        <FeatureTielsListItem>Duplicate submissions will not be accepted</FeatureTielsListItem>
-                        <FeatureTielsListItem>Valid submissions will receive Sweeps Coins credited to their account</FeatureTielsListItem>
+                        <FeatureTielsListItem>
+                            Limit: 1 free entry per person, per 7 days
+                        </FeatureTielsListItem>
+                        <FeatureTielsListItem>
+                            Duplicate submissions will not be accepted
+                        </FeatureTielsListItem>
+                        <FeatureTielsListItem>
+                            Valid submissions will receive Sweeps Coins credited
+                            to their account
+                        </FeatureTielsListItem>
                     </FeatureTielsList>
 
                     <div className='h-px w-full bg-white/10 my-2 md:my-3' />
