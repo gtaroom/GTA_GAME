@@ -29,7 +29,7 @@ const VideoSlider = () => {
         {
             id: '4kd7yetMnK4',
             title: 'How It Works GC, Exclusive GC & Sweeps Coins',
-            thumbnailTitle: 'HOW IT WORKS',
+            thumbnailTitle: 'HOW IT WORKS: GOLD COINS AND SWEEPS COINS',
             description:
                 'We break down exactly how our ecosystem works so you can maximize your gameplay',
             gradient: 'from-blue-600/80 to-cyan-600/80',
