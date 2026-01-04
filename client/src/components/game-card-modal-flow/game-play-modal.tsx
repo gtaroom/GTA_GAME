@@ -748,6 +748,34 @@ export default function GamePlayStep({
                                 for redemption. Min: ${MIN_REDEEM}, Max: $
                                 {MAX_REDEEM}
                             </p>
+
+                            {/* REDEMPTION FEE NOTICE - NEW */}
+                            <NeonBox
+                                glowColor='--color-yellow-500'
+                                backgroundColor='--color-yellow-500'
+                                backgroundOpacity={0.15}
+                                className='p-3 rounded-lg border border-yellow-500/30'
+                            >
+                                <div className='flex items-start gap-2'>
+                                    <NeonIcon
+                                        icon='lucide:info'
+                                        size={16}
+                                        glowColor='--color-yellow-500'
+                                        className='mt-0.5 flex-shrink-0'
+                                    />
+                                    <div className='space-y-1'>
+                                        <p className='text-xs font-semibold text-yellow-400'>
+                                            Redemption Fee Notice
+                                        </p>
+                                        <p className='text-xs text-yellow-200/90'>
+                                            A $3.00 processing fee will be
+                                            deducted by our payment processor at
+                                            the time of redemption.
+                                        </p>
+                                    </div>
+                                </div>
+                            </NeonBox>
+
                             <Input
                                 type='number'
                                 placeholder={`Enter amount ($${MIN_REDEEM}-$${MAX_REDEEM})`}
@@ -759,6 +787,51 @@ export default function GamePlayStep({
                                 step='0.01'
                                 className='w-full'
                             />
+
+                            {/* Show calculation when amount is entered */}
+                            {redeemAmount &&
+                                !isNaN(parseFloat(redeemAmount)) &&
+                                parseFloat(redeemAmount) >= MIN_REDEEM &&
+                                parseFloat(redeemAmount) <= MAX_REDEEM && (
+                                    <div className='p-3 bg-green-500/10 rounded-lg border border-green-500/20'>
+                                        <div className='space-y-1.5 text-xs'>
+                                            <div className='flex items-center justify-between'>
+                                                <span className='text-gray-400'>
+                                                    Redemption Amount:
+                                                </span>
+                                                <span className='font-semibold text-green-300'>
+                                                    $
+                                                    {parseFloat(
+                                                        redeemAmount
+                                                    ).toFixed(2)}
+                                                </span>
+                                            </div>
+                                            <div className='flex items-center justify-between'>
+                                                <span className='text-gray-400'>
+                                                    Processing Fee:
+                                                </span>
+                                                <span className='font-semibold text-yellow-400'>
+                                                    -$3.00
+                                                </span>
+                                            </div>
+                                            <div className='h-px bg-green-500/30 my-1'></div>
+                                            <div className='flex items-center justify-between'>
+                                                <span className='text-gray-300 font-semibold'>
+                                                    You'll Receive:
+                                                </span>
+                                                <span className='font-bold text-green-400 text-sm'>
+                                                    $
+                                                    {(
+                                                        parseFloat(
+                                                            redeemAmount
+                                                        ) - 3
+                                                    ).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                             <Button
                                 onClick={handleRedeemLoot}
                                 disabled={loading || !redeemAmount}

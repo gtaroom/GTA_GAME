@@ -48,8 +48,8 @@ const Home = () => {
             <HeroSection />
             <FeatureGames />
             <ReferFriends />
-            <ExclusiveGames />
             <VideoSlider />
+            <ExclusiveGames />
             <FeatureTiels />
             <LatestWinners />
             <SpinWheelSection />

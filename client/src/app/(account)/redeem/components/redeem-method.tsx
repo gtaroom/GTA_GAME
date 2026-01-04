@@ -382,6 +382,33 @@ export default function RedeemMethod() {
 
                 {/* Redeem Amount */}
                 <SecBox title='Redeem Amount*'>
+                    {/* REDEMPTION FEE NOTICE - ADDED */}
+                    <NeonBox
+                        glowColor='--color-yellow-500'
+                        backgroundColor='--color-yellow-500'
+                        backgroundOpacity={0.15}
+                        className='p-3 rounded-lg border border-yellow-500/30 mb-4'
+                    >
+                        <div className='flex items-start gap-2'>
+                            <NeonIcon
+                                icon='lucide:info'
+                                size={16}
+                                glowColor='--color-yellow-500'
+                                className='mt-0.5 flex-shrink-0'
+                            />
+                            <div className='space-y-1'>
+                                <p className='text-xs font-semibold text-yellow-400'>
+                                    Redemption Fee Notice
+                                </p>
+                                <p className='text-xs text-yellow-200/90'>
+                                    A $3.00 processing fee will be deducted by
+                                    our payment processor at the time of
+                                    redemption.
+                                </p>
+                            </div>
+                        </div>
+                    </NeonBox>
+
                     <Input
                         className='mb-4'
                         type='number'
@@ -406,6 +433,44 @@ export default function RedeemMethod() {
                             })}{' '}
                             SC
                         </span>
+
+                        {/* Live Calculation - Show when amount is valid - ADDED */}
+                        {amount && isAmountValid && !hasInsufficientBalance && (
+                            <NeonBox
+                                glowColor='--color-green-500'
+                                backgroundColor='--color-green-500'
+                                backgroundOpacity={0.1}
+                                className='p-3 rounded-lg border border-green-500/20 mt-2'
+                            >
+                                <div className='space-y-1.5 text-xs'>
+                                    <div className='flex items-center justify-between'>
+                                        <span className='text-gray-400'>
+                                            Redemption Amount:
+                                        </span>
+                                        <span className='font-semibold text-green-300'>
+                                            ${amountNum.toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div className='flex items-center justify-between'>
+                                        <span className='text-gray-400'>
+                                            Processing Fee:
+                                        </span>
+                                        <span className='font-semibold text-yellow-400'>
+                                            -$3.00
+                                        </span>
+                                    </div>
+                                    <div className='h-px bg-green-500/30 my-1'></div>
+                                    <div className='flex items-center justify-between'>
+                                        <span className='text-gray-300 font-semibold'>
+                                            You'll Receive:
+                                        </span>
+                                        <span className='font-bold text-green-400 text-sm'>
+                                            ${(amountNum - 3).toFixed(2)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </NeonBox>
+                        )}
 
                         {/* Validation Messages */}
                         {amount && !isAmountValid && (
