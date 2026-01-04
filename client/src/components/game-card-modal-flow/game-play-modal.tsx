@@ -768,8 +768,7 @@ export default function GamePlayStep({
                                             Redemption Fee Notice
                                         </p>
                                         <p className='text-xs text-yellow-200/90'>
-                                            A $3.00 processing fee will be
-                                            deducted by our payment processor at
+                                            A $3.00 processing fee applies at
                                             the time of redemption.
                                         </p>
                                     </div>
