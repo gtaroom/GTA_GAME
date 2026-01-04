@@ -20,30 +20,38 @@ const VideoSlider = () => {
         {
             id: 'e5ZcdY4GSy0',
             title: 'How to Play',
+            thumbnailTitle: 'HOW TO PLAY',
             description:
                 'In this video, we walk you through the entire player journey',
             gradient: 'from-purple-600/80 to-pink-600/80',
+            thumbnailGradient: 'from-purple-600 to-pink-600',
         },
         {
             id: '4kd7yetMnK4',
             title: 'How It Works GC, Exclusive GC & Sweeps Coins',
+            thumbnailTitle: 'HOW IT WORKS',
             description:
                 'We break down exactly how our ecosystem works so you can maximize your gameplay',
             gradient: 'from-blue-600/80 to-cyan-600/80',
+            thumbnailGradient: 'from-blue-600 to-cyan-600',
         },
         {
             id: 'WQkfgGu83Ng',
             title: 'How To Purchase Gold Coins',
+            thumbnailTitle: 'HOW TO PURCHASE GOLD COINS',
             description:
                 'Here is the official guide on how to purchase Gold Coins at GTOA',
             gradient: 'from-orange-600/80 to-red-600/80',
+            thumbnailGradient: 'from-yellow-600 to-orange-600',
         },
         {
             id: '5LrxNgFp8Bg',
             title: 'How To Redeem Sweeps Coins',
+            thumbnailTitle: 'HOW TO REDEEM',
             description:
                 'Here is exactly how to redeem your Sweeps Coins for prizes at GTOA',
             gradient: 'from-green-600/80 to-emerald-600/80',
+            thumbnailGradient: 'from-red-600 to-rose-600',
         },
     ];
 
@@ -77,7 +85,7 @@ const VideoSlider = () => {
     const toggleMute = () => setIsMuted(!isMuted);
 
     return (
-        <div className='w-full bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 py-6 sm:py-10 px-3 sm:px-6 overflow-hidden font-sans'>
+        <div className='w-full bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 py-6 sm:py-10 px-3 sm:px-6 overflow-hidden font-sans mb-8'>
             <div className='w-full max-w-7xl mx-auto relative'>
                 <div className='relative aspect-video rounded-xl sm:rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl shadow-purple-500/50'>
                     <div className='absolute inset-0'>
@@ -175,7 +183,8 @@ const VideoSlider = () => {
                     </button>
                 </div>
 
-                <div className='flex gap-2 sm:gap-4 mt-3 sm:mt-6 justify-center overflow-x-auto pb-2'>
+                {/* Enhanced Thumbnail Navigation with Text Labels */}
+                <div className='flex gap-3 sm:gap-4 mt-4 sm:mt-8 justify-center overflow-x-auto pb-2 px-2'>
                     {videos.map((video, idx) => (
                         <button
                             key={idx}
@@ -183,15 +192,56 @@ const VideoSlider = () => {
                                 setCurrentIndex(idx);
                                 setProgress(0);
                             }}
-                            className={`relative w-16 h-12 sm:w-24 sm:h-16 rounded-md sm:rounded-lg overflow-hidden transition-all flex-shrink-0 ${idx === currentIndex ? 'ring-2 sm:ring-4 ring-white scale-105 sm:scale-110' : 'opacity-60 hover:opacity-100'}`}
+                            className={`group relative w-32 h-20 sm:w-48 sm:h-28 md:w-56 md:h-32 rounded-lg sm:rounded-xl overflow-hidden transition-all duration-300 flex-shrink-0 ${
+                                idx === currentIndex
+                                    ? 'ring-3 sm:ring-4 ring-white scale-105 sm:scale-110 shadow-2xl shadow-white/30'
+                                    : 'opacity-70 hover:opacity-100 hover:scale-105 shadow-lg'
+                            }`}
                         >
+                            {/* Background Image with Fallback */}
                             <img
-                                src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`}
+                                src={`https://img.youtube.com/vi/${video.id}/hqdefault.jpg`}
                                 className='w-full h-full object-cover'
-                                alt=''
+                                alt={video.thumbnailTitle}
                             />
+
+                            {/* Gradient Overlay */}
                             <div
-                                className={`absolute inset-0 bg-gradient-to-r ${video.gradient} mix-blend-multiply`}
+                                className={`absolute inset-0 bg-gradient-to-br ${video.thumbnailGradient} mix-blend-multiply transition-all duration-300 ${
+                                    idx === currentIndex
+                                        ? 'opacity-70'
+                                        : 'opacity-80'
+                                }`}
+                            />
+
+                            {/* Dark Overlay for Better Text Contrast */}
+                            <div className='absolute inset-0 bg-black/40' />
+
+                            {/* Text Label */}
+                            <div className='absolute inset-0 flex items-center justify-center p-2'>
+                                <div className='text-center'>
+                                    <p
+                                        className={`font-bold text-white leading-tight transition-all duration-300 ${
+                                            idx === currentIndex
+                                                ? 'text-[10px] sm:text-sm md:text-base drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]'
+                                                : 'text-[9px] sm:text-xs md:text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]'
+                                        }`}
+                                    >
+                                        {video.thumbnailTitle}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Active Indicator - Bottom Border */}
+                            {idx === currentIndex && (
+                                <div className='absolute bottom-0 left-0 right-0 h-1 sm:h-1.5 bg-white shadow-lg' />
+                            )}
+
+                            {/* Hover Effect - Glow */}
+                            <div
+                                className={`absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-all duration-300 ${
+                                    idx === currentIndex ? 'bg-white/5' : ''
+                                }`}
                             />
                         </button>
                     ))}
